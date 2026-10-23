@@ -13,6 +13,9 @@ export default defineConfig(({ mode }) => {
   return {
     base: normalizeBase(env.VITE_BASE ?? process.env.VITE_BASE),
     plugins: [react(), tailwindcss()],
+    build: {
+      assetsInlineLimit: 0,
+    },
     test: {
       environment: "node",
       include: ["src/**/*.test.{ts,tsx}", "shared/**/*.test.ts", "content/**/*.test.ts", "tests/**/*.test.ts"],

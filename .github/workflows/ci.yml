@@ -59,8 +59,8 @@ jobs:
           HEAD="${{ github.event.pull_request.head.sha }}"
           MISSING=0
           for commit in $(git rev-list --no-merges ${BASE}..${HEAD}); do
-            if ! git log -1 --format="%B" "$commit" | grep -q "Signed-off-by:"; then
-              echo "Error: el commit $commit no incluye Signed-off-by."
+            if ! git log -1 --format="%B" "$commit" | grep -qE "^Signed-off-by: [^<]+ <[^@>]+@[^>]+>$"; then
+              echo "Error: el commit $commit no incluye un trailer DCO válido 'Signed-off-by: Nombre <email>'."
               MISSING=1
             fi
           done

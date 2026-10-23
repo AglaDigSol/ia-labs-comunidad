@@ -1,4 +1,4 @@
-import { ShieldCheck } from "lucide-react";
+import { CheckCircle2, GraduationCap, Info, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { evolve } from "../../../../shared/markov/evolution.ts";
@@ -9,7 +9,7 @@ import {
   validateStochastic,
   type Issue,
 } from "../../../../shared/markov/validate.ts";
-import { formatDecimal, parseNumber, type Frac } from "../../../../shared/rational.ts";
+import { formatDecimal, parseNumber, toNumber, type Frac } from "../../../../shared/rational.ts";
 import { Chip } from "../../../components/ui/chip.tsx";
 import { EvolutionBlock } from "./EvolutionBlock.tsx";
 import { InverseBlock } from "./InverseBlock.tsx";
@@ -86,9 +86,90 @@ const parseCell = (text: string): Parsed => {
   return r.ok ? { value: r.value } : { error: r.error };
 };
 
+function AcademicMarkovCheck({
+  stateName,
+  targetFrac,
+}: {
+  stateName: string;
+  targetFrac: Frac | null;
+}) {
+  const [val, setVal] = useState("");
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    setVal("");
+    setChecked(false);
+  }, [stateName, targetFrac]);
+
+  const parsed = useMemo(() => parseNumber(val), [val]);
+  const isCorrect = useMemo(() => {
+    if (!checked || !targetFrac || !parsed.ok) return false;
+    const diff = Math.abs(toNumber(parsed.value) - toNumber(targetFrac));
+    return diff < 0.005;
+  }, [checked, targetFrac, parsed]);
+
+  if (!targetFrac) return null;
+
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-border bg-raised p-4">
+      <div className="flex items-center gap-2">
+        <GraduationCap size={18} className="text-accent" aria-hidden="true" />
+        <h3 className="font-display text-[15px] font-semibold">
+          Comprueba tu respuesta
+        </h3>
+      </div>
+      <p className="text-[14px] text-muted">
+        Calcula manualmente la probabilidad del estado <strong>{stateName}</strong> tras el paso 1 (v₁) antes de consultar la solución completa:
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="text"
+          value={val}
+          onChange={(e) => {
+            setVal(e.target.value);
+            setChecked(false);
+          }}
+          placeholder="Ej: 0,35 o 7/20"
+          aria-label={`Comprobar probabilidad paso 1 para ${stateName}`}
+          className="min-h-9 w-44 rounded-md border border-border bg-sunken px-3 text-[14px] font-mono focus:border-accent focus:outline-none"
+        />
+        <button
+          type="button"
+          disabled={!val.trim()}
+          onClick={() => setChecked(true)}
+          className="inline-flex min-h-9 items-center rounded-md bg-accent px-3 text-[14px] font-semibold text-accent-contrast hover:opacity-90 disabled:opacity-40"
+        >
+          Comprobar
+        </button>
+      </div>
+
+      {checked ? (
+        <div className="pt-1">
+          {isCorrect ? (
+            <Chip tone="ok" className="text-[13px]">
+              <CheckCircle2 size={16} aria-hidden="true" />
+              ¡Correcto! Tu valor coincide con el cálculo de v₁ para {stateName}.
+            </Chip>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <Chip tone="warn" className="text-[13px]">
+                No coincide. Inténtalo de nuevo.
+              </Chip>
+              <p className="text-[13px] text-muted">
+                Pista: Multiplica el vector fila inicial v₀ por la columna correspondiente de la matriz P: v₁(j) = ∑ v₀(i) · P(i, j).
+              </p>
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function MarkovLabPage() {
   const [params, setParams] = useSearchParams();
   const [draft, setDraft] = useState<Draft>(() => initialDraft(params.get("n")));
+  const [showSolution, setShowSolution] = useState(true);
   const { size, names, P, v0, n } = draft;
   // Inverse-problem vector: initialised from v0 until the user edits it (draft field vInv).
   const vInv = draft.vInv ?? v0;
@@ -334,30 +415,58 @@ export function MarkovLabPage() {
           ) : (
             <>
               <ValidationBlock verdict={verdict} rows={reports} />
-              <div className="flex flex-col gap-3">
-                {evolution ? (
-                  <EvolutionBlock
-                    names={displayNames}
-                    vectors={evolution.vectors}
-                    steps={evolution.steps}
-                  />
-                ) : evolutionHint ? (
-                  <Chip tone="info">{evolutionHint}</Chip>
-                ) : null}
+
+              {evolution && evolution.vectors[1] && evolution.vectors[1][0] ? (
+                <AcademicMarkovCheck
+                  stateName={displayNames[0] ?? "Estado 1"}
+                  targetFrac={evolution.vectors[1][0]}
+                />
+              ) : null}
+
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-sunken/40 px-3 py-2">
+                <div className="flex items-center gap-2 text-[13px] text-muted">
+                  <Info size={16} aria-hidden="true" />
+                  <span>
+                    Aviso de integridad: calcula el desarrollo en papel antes de consultar la solución completa generada por la herramienta.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSolution((s) => !s)}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-raised px-3 text-[13px] font-medium hover:bg-sunken"
+                >
+                  {showSolution ? "Ocultar solución detallada" : "Ver la solución completa"}
+                </button>
               </div>
-              <StationaryBlock names={displayNames} P={solverMatrix} hint={solverHint} />
-              <InverseBlock
-                names={displayNames}
-                P={solverMatrix}
-                hint={solverHint}
-                v={vInv}
-                onV={(j, text) =>
-                  patch((d) => ({
-                    ...d,
-                    vInv: (d.vInv ?? d.v0).map((c, k) => (k === j ? text.slice(0, MAX_CELL) : c)),
-                  }))
-                }
-              />
+
+              {showSolution ? (
+                <>
+                  <div className="flex flex-col gap-3">
+                    {evolution ? (
+                      <EvolutionBlock
+                        names={displayNames}
+                        vectors={evolution.vectors}
+                        steps={evolution.steps}
+                      />
+                    ) : evolutionHint ? (
+                      <Chip tone="info">{evolutionHint}</Chip>
+                    ) : null}
+                  </div>
+                  <StationaryBlock names={displayNames} P={solverMatrix} hint={solverHint} />
+                  <InverseBlock
+                    names={displayNames}
+                    P={solverMatrix}
+                    hint={solverHint}
+                    v={vInv}
+                    onV={(j, text) =>
+                      patch((d) => ({
+                        ...d,
+                        vInv: (d.vInv ?? d.v0).map((c, k) => (k === j ? text.slice(0, MAX_CELL) : c)),
+                      }))
+                    }
+                  />
+                </>
+              ) : null}
             </>
           )}
         </div>

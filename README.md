@@ -26,8 +26,9 @@ Se requiere **Node.js 22** o superior y **npm**:
 git clone https://github.com/AglaDigSol/ia-labs-comunidad.git
 cd ia-labs-comunidad
 
-# 2. Instalar dependencias
+# 2. Instalar dependencias (raíz y herramientas de lint)
 npm ci --ignore-scripts
+npm --prefix tools/lint ci --ignore-scripts
 
 # 3. Iniciar el servidor de desarrollo
 npm run dev

@@ -283,3 +283,32 @@ describe("Normal forms and intermediate columns", () => {
     expect(sw.getAttribute("aria-checked")).toBe("false");
   });
 });
+
+describe("Integridad académica y Comprueba tu respuesta", () => {
+  it("permite verificar una hipótesis, da pistas y alterna la solución completa", async () => {
+    renderAt("/laboratorios/logica?f=p%20%E2%88%A7%20q");
+    expect(await screen.findByText("Comprueba tu respuesta")).toBeTruthy();
+    expect(screen.getByText("Aviso de integridad: contrasta tus resultados tras intentar resolver el ejercicio por ti mismo.")).toBeTruthy();
+
+    // Selecciona incorrecto: Es tautología
+    fireEvent.click(screen.getByRole("button", { name: "Es tautología" }));
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(screen.getByText("No coincide. Inténtalo de nuevo.")).toBeTruthy();
+    expect(screen.getByText(/Pista: Evalúa interpretaciones con valores opuestos/)).toBeTruthy();
+
+    // Selecciona correcto: Es contingencia
+    fireEvent.click(screen.getByRole("button", { name: "Es contingencia" }));
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(screen.getByText(/¡Correcto! Es una contingencia/)).toBeTruthy();
+
+    // Ocultar y volver a mostrar la solución detallada
+    const toggleBtn = screen.getByRole("button", { name: "Ocultar solución detallada" });
+    fireEvent.click(toggleBtn);
+    expect(screen.queryByRole("table")).toBeNull();
+
+    const showBtn = screen.getByRole("button", { name: "Ver la solución completa" });
+    fireEvent.click(showBtn);
+    expect(screen.getByRole("table")).toBeTruthy();
+  });
+});
+

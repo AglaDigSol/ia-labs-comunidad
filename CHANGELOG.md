@@ -18,6 +18,10 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 ## [0.1.0] - 2026-10-23
 
 ### Añadido
+- **Modo de Integridad Académica («Comprueba tu respuesta»):**
+  - Modo pedagógico interactivo en el Laboratorio de Lógica para clasificar fórmulas (tautología, contingencia o contradicción) con comprobación inmediata y pistas paso a paso.
+  - Modo pedagógico interactivo en el Laboratorio de Markov para calcular manualmente la probabilidad del primer paso ($v_1$) con pistas guiadas.
+  - Botón «Ver la solución completa» con aviso previo de integridad académica para contrastar resultados tras el desarrollo propio.
 - **Laboratorio de Simbología:**
   - Diccionario interactivo de símbolos matemáticos y de inteligencia artificial.
   - Renderizado tipográfico preciso con KaTeX (`htmlAndMathml`).
@@ -45,3 +49,12 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
   - Exportación e importación de copias de seguridad en formato JSON con validación de esquema y límite de 2 MB.
   - Selector de tema visual (Claro, Oscuro y Sistema).
   - Configuración estricta de privacidad sin rastreadores ni analítica de terceros.
+- **Licencia y Gobernanza:**
+  - Contenido educativo unificado bajo licencia **Creative Commons Atribución-CompartirIgual 4.0 Internacional (CC BY-SA 4.0)**, conforme a decisión expresa de la titular.
+  - Código fuente publicado bajo licencia de código abierto **MIT**.
+  - Política de contribución mediante DCO (`Signed-off-by: Nombre <email>`) validada en CI.
+- **Seguridad y CSP:**
+  - Modo `jitless` configurado en Zod para eliminar sondas `eval`/`Function` en navegadores bajo CSP `script-src 'self'`.
+  - `build.assetsInlineLimit: 0` en Vite para que las fuentes KaTeX (`woff2`) se emitan como archivos independientes y no como `data:` URI, garantizando compatibilidad total con `font-src 'self'`.
+  - Configuración Nginx (`nginx.conf`) con herencia explícita de cabeceras de seguridad en todos los bloques `location`.
+  - Monitorización automatizada de dependencias en raíz y `/tools/lint` mediante Dependabot.
