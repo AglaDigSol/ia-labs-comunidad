@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check:
+    name: Lint, Typecheck, Test, Build & Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install root dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install lint dependencies
+        run: npm --prefix tools/lint ci --ignore-scripts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit & Integration Tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Security audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: DCO Check
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Verificando firmas Signed-off-by en los commits del Pull Request..."
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          MISSING=0
+          for commit in $(git rev-list --no-merges ${BASE}..${HEAD}); do
+            if ! git log -1 --format="%B" "$commit" | grep -q "Signed-off-by:"; then
+              echo "Error: el commit $commit no incluye Signed-off-by."
+              MISSING=1
+            fi
+          done
+          if [ $MISSING -eq 1 ]; then
+            echo "DCO fallido: cada commit debe firmarse con 'git commit -s'."
+            exit 1
+          fi
+          echo "DCO verificado correctamente."
+
+      - name: Link Checker (lychee)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --verbose --no-progress './**/*.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

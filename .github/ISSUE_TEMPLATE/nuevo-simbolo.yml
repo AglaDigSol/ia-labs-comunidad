@@ -1,0 +1,46 @@
+name: "Nuevo símbolo"
+description: "Propón un símbolo matemático o lógico para el diccionario interactivo"
+title: "[Símbolo]: "
+labels: ["contenido", "símbolos"]
+body:
+  - type: markdown
+    attributes:
+      value: "Gracias por proponer un nuevo símbolo para el diccionario."
+  - type: input
+    id: simbolo
+    attributes:
+      label: "Símbolo o expresión en LaTeX"
+      description: "Por ejemplo: \\models o \\approx"
+      placeholder: "\\nabla"
+    validations:
+      required: true
+  - type: input
+    id: nombre
+    attributes:
+      label: "Nombre en español"
+      description: "Cómo se nombra este símbolo"
+      placeholder: "Gradiente"
+    validations:
+      required: true
+  - type: textarea
+    id: significado
+    attributes:
+      label: "Significado y contexto"
+      description: "Breve explicación de su significado y campo de aplicación"
+    validations:
+      required: true
+  - type: input
+    id: lectura
+    attributes:
+      label: "Lectura oral recomendada"
+      description: "Cómo se lee en clase en voz alta"
+      placeholder: "gradiente de efe"
+    validations:
+      required: false
+  - type: input
+    id: python
+    attributes:
+      label: "Equivalente en Python (si aplica)"
+      placeholder: "np.gradient(f)"
+    validations:
+      required: false

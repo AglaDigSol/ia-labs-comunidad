@@ -1,0 +1,39 @@
+name: "Reporte de error"
+description: "Informa sobre un cálculo incorrecto, fallo visual o error en los laboratorios"
+title: "[Error]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Describe el problema encontrado para que podamos reproducirlo y solucionarlo."
+  - type: dropdown
+    id: modulo
+    attributes:
+      label: "Módulo o laboratorio afectado"
+      options:
+        - "Simbología"
+        - "Lógica proposicional"
+        - "Cadenas de Markov"
+        - "Flashcards (SM-2)"
+        - "Calculadora de notas"
+        - "Ajustes / Importación-Exportación"
+        - "Otro"
+    validations:
+      required: true
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: "Descripción del comportamiento observado vs esperado"
+      description: "Qué cálculo o comportamiento dio la aplicación y qué resultado consideras correcto según la teoría matemática"
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: "Pasos para reproducir"
+      placeholder: |
+        1. Ir a /laboratorios/markov
+        2. Cargar matriz...
+        3. Observar...
+    validations:
+      required: true

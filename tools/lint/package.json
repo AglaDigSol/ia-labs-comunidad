@@ -1,0 +1,17 @@
+{
+  "name": "ia-labs-comunidad-lint",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ESLint aislado: typescript-eslint necesita la API de TypeScript ≤ 6.0, y la app usa TypeScript 7 (sin API JS).",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint --config eslint.config.js --max-warnings 0 ../.."
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.12.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.1"
+  }
+}
