@@ -82,7 +82,6 @@ jobs:
             --no-progress
             --accept 200,206,429
             --exclude-path node_modules
-            --exclude '^https://labs-ai\.docentes20\.com'
             --exclude '^https://github\.com/AglaDigSol/ia-labs-comunidad/(compare|releases)'
             './**/*.md'
           fail: true

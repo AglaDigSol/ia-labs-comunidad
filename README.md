@@ -65,7 +65,7 @@ KaTeX) que se sirve con cualquier servidor web.
 
 ## Desplegar en un subdominio propio
 
-Ejemplo: `labs-ai.docentes20.com`.
+Ejemplo: `labs.tu-dominio.com`.
 
 1. Crea el subdominio en tu DNS y apúntalo a tu servidor.
 2. Activa HTTPS (Let's Encrypt o el proxy de Cloudflare). HSTS se envía siempre: no sirvas el sitio por HTTP.
@@ -143,10 +143,11 @@ docker build --build-arg CALENDAR_ICS_URL="https://…" -t ia-labs-comunidad .
 > **Advertencia:** si usas tu feed personal del campus, todo el que abra el sitio verá los eventos de ese feed (aunque no
 > tu token). No uses un feed con datos personales.
 
-Para refrescarlo hay que reconstruir el sitio. Ejemplo de cron en el servidor (cada día a las 06:15):
+Para refrescarlo hay que reconstruir el sitio. Ejemplo de cron en el servidor (cada día a las 06:15). Si usas
+`CALENDAR_ICS_KEY`, pásala en cada build: con otra clave cambian los enlaces de suscripción.
 
 ```cron
-15 6 * * * cd /srv/ia-labs-comunidad && git pull -q && CALENDAR_ICS_URL="$(cat /etc/ia-labs/feed-url)" npm run build && rsync -a --delete dist/ /var/www/labs-ai/
+15 6 * * * cd /ruta/al/repo && git pull -q && CALENDAR_ICS_URL="$(cat /ruta/privada/feed-url)" CALENDAR_ICS_KEY="$(cat /ruta/privada/ics-key)" npm ci --ignore-scripts && npm run build && rsync -a --delete dist/ /ruta/del/sitio/
 ```
 
 ## Restringir el acceso
@@ -155,7 +156,7 @@ El sitio no tiene contraseña propia. Para que solo entren tus compañeros, pon 
 subdominio (gratis hasta 50 usuarios):
 
 1. En el panel de Cloudflare, abre **Zero Trust → Access → Applications → Add an application → Self-hosted**.
-2. Dominio de la aplicación: `labs-ai.docentes20.com`.
+2. Dominio de la aplicación: tu subdominio (por ejemplo `labs.tu-dominio.com`).
 3. Crea una política **Allow** con la regla *Emails* (la lista de correos de tus compañeros) o *Emails ending in* (el
    dominio del correo del máster).
 4. En **Authentication**, usa *One-time PIN*: cada persona recibe un código de un solo uso en su correo.
@@ -194,26 +195,5 @@ subdominio (gratis hasta 50 usuarios):
 
 ## Mantenimiento
 
-### Proteger `main` en GitHub
-
-En **Settings → Branches → Add branch ruleset** (o *Add rule*) para `main`:
-
-1. **Require a pull request before merging**, con 1 aprobación y **Require review from Code Owners** (el fichero
-   [`.github/CODEOWNERS`](.github/CODEOWNERS) asigna todo a la mantenedora).
-2. **Require status checks to pass**: marca los jobs de CI (`build-test`, `lint`, `audit`, `gitleaks`, `links` y `dco`).
-3. **Block force pushes** y **Restrict deletions**.
-4. Como la dueña es la única mantenedora y no puede aprobar sus propios PR, añádela en **Bypass list** (*Allow specified
-   actors to bypass*), o deja sin marcar **Include administrators** / **Do not allow bypassing the above settings**. Así
-   puede fusionar sus PR cuando los checks estén en verde.
-
-### Dependencias
-
-Dependabot ([`.github/dependabot.yml`](.github/dependabot.yml)) propone cada mes un PR agrupado para npm y otro para
-GitHub Actions. Las versiones están fijadas con exactitud; ESLint vive aparte en `tools/lint/` porque typescript-eslint
-necesita la API de TypeScript ≤ 6.0 y la app usa TypeScript 7.
-
-### CI
-
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) ejecuta en cada push y PR: typecheck, tests y build; lint;
-`npm audit --omit=dev --audit-level=high`; gitleaks sobre todo el historial; comprobación de enlaces de los `.md` con
-lychee; y, en los PR, que todos los commits lleven `Signed-off-by` (DCO).
+Los cambios entran por pull request, con revisión y los checks de CI en verde (ver [CONTRIBUTING.md](CONTRIBUTING.md)).
+Las tareas de mantenimiento del repositorio están en [MAINTAINING.md](MAINTAINING.md).
