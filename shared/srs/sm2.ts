@@ -4,7 +4,7 @@ import type { Srs } from "./types.ts";
 
 export type { Srs } from "./types.ts";
 
-/** Button → SM-2 quality (D-05). q = 0 and q = 2 are never produced. */
+/** Button → SM-2 quality. q = 0 and q = 2 are never produced. */
 export type Quality = 1 | 3 | 4 | 5;
 export const QUALITY = { otra: 1, dificil: 3, bien: 4, facil: 5 } as const satisfies Record<string, Quality>;
 export const QUALITY_LABEL: Record<Quality, string> = { 1: "Otra vez", 3: "Difícil", 4: "Bien", 5: "Fácil" };

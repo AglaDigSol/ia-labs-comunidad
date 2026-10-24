@@ -4,12 +4,14 @@
 //    navegación y de las rutas, y su código (un chunk perezoso) no se descarga nunca.
 // 2) Registro: cada módulo declara su id, su ruta, su entrada de navegación, su componente perezoso y
 //    el contenido de content/ que usa. Para añadir un módulo nuevo, añade una entrada a MODULES.
-import { Calculator, FlaskConical, Layers, Settings } from "lucide-react";
+import { CalendarDays, Calculator, FlaskConical, Layers, Settings } from "lucide-react";
 import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import { t } from "./i18n/index.ts";
 
 export const config = {
   modules: {
+    /** Calendario de clases y entregas con zona horaria y .ics suscribible. */
+    calendario: true,
     /** Flashcards con repaso espaciado SM-2 (barajas del diccionario y barajas propias). */
     flashcards: true,
     /** Calculadora de notas (mínimo 5,0 por bloque y menciones). */
@@ -44,6 +46,14 @@ export const MODULES: AppModule[] = [
     component: lazyNamed(() => import("./features/labs/labs.tsx"), "LabsRoutes"),
     content: ["content/symbols", "content/notation"],
     optional: false,
+  },
+  {
+    id: "calendario",
+    path: "/calendario",
+    nav: { label: t.nav.calendar, short: t.nav.calendarShort, icon: CalendarDays, end: true },
+    component: lazyNamed(() => import("./features/calendar/CalendarPage.tsx"), "CalendarPage"),
+    content: ["content/calendario"],
+    optional: true,
   },
   {
     id: "flashcards",

@@ -1,39 +1,29 @@
-name: "Reporte de error"
-description: "Informa sobre un cálculo incorrecto, fallo visual o error en los laboratorios"
-title: "[Error]: "
-labels: ["bug"]
+name: Error
+description: Algo no funciona o da un resultado incorrecto.
+title: "[Error] "
+labels: ["error"]
 body:
-  - type: markdown
-    attributes:
-      value: "Describe el problema encontrado para que podamos reproducirlo y solucionarlo."
-  - type: dropdown
-    id: modulo
-    attributes:
-      label: "Módulo o laboratorio afectado"
-      options:
-        - "Simbología"
-        - "Lógica proposicional"
-        - "Cadenas de Markov"
-        - "Flashcards (SM-2)"
-        - "Calculadora de notas"
-        - "Ajustes / Importación-Exportación"
-        - "Otro"
-    validations:
-      required: true
   - type: textarea
-    id: descripcion
+    id: que
     attributes:
-      label: "Descripción del comportamiento observado vs esperado"
-      description: "Qué cálculo o comportamiento dio la aplicación y qué resultado consideras correcto según la teoría matemática"
+      label: Qué ha pasado
+      description: Qué esperabas y qué ocurrió. Si es un cálculo, incluye la entrada exacta (fórmula, matriz…).
     validations:
       required: true
   - type: textarea
     id: pasos
     attributes:
-      label: "Pasos para reproducir"
-      placeholder: |
-        1. Ir a /laboratorios/markov
-        2. Cargar matriz...
-        3. Observar...
-    validations:
-      required: true
+      label: Pasos para reproducirlo
+      placeholder: "1. Abre Laboratorios → Lógica\n2. Escribe…"
+  - type: input
+    id: entorno
+    attributes:
+      label: Navegador y dispositivo
+      placeholder: "Safari 26 en iPad"
+  - type: checkboxes
+    id: privacidad
+    attributes:
+      label: Privacidad
+      options:
+        - label: No incluyo datos personales ni enunciados de actividades evaluables.
+          required: true

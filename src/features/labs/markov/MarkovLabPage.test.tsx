@@ -29,7 +29,12 @@ afterEach(() => {
 
 const cell = (i: number, j: number) => screen.getByLabelText(`P(${i},${j})`) as HTMLInputElement;
 const type = (el: HTMLElement, v: string) => fireEvent.change(el, { target: { value: v } });
-const loadExample = () => fireEvent.click(screen.getByRole("button", { name: "Cargar ejemplo ilustrativo" }));
+/** Loads the example and opens «Ver la solución completa» (hidden by default). */
+const loadExample = () => {
+  fireEvent.click(screen.getByRole("button", { name: "Cargar ejemplo ilustrativo" }));
+  const reveal = screen.queryByRole("button", { name: "Ver la solución completa" });
+  if (reveal) fireEvent.click(reveal);
+};
 
 describe("MarkovLabPage: editor y comprobación", () => {
   it("primera visita: marco de integridad, estado vacío y sin celdas rellenas", () => {
@@ -172,7 +177,7 @@ describe("MarkovLabPage: editor y comprobación", () => {
     expect(cell(1, 1).value).toBe("");
   });
 
-  it("sin afordancias de copiar respuesta (D-07)", () => {
+  it("sin afordancias de copiar respuesta", () => {
     renderPage();
     loadExample();
     const text = document.body.textContent ?? "";
@@ -252,41 +257,3 @@ describe("MarkovLabPage: matriz compacta", () => {
     }
   });
 });
-
-describe("MarkovLabPage: integridad académica y comprobación de respuesta", () => {
-  it("permite al alumno verificar su cálculo de v1(1), ofrece pistas y alterna la solución completa", () => {
-    renderPage();
-    loadExample();
-
-    expect(screen.getByText("Comprueba tu respuesta")).toBeTruthy();
-    expect(
-      screen.getByText(/Aviso de integridad: calcula el desarrollo en papel antes de consultar la solución completa/),
-    ).toBeTruthy();
-
-    const checkInput = screen.getByLabelText(/Comprobar probabilidad paso 1 para Leer/);
-    const checkBtn = screen.getByRole("button", { name: "Comprobar" });
-
-    // Intento erróneo: 0,1
-    fireEvent.change(checkInput, { target: { value: "0,1" } });
-    fireEvent.click(checkBtn);
-    expect(screen.getByText("No coincide. Inténtalo de nuevo.")).toBeTruthy();
-    expect(
-      screen.getByText(/Pista: Multiplica el vector fila inicial v₀ por la columna correspondiente/),
-    ).toBeTruthy();
-
-    // Intento correcto: 0,35
-    fireEvent.change(checkInput, { target: { value: "0,35" } });
-    fireEvent.click(checkBtn);
-    expect(screen.getByText(/¡Correcto! Tu valor coincide con el cálculo de v₁ para Leer/)).toBeTruthy();
-
-    // Alternar solución completa
-    const toggleBtn = screen.getByRole("button", { name: "Ocultar solución detallada" });
-    fireEvent.click(toggleBtn);
-    expect(screen.queryByText("Evolución v₀ → vₙ")).toBeNull();
-
-    const showBtn = screen.getByRole("button", { name: "Ver la solución completa" });
-    fireEvent.click(showBtn);
-    expect(screen.getByText("Evolución v₀ → vₙ")).toBeTruthy();
-  });
-});
-

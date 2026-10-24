@@ -1,9 +1,8 @@
-import { Download, LogOut, Trash2, Upload } from "lucide-react";
+import { Download, Trash2, Upload } from "lucide-react";
 import { useRef, useState, type ChangeEvent } from "react";
 import { ThemeToggle } from "../../components/layout/AppShell.tsx";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog.tsx";
-import { clearAccessCookie, hasAccessCookie } from "../../lib/access.ts";
 import { backupFileName, buildBackup, restoreBackup } from "../../lib/backup.ts";
 import { t } from "../../i18n/index.ts";
 import { clearKv } from "../../lib/kv-store.ts";
@@ -32,7 +31,6 @@ export function SettingsPage() {
   const [mode, setMode] = useState<"merge" | "replace">("merge");
   const [status, setStatus] = useState<Status>(null);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [locked] = useState(() => hasAccessCookie());
 
   const onExport = () => {
     const now = new Date();
@@ -150,26 +148,6 @@ export function SettingsPage() {
         </h2>
         <p className="text-muted">{t.settings.privacyBody}</p>
       </section>
-
-      {locked ? (
-        <section aria-labelledby="ajustes-acceso" className="flex flex-col gap-2">
-          <h2 id="ajustes-acceso" className="text-[20px]">
-            {t.access.title}
-          </h2>
-          <p className="text-muted">{t.access.body}</p>
-          <div>
-            <Button
-              onClick={() => {
-                clearAccessCookie();
-                window.location.reload();
-              }}
-            >
-              <LogOut size={16} aria-hidden="true" />
-              {t.access.logout}
-            </Button>
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }

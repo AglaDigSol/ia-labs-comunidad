@@ -1,6 +1,6 @@
 // Integer grade engine. Units: grades are integer hundredths on a 0..1000 scale (6,5 = 650);
 // weights are integer percent. No float arithmetic anywhere. Pure module (no imports from src/).
-// VIU rule: overall >= 5,0 AND portfolio block >= 5,0 AND exam >= 5,0.
+// Evaluation rule: overall >= 5,0 AND portfolio block >= 5,0 AND exam >= 5,0.
 import type { GradeComponent } from "./courses/types.ts";
 
 /** Default Matricula de Honor threshold (user override lives in pref/mhThreshold). */
@@ -99,7 +99,7 @@ export type MinAverage = { status: "ok" | "unreachable"; needed100: number; byBl
 /**
  * Partial portfolio: the minimum AVERAGE (hundredths) needed across every remaining component
  * (pending portfolio items + the exam if not entered, weighted) to reach target100, honouring the
- * VIU rule (exam >= 5,0 and portfolio >= 5,0). Unreachable only if even 10 everywhere is not enough.
+ * block-minimum rule (exam >= 5,0 and portfolio >= 5,0). Unreachable only if even 10 everywhere is not enough.
  */
 export function minAverage(target100: number, acc: Accum, examWeightPct: number): MinAverage {
   const pendingPortfolioPct = acc.portfolioWeightPct - acc.enteredWeightPct;

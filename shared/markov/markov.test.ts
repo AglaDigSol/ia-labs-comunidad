@@ -14,30 +14,30 @@ const vec = (xs: string[]): Vec => xs.map(p);
 const names = ["Leer", "Programar", "Descansar"];
 
 const P = mat([
-  ["0.6", "0.2", "0.2"],
-  ["0.1", "0.7", "0.2"],
-  ["0.3", "0.2", "0.5"],
+  ["0.5", "0.3", "0.2"],
+  ["0.2", "0.6", "0.2"],
+  ["0.1", "0.3", "0.6"],
 ]);
-const v0 = vec(["0.4", "0.4", "0.2"]);
+const v0 = vec(["0.5", "0.5", "0"]);
 
 describe("evolve (golden NumPy)", () => {
   const { vectors, steps } = evolve(P, v0, 3);
   it("v1..v3 exactos", () => {
-    expect(vectors[1]!.map(formatFrac)).toEqual(["17/50", "2/5", "13/50"]);
-    expect(vectors[2]!.map(formatFrac)).toEqual(["161/500", "2/5", "139/500"]);
-    expect(vectors[3]!.map(formatFrac)).toEqual(["1583/5000", "2/5", "1417/5000"]);
+    expect(vectors[1]!.map(formatFrac)).toEqual(["7/20", "9/20", "1/5"]);
+    expect(vectors[2]!.map(formatFrac)).toEqual(["57/200", "87/200", "7/25"]);
+    expect(vectors[3]!.map(formatFrac)).toEqual(["103/400", "861/2000", "39/125"]);
   });
   it("v3 coincide con NumPy", () => {
-    const np = [0.3166, 0.4, 0.2834];
+    const np = [0.2575, 0.4305, 0.312];
     vectors[3]!.forEach((x, i) => expect(Math.abs(toNumber(x) - np[i]!)).toBeLessThan(1e-12));
   });
   it("pasos con TeX", () => {
     expect(steps).toHaveLength(3);
     expect(steps[0]!.title).toBe("Paso 1: v₁ = v₀ · P");
     expect(steps[0]!.tex).toHaveLength(4);
-    expect(steps[0]!.tex[1]).toContain("0{,}6");
-    expect(steps[0]!.tex[1]).toContain("0{,}1");
-    expect(steps[0]!.tex[1]!.endsWith("0{,}34")).toBe(true);
+    expect(steps[0]!.tex[1]).toContain("0{,}5");
+    expect(steps[0]!.tex[1]).toContain("0{,}2");
+    expect(steps[0]!.tex[1]!.endsWith("0{,}35")).toBe(true);
   });
   it("límites", () => {
     expect(() => evolve(P, v0, MAX_STEPS + 1)).toThrow();

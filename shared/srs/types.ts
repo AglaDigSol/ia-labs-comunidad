@@ -1,8 +1,8 @@
-// Flashcards: deck, card and SM-2 state schemas (D-05). Content (card/) and schedule (srs/, susp/)
+// Flashcards: deck, card and SM-2 state schemas. Content (card/) and schedule (srs/, susp/)
 // live in separate keys of the local store.
 import { z } from "zod";
 
-/** Client-generated ids: 10–12 chars of [a-z0-9], never in the seed namespaces (Pitfall 12). */
+/** Client-generated ids: 10–12 chars of [a-z0-9], never in the seed namespaces. */
 export const USER_ID_SRC = "(?!nn-|gd-|sym)[a-z0-9]{10,12}";
 export const USER_ID_RE = new RegExp(`^${USER_ID_SRC}$`);
 /** Seed decks built from the symbol dictionary. Read-only: never written to KV. */

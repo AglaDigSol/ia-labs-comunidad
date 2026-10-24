@@ -18,7 +18,7 @@ describe("searchSymbols", () => {
     },
   );
 
-  it("implication entry carries VIU variants, readings and NumPy code", () => {
+  it("implication entry carries notation variants, readings and NumPy code", () => {
     const e = symbolById("implicacion")!;
     const texs = e.variants.map((v) => v.tex ?? "").join(" ");
     expect(texs).toMatch(/\\to|\\rightarrow/);

@@ -1,4 +1,4 @@
-// Diccionario de símbolos (contenido, CC BY-SA 4.0). Para añadir un símbolo, edita el fichero de su
+// Diccionario de símbolos (contenido, CC BY 4.0). Para añadir un símbolo, edita el fichero de su
 // bloque; para añadir un bloque nuevo, crea un fichero junto a estos y añádelo a esta lista.
 // tests/content.test.ts valida cada paquete con SymbolPackSchema (shared/symbols/schema.ts).
 import type { ContentMeta } from "../../shared/content/meta.ts";
@@ -14,7 +14,7 @@ const BASE = {
   level: "máster",
   language: "es",
   author: "Comunidad IA Labs",
-  license: "CC-BY-SA-4.0",
+  license: "CC-BY-4.0",
   source: "Elaboración propia",
   updated: "2026-10-23",
 } as const;

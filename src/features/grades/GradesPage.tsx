@@ -75,6 +75,7 @@ export function GradesPage() {
   useEffect(() => {
     const t = setTimeout(() => document.getElementById(`grade-${course.id}-${course.components[0]!.id}`)?.focus(), 0);
     return () => clearTimeout(t);
+    // Focus the first field only on mount, not on every course change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

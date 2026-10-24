@@ -8,7 +8,7 @@ export const es = {
     tagline: "Laboratorios del Máster en IA",
     disclaimer:
       "Proyecto comunitario de estudiantes del Máster en IA. No oficial ni afiliado a la Universidad Internacional de Valencia (VIU).",
-    licenses: "Código abierto (MIT) y contenido CC BY-SA 4.0",
+    licenses: "Código abierto (MIT) y contenido CC BY 4.0",
     contribute: "Contribuye en GitHub",
     loading: "Cargando…",
   },
@@ -18,6 +18,8 @@ export const es = {
     labsShort: "Labs",
     flashcards: "Flashcards",
     flashcardsShort: "Flashcards",
+    calendar: "Calendario",
+    calendarShort: "Calendario",
     grades: "Calculadora de notas",
     gradesShort: "Notas",
     settings: "Ajustes",
@@ -43,7 +45,7 @@ export const es = {
     importReplace: "Sustituir todos los datos actuales",
     exported: (n: string) => `Copia descargada: ${n}.`,
     imported: (n: string) => `Importados ${n}.`,
-    skipped: (n: string) => ` Se descartaron ${n} no válidos.`,
+    skipped: (n: string) => ` Descartados por no ser válidos: ${n}.`,
     tooBig: (mb: number) => `El archivo es demasiado grande (máximo ${mb} MB).`,
     invalidFile: "El archivo no es una copia válida de IA Labs · Comunidad.",
     entries: (n: number) => (n === 1 ? "1 dato" : `${n} datos`),
@@ -56,12 +58,11 @@ export const es = {
     cleared: "Datos borrados.",
     privacyTitle: "Privacidad",
     privacyBody:
-      "Sin analítica, sin rastreadores y sin recursos de terceros: todo se sirve desde este sitio. La única cookie posible es «labs_key», estrictamente necesaria para la frase de acceso cuando el sitio la usa; no sirve para seguimiento.",
+      "Sin analítica, sin rastreadores y sin recursos de terceros: todo se sirve desde este sitio. El sitio no usa cookies: tus datos se guardan solo en el almacenamiento local de este navegador.",
   },
-  access: {
-    title: "Acceso",
-    body: "Este sitio está protegido con una frase de acceso. Sal para olvidarla en este navegador.",
-    logout: "Salir",
+  calendar: {
+    title: "Calendario",
+    notice: "Calendario orientativo, no oficial. Manda lo que publique OnCampus/Blackboard.",
   },
   grades: {
     notice: "Orientativa, no oficial; manda la guía docente vigente.",

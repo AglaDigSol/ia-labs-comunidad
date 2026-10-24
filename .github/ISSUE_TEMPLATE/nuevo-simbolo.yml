@@ -1,46 +1,36 @@
-name: "Nuevo símbolo"
-description: "Propón un símbolo matemático o lógico para el diccionario interactivo"
-title: "[Símbolo]: "
-labels: ["contenido", "símbolos"]
+name: Nuevo símbolo
+description: Propón un símbolo para el diccionario de simbología.
+title: "[Símbolo] "
+labels: ["contenido", "simbología"]
 body:
-  - type: markdown
-    attributes:
-      value: "Gracias por proponer un nuevo símbolo para el diccionario."
   - type: input
     id: simbolo
     attributes:
-      label: "Símbolo o expresión en LaTeX"
-      description: "Por ejemplo: \\models o \\approx"
-      placeholder: "\\nabla"
+      label: Símbolo y nombre
+      placeholder: "∇ · gradiente"
     validations:
       required: true
   - type: input
-    id: nombre
+    id: tex
     attributes:
-      label: "Nombre en español"
-      description: "Cómo se nombra este símbolo"
-      placeholder: "Gradiente"
+      label: TeX
+      placeholder: "\\nabla f"
+  - type: textarea
+    id: lectura
+    attributes:
+      label: Cómo se lee en clase
+      description: Escríbelo con palabras, como lo dirías en voz alta.
     validations:
       required: true
   - type: textarea
-    id: significado
-    attributes:
-      label: "Significado y contexto"
-      description: "Breve explicación de su significado y campo de aplicación"
-    validations:
-      required: true
-  - type: input
-    id: lectura
-    attributes:
-      label: "Lectura oral recomendada"
-      description: "Cómo se lee en clase en voz alta"
-      placeholder: "gradiente de efe"
-    validations:
-      required: false
-  - type: input
     id: python
     attributes:
-      label: "Equivalente en Python (si aplica)"
-      placeholder: "np.gradient(f)"
-    validations:
-      required: false
+      label: Equivalente en Python o NumPy (opcional)
+      render: python
+  - type: checkboxes
+    id: integridad
+    attributes:
+      label: Integridad
+      options:
+        - label: No copio texto de diapositivas, guías ni enunciados del curso.
+          required: true

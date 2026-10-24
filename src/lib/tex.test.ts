@@ -93,7 +93,7 @@ describe("RichText", () => {
 });
 
 describe("renderTex (authored TeX) is unchanged", () => {
-  it("matches the Phase 3 KaTeX output for a labs formula", () => {
+  it("matches the reference KaTeX output for a labs formula", () => {
     const tex = "P(X_{n+1} = j \\mid X_n = i) = p_{ij}";
     expect(renderTex(tex, true)).toBe(
       katex.renderToString(tex, { throwOnError: false, displayMode: true, output: "htmlAndMathml" }),

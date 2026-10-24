@@ -8,7 +8,7 @@ export const NOTATION_02MIAR: Notation = {
     level: "máster",
     language: "es",
     author: "Comunidad IA Labs",
-    license: "CC-BY-SA-4.0",
+    license: "CC-BY-4.0",
     source: "Elaboración propia a partir de la notación usada en la asignatura",
     updated: "2026-10-23",
   },

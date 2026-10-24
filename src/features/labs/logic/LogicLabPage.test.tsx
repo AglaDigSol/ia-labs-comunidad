@@ -30,7 +30,12 @@ const field = () => screen.findByLabelText("Fórmula") as Promise<HTMLInputEleme
 async function typeFormula(v: string) {
   fireEvent.change(await field(), { target: { value: v } });
 }
-const bodyRows = () => within(screen.getByRole("table")).getAllByRole("row").slice(1);
+/** Opens «Ver la solución completa» (the solution is hidden by default). */
+async function reveal() {
+  fireEvent.click(await screen.findByRole("button", { name: "Ver la solución completa" }, { timeout: 3000 }));
+}
+const sol = () => within(screen.getByTestId("solution"));
+const bodyRows = () => within(sol().getByRole("table")).getAllByRole("row").slice(1);
 
 const cells = (row: HTMLElement) =>
   within(row)
@@ -80,25 +85,28 @@ describe("LogicLabPage single formula", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Laboratorio de lógica" }),
     ).toBeTruthy();
-    const table = await screen.findByRole("table");
+    await reveal();
+    const table = sol().getByRole("table");
     await waitFor(() => expect(within(table).getAllByRole("row").length).toBe(9));
     const rows = within(table).getAllByRole("row").slice(1);
     // columns: p, q, r, p ∧ q (intermediate, on by default), Resultado
     expect(cells(rows[0]!)).toEqual(["1", "1", "1", "1", "1"]);
     expect(cells(rows[1]!)).toEqual(["1", "1", "0", "1", "0"]);
-    expect(screen.getByText("Contingencia")).toBeTruthy();
-    expect(screen.getByText("Verdadera en 7 de 8 filas")).toBeTruthy();
+    expect(sol().getByText("Contingencia")).toBeTruthy();
+    expect(sol().getByText("Verdadera en 7 de 8 filas")).toBeTruthy();
   });
 
   it("accepts the ASCII form", async () => {
     renderAt("/laboratorios/logica");
     await typeFormula("(p & q) -> r");
+    await reveal();
     await waitFor(() => expect(bodyRows().length).toBe(8));
     expect(screen.getByLabelText("Fórmula normalizada")).toBeTruthy();
   });
 
   it("1/0 by default, V/F toggle persists", async () => {
     renderAt("/laboratorios/logica?f=p");
+    await reveal();
     await waitFor(() => expect(bodyRows().length).toBe(2));
     expect(cells(bodyRows()[0]!)).toEqual(["1", "1"]);
     fireEvent.click(screen.getByRole("radio", { name: "V / F" }));
@@ -107,6 +115,7 @@ describe("LogicLabPage single formula", () => {
     expect(localStorage.getItem("ia-labs.logic-format")).toBe("VF");
     cleanup();
     renderAt("/laboratorios/logica?f=p");
+    await reveal();
     await waitFor(() => expect(bodyRows().length).toBe(2));
     expect(cells(bodyRows()[0]!)).toEqual(["V", "V"]);
   });
@@ -114,10 +123,12 @@ describe("LogicLabPage single formula", () => {
   it("?v=vf selects V/F and junk storage is ignored", async () => {
     localStorage.setItem("ia-labs.logic-format", "junk");
     renderAt("/laboratorios/logica?f=p&v=vf");
+    await reveal();
     await waitFor(() => expect(bodyRows().length).toBe(2));
     expect(cells(bodyRows()[0]!)).toEqual(["V", "V"]);
     cleanup();
     renderAt("/laboratorios/logica?f=p");
+    await reveal();
     await waitFor(() => expect(bodyRows().length).toBe(2));
     expect(cells(bodyRows()[0]!)).toEqual(["1", "1"]);
   });
@@ -125,14 +136,17 @@ describe("LogicLabPage single formula", () => {
   it("tautology and contradiction chips", async () => {
     renderAt("/laboratorios/logica");
     await typeFormula("p ∨ ¬p");
-    expect(await screen.findByText("Tautología")).toBeTruthy();
+    await reveal();
+    expect(await sol().findByText("Tautología")).toBeTruthy();
     await typeFormula("p ∧ ¬p");
-    expect(await screen.findByText("Contradicción")).toBeTruthy();
+    await reveal();
+    expect(await sol().findByText("Contradicción")).toBeTruthy();
   });
 
   it("shows a positioned error after the pause and keeps the previous table", async () => {
     renderAt("/laboratorios/logica");
     await typeFormula("p ∨ q");
+    await reveal();
     await waitFor(() => expect(bodyRows().length).toBe(4));
     await typeFormula("p ∧");
     expect(screen.queryByRole("alert")).toBeNull();
@@ -182,6 +196,7 @@ describe("LogicLabPage single formula", () => {
     renderAt("/laboratorios/logica");
     expect(await screen.findByRole("heading", { name: "Escribe una fórmula" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "p → q" }));
+    await reveal();
     await waitFor(() => expect(bodyRows().length).toBe(4));
   });
 
@@ -204,8 +219,9 @@ describe("Comparar mode", () => {
     renderAt(CMP);
     expect(await screen.findByLabelText("Fórmula A")).toBeTruthy();
     expect(screen.getByLabelText("Fórmula B")).toBeTruthy();
+    await reveal();
     expect(await screen.findByText("No equivalentes: difieren en 2 filas")).toBeTruthy();
-    const heads = within(screen.getByRole("table")).getAllByRole("columnheader").map((h) => h.textContent);
+    const heads = within(sol().getByRole("table")).getAllByRole("columnheader").map((h) => h.textContent);
     expect(heads).toEqual(expect.arrayContaining(["A", "B", "Coinciden"]));
     expect(bodyRows().length).toBe(4);
     expect(screen.getAllByText("≠").length).toBe(2);
@@ -217,9 +233,11 @@ describe("Comparar mode", () => {
   it("example chips load the pairs", async () => {
     renderAt("/laboratorios/logica?m=comparar");
     fireEvent.click(await screen.findByRole("button", { name: "Implicación frente a contrarrecíproco" }));
+    await reveal();
     expect(await screen.findByText("Equivalentes")).toBeTruthy();
     expect((screen.getByLabelText("Fórmula B") as HTMLInputElement).value).toBe("¬q → ¬p");
     fireEvent.click(screen.getByRole("button", { name: "Implicación frente a recíproco" }));
+    await reveal();
     expect(await screen.findByText("No equivalentes: difieren en 2 filas")).toBeTruthy();
     expect((screen.getByLabelText("Fórmula B") as HTMLInputElement).value).toBe("q → p");
   });
@@ -227,6 +245,7 @@ describe("Comparar mode", () => {
   it("Comparar fórmulas focuses the verdict and exists only in this mode", async () => {
     renderAt(CMP);
     const btn = await screen.findByRole("button", { name: "Comparar fórmulas" });
+    await reveal();
     await screen.findByTestId("verdict");
     fireEvent.click(btn);
     expect(document.activeElement).toBe(screen.getByTestId("verdict"));
@@ -238,6 +257,7 @@ describe("Comparar mode", () => {
 
   it("labels the variable that one side does not use", async () => {
     renderAt("/laboratorios/logica?m=comparar&f=p&g=p%20%E2%88%A7%20q");
+    await reveal();
     expect(await screen.findByText("A no usa q")).toBeTruthy();
   });
 
@@ -255,6 +275,7 @@ describe("Comparar mode", () => {
 describe("Normal forms and intermediate columns", () => {
   it("(p ∧ q) → r shows FND, FNC with ΠM(6) and the sub column", async () => {
     renderAt("/laboratorios/logica?f=(p%20%E2%88%A7%20q)%20%E2%86%92%20r");
+    await reveal();
     expect(await screen.findByRole("heading", { name: "Forma normal disyuntiva (FND)" })).toBeTruthy();
     expect(screen.getByText("Minterms: m₀, m₁, m₂, m₃, m₄, m₅, m₇")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Forma normal conjuntiva (FNC)" })).toBeTruthy();
@@ -271,44 +292,18 @@ describe("Normal forms and intermediate columns", () => {
   it("tautology and contradiction empty-list copy", async () => {
     renderAt("/laboratorios/logica");
     await typeFormula("p ∨ ¬p");
+    await reveal();
     expect(await screen.findByText("Sin maxterms: la fórmula es una tautología.")).toBeTruthy();
     await typeFormula("p ∧ ¬p");
+    await reveal();
     expect(await screen.findByText("Sin minterms: la fórmula es una contradicción.")).toBeTruthy();
   });
 
   it("starts with intermediate columns off above 5 subformulas", async () => {
     renderAt("/laboratorios/logica");
     await typeFormula("(a ∧ b) ∨ (c ∧ d) ∨ (e ∧ f) ∨ ¬a ∨ ¬b ∨ ¬c");
+    await reveal();
     const sw = await screen.findByRole("switch", { name: "Mostrar pasos intermedios" });
     expect(sw.getAttribute("aria-checked")).toBe("false");
   });
 });
-
-describe("Integridad académica y Comprueba tu respuesta", () => {
-  it("permite verificar una hipótesis, da pistas y alterna la solución completa", async () => {
-    renderAt("/laboratorios/logica?f=p%20%E2%88%A7%20q");
-    expect(await screen.findByText("Comprueba tu respuesta")).toBeTruthy();
-    expect(screen.getByText("Aviso de integridad: contrasta tus resultados tras intentar resolver el ejercicio por ti mismo.")).toBeTruthy();
-
-    // Selecciona incorrecto: Es tautología
-    fireEvent.click(screen.getByRole("button", { name: "Es tautología" }));
-    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
-    expect(screen.getByText("No coincide. Inténtalo de nuevo.")).toBeTruthy();
-    expect(screen.getByText(/Pista: Evalúa interpretaciones con valores opuestos/)).toBeTruthy();
-
-    // Selecciona correcto: Es contingencia
-    fireEvent.click(screen.getByRole("button", { name: "Es contingencia" }));
-    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
-    expect(screen.getByText(/¡Correcto! Es una contingencia/)).toBeTruthy();
-
-    // Ocultar y volver a mostrar la solución detallada
-    const toggleBtn = screen.getByRole("button", { name: "Ocultar solución detallada" });
-    fireEvent.click(toggleBtn);
-    expect(screen.queryByRole("table")).toBeNull();
-
-    const showBtn = screen.getByRole("button", { name: "Ver la solución completa" });
-    fireEvent.click(showBtn);
-    expect(screen.getByRole("table")).toBeTruthy();
-  });
-});
-

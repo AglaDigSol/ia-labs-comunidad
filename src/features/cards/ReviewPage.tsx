@@ -1,6 +1,6 @@
-// Sesión de repaso (UI-SPEC section 8 «Repaso», CARD-01, D-05). The queue lives in component state as
+// Sesión de repaso. The queue lives in component state as
 // card ids: it follows today's queue until the session starts, then only changes through sessionStep()
-// after each grade. Grades go through gradeCard() (srs/<id>) and can be undone for 6 s (T-0409-02).
+// after each grade. Grades go through gradeCard() (srs/<id>) and can be undone for 6 s.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { dueSummary, sessionStep, type CardView } from "../../../shared/srs/due.ts";

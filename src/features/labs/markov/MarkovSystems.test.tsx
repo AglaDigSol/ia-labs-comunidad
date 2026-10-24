@@ -24,7 +24,12 @@ afterEach(() => {
 const cell = (i: number, j: number) => screen.getByLabelText(`P(${i},${j})`) as HTMLInputElement;
 const vCell = (j: number) => screen.getByLabelText(`v(${j})`) as HTMLInputElement;
 const type = (el: HTMLElement, v: string) => fireEvent.change(el, { target: { value: v } });
-const loadExample = () => fireEvent.click(screen.getByRole("button", { name: "Cargar ejemplo ilustrativo" }));
+/** Loads the example and opens «Ver la solución completa» (hidden by default). */
+const loadExample = () => {
+  fireEvent.click(screen.getByRole("button", { name: "Cargar ejemplo ilustrativo" }));
+  const reveal = screen.queryByRole("button", { name: "Ver la solución completa" });
+  if (reveal) fireEvent.click(reveal);
+};
 const fill = (rows: string[][]) => rows.forEach((r, i) => r.forEach((x, j) => type(cell(i + 1, j + 1), x)));
 const stat = () => within(screen.getByRole("region", { name: "Distribución estacionaria π" }));
 const inv = () => within(screen.getByRole("region", { name: "Problema inverso u₀" }));
@@ -120,6 +125,7 @@ describe("Markov: distribución estacionaria y problema inverso", () => {
     expect(saved.vInv[0]).toBe("0,4");
     cleanup();
     renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Ver la solución completa" }));
     expect(vCell(1).value).toBe("0,4");
   });
 

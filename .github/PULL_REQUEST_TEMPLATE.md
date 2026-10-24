@@ -1,17 +1,15 @@
-## Descripción del cambio
+## Qué cambia
 
-<!-- Describe brevemente qué problema resuelve o qué función añade este PR. -->
+<!-- Describe el cambio en pocas líneas. Si arregla un issue: «Cierra #123». -->
 
-## Tipo de cambio
+## Lista de comprobación
 
-- [ ] Nuevo símbolo o contenido en `content/`
-- [ ] Corrección de error (bugfix)
-- [ ] Mejora de laboratorio o módulo existente
-- [ ] Documentación o infraestructura / CI
-
-## Lista de verificación
-
-- [ ] **Developer Certificate of Origin (DCO):** Confirmo que todos los commits de esta rama han sido firmados con `git commit -s` (`Signed-off-by`).
-- [ ] **Integridad académica:** Confirmo que este PR NO incluye enunciados ni soluciones de actividades evaluables, entregables ni exámenes de la universidad.
-- [ ] He ejecutado `npm run typecheck`, `npm run lint` y `npm run test` localmente y todas las pruebas pasan en verde.
-- [ ] He añadido o actualizado las pruebas pertinentes si el cambio añade lógica nueva.
+- [ ] **DCO:** todos mis commits llevan `Signed-off-by` (`git commit -s`). Con ello declaro que el contenido es mío y
+      acepto publicarlo bajo MIT (código) y CC BY 4.0 (`content/`).
+- [ ] No incluye enunciados, soluciones ni preguntas reales de actividades, tests o exámenes (actuales o pasados), ni
+      material copiado del curso.
+- [ ] Los ejemplos son originales.
+- [ ] No hay datos personales (nombres de docentes o compañeros, correos, enlaces del campus).
+- [ ] `npm run typecheck`, `npm test`, `npm run lint` y `npm run build` pasan.
+- [ ] Si toca la interfaz: se usa con teclado y se ve bien a 390 px.
+- [ ] Si añade contenido: metadatos y fuente rellenos.

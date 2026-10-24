@@ -17,7 +17,7 @@ const txt = (x: Frac) => {
   return f.exact ? f.text : `≈ ${f.text}`;
 };
 
-// Verification only (D-07, MRKV-05): formulas, values and validity; no narrative, no copy affordance.
+// Verification only: formulas, values and validity; no narrative, no copy affordance.
 export function InverseBlock({
   names,
   P,

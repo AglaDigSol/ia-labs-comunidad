@@ -1,4 +1,4 @@
-// Daily count and review queue (D-05, research "SM-2 exact algorithm" edge cases 5 and 8).
+// Daily count and review queue.
 // Pure: the caller passes the local civil `today` and the new-card cap (pref/newCardsPerDay).
 import type { Course } from "./decks.ts";
 import { addDays, type Quality } from "./sm2.ts";

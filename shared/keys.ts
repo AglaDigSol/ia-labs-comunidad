@@ -16,6 +16,9 @@ export const keys = {
     newCardsPerDay: "pref/newCardsPerDay",
     theme: "pref/theme",
     mhThreshold: "pref/mhThreshold",
+    timeZone: "pref/timeZone",
+    calGroup: "pref/calGroup",
+    calSlot: "pref/calSlot",
   },
 } as const;
 
@@ -24,6 +27,9 @@ const themeSchema = z.enum(["light", "system", "dark"]);
 const boolSchema = z.literal(true);
 const mhSchema = z.number().int().min(900).max(1000);
 const newCardsPerDaySchema = z.number().int().min(1).max(200);
+const timeZoneSchema = z.string().regex(/^[A-Za-z]+(?:\/[A-Za-z0-9_+-]+){0,2}$/).max(64);
+const calGroupSchema = z.enum(["G1", "G2", "G3", "todos"]);
+const calSlotSchema = z.enum(["F1", "F2", "todas"]);
 
 // Las barajas semilla (sym-*) viven en el repositorio: deck/ y card/ solo aceptan ids de usuario;
 // srs/ y susp/ aceptan también ids de tarjetas semilla (su calendario).
@@ -49,6 +55,9 @@ function schemaFor(key: string): z.ZodType | null {
   if (key === keys.pref.theme) return themeSchema;
   if (key === keys.pref.mhThreshold) return mhSchema;
   if (key === keys.pref.newCardsPerDay) return newCardsPerDaySchema;
+  if (key === keys.pref.timeZone) return timeZoneSchema;
+  if (key === keys.pref.calGroup) return calGroupSchema;
+  if (key === keys.pref.calSlot) return calSlotSchema;
   return null;
 }
 

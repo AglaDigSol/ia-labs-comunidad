@@ -2,7 +2,7 @@
   "name": "ia-labs-comunidad",
   "version": "0.1.0",
   "private": true,
-  "description": "Laboratorios interactivos para estudiantes del Máster en IA: simbología, lógica, Markov, flashcards y calculadora de notas.",
+  "description": "Laboratorios interactivos para estudiantes del Máster en IA: simbología, lógica, Markov, calendario, flashcards y calculadora de notas.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -14,11 +14,12 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/build-ics.ts dist",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
-    "lint": "npx --prefix tools/lint eslint --config tools/lint/eslint.config.js --max-warnings 0 ."
+    "lint:install": "npm ci --prefix tools/lint --ignore-scripts --no-audit --no-fund",
+    "lint": "tools/lint/node_modules/.bin/eslint -c tools/lint/eslint.config.js --max-warnings 0 ."
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.3.1",

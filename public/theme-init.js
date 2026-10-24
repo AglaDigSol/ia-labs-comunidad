@@ -1,3 +1,5 @@
+// Aplica el tema guardado antes de pintar la página (evita el destello claro en modo oscuro).
+// Es un fichero externo para cumplir la CSP (script-src 'self', sin scripts inline).
 (function () {
   try {
     var p = localStorage.getItem("theme") || "system";
@@ -8,6 +10,6 @@
     var m = document.querySelector('meta[name="theme-color"]');
     if (m) m.content = d ? "#0E1320" : "#F3F5F9";
   } catch {
-    // Ignore storage or media-query errors in restricted environments.
+    // almacenamiento no disponible: tema del sistema
   }
 })();

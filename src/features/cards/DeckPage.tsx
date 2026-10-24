@@ -1,4 +1,4 @@
-// Detalle del mazo (UI-SPEC section 8, CARD-01/02): cards rendered with KaTeX, schedule per card,
+// Detalle del mazo: cards rendered with KaTeX, schedule per card,
 // suspend/reactivate, delete with 6 s undo, and deck edit/delete. Dictionary decks are read-only.
 import { ArrowLeft, EllipsisVertical, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";

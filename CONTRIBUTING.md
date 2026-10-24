@@ -1,57 +1,100 @@
-# Guía de contribución · IA Labs · Comunidad
+# Cómo contribuir
 
-Gracias por colaborar con este proyecto de estudiantes. Antes de enviar una propuesta o cambio, por favor revisa estas directrices.
+¡Gracias por ayudar! IA Labs · Comunidad lo mantienen estudiantes para estudiantes. Antes de abrir un PR, lee las
+reglas de integridad académica: son lo más importante de este documento.
 
----
+## Integridad académica
 
-## 1. Integridad académica y propiedad intelectual
+La regla de oro es **comprobar y entrenar, no resolver**.
 
-Este proyecto es una iniciativa comunitaria de estudio independiente y **no oficial**. Está terminantemente prohibido subir o incluir:
+- **No subas enunciados ni soluciones** de actividades, exámenes, tests, foros o entregables de la VIU, ni actuales ni
+  pasados. Tampoco «adaptaciones» que permitan reconocerlos.
+- **No subas preguntas reales de examen** ni de tests evaluables.
+- **No copies material del curso**: diapositivas, apuntes del profesorado, guías docentes o cualquier texto literal.
+  Los datos objetivos (pesos de evaluación, fechas) se citan indicando la fuente, sin copiar el texto.
+- **Los ejemplos tienen que ser originales.** Si un ejemplo de Markov, de lógica o una tarjeta se parece a una actividad
+  evaluable, cámbialo.
+- Las herramientas nuevas siguen el modo «Comprueba tu respuesta»: la persona introduce su resultado, la app lo
+  verifica y da pistas; la solución completa queda detrás de «Ver la solución completa».
+- Nada de datos personales: ni nombres de docentes o compañeros, ni correos, ni enlaces del campus.
 
-- Enunciados o soluciones de actividades evaluables, entregables, foros calificados o exámenes (actuales o pasados).
-- Material protegido con derechos de autor de la universidad o de docentes (diapositivas, manuales, transcripciones).
-- Enlaces directos a recursos privados del campus virtual.
+Un PR que no cumpla esto se cierra sin fusionar.
 
-Todos los ejemplos, fórmulas y problemas precargados deben ser de **elaboración propia** o proceder de fuentes y libros de dominio público debidamente citados.
+## Firma de los commits (DCO)
 
----
+Cada commit debe llevar una línea `Signed-off-by` ([Developer Certificate of Origin](https://developercertificate.org/)):
 
-## 2. Developer Certificate of Origin (DCO)
-
-Para garantizar la autoría del código y la compatibilidad de licencias, este proyecto exige el **DCO (Developer Certificate of Origin 1.1)**.
-
-Cada commit debe incluir una firma `Signed-off-by` válida:
-
-```bash
-git commit -s -m "feat(modulo): descripción del cambio"
+```sh
+git commit -s -m "Añade el símbolo de la traza"
 ```
 
-El pipeline de integración continua (CI) rechazará automáticamente cualquier Pull Request cuyos commits carezcan de esta firma.
+Con esa firma declaras que el contenido es tuyo (o que tienes derecho a aportarlo) y que aceptas publicarlo bajo la
+licencia **MIT** (código) y **CC BY 4.0** (todo lo que está en `content/`). La CI rechaza los PR con algún commit sin
+firmar. Si se te olvidó: `git rebase --signoff main` y `git push --force-with-lease`.
 
----
+## Añadir contenido
 
-## 3. Licencias
+Todo el contenido vive en `content/` y se valida con esquemas zod en `tests/content.test.ts` y
+`tests/calendar.test.ts`. Si el test falla, su mensaje dice qué campo corregir. Cada paquete lleva metadatos genéricos:
+materia, tema, nivel, idioma, autoría, licencia (`CC-BY-4.0`) y fuente.
 
-- **Código:** Todo el código fuente del proyecto se distribuye bajo la licencia **MIT**.
-- **Contenido (`content/`):** Todo el contenido de símbolos, notación y asignaturas se publica bajo licencia **Creative Commons Atribución-CompartirIgual 4.0 Internacional (CC BY-SA 4.0)**. Cualquier adición a `content/` debe declarar explícitamente sus metadatos con `ContentMetaSchema`.
+### Un símbolo
 
----
+1. Abre el fichero del bloque en `content/symbols/` (por ejemplo `logica.ts`).
+2. Añade una entrada con `sym({ … })`:
+   - `id` en `minusculas-con-guiones`, único;
+   - `category`, `session`, `name`, `tex` (TeX de KaTeX, con `` T`…` `` para no duplicar las barras);
+   - `reading`: cómo se lee en clase; `spoken`: lo mismo **solo con palabras** (la voz no sabe leer símbolos);
+   - opcional: `aliases`, `variants`, `example`, `code` (equivalente en Python/NumPy como texto) y `related`.
+3. Ejecuta `npx vitest run tests/content.test.ts`.
 
-## 4. Textos e idiomas (i18n)
+Para un bloque nuevo, crea un fichero junto a los demás y regístralo en `content/symbols/index.ts` con sus metadatos.
 
-- El idioma principal de la interfaz es el español (`src/i18n/es.ts`).
-- Los textos visibles de la aplicación deben centralizarse en los archivos de traducción para permitir su futura localización.
-- No utilices lenguaje comercial, engañoso ni referencias a marcas ajenas.
+### Una asignatura (calculadora de notas)
 
----
+1. Copia `content/courses/01MIAR.ts` con el código de la asignatura.
+2. Rellena los componentes: los pesos tienen que sumar 100 % y debe haber exactamente un examen.
+3. Cada peso lleva `source`: título de la guía docente, curso académico y fecha de comprobación. **Sin URL del campus.**
+4. Añádela a `content/courses/index.ts`.
 
-## 5. Proceso de Pull Request
+### Eventos del calendario
 
-1. Crea una rama descriptiva para tu cambio: `git checkout -b feature/nombre-del-cambio`.
-2. Asegúrate de que las comprobaciones locales pasen antes de enviar el PR:
-   ```bash
-   npm run typecheck
-   npm run test
-   npm run build
-   ```
-3. Utiliza la plantilla de Pull Request y marca la casilla de confirmación del DCO y de integridad académica.
+Edita `content/calendario/2026-27.ts`. Las horas son hora de pared de España (`"2026-10-28T20:00"`). Usa `grupo` o
+`franja` solo para prácticas o exámenes con varias opciones, y sube `revision` si cambias la hora de un evento que ya se
+publicó (los calendarios suscritos lo actualizarán).
+
+### Una plantilla nueva de laboratorio o un módulo
+
+Los módulos se registran en `src/config.ts` (id, ruta, navegación, componente perezoso y contenido que usa). Copia la
+estructura de un laboratorio existente en `src/features/labs/`, pon la lógica pura en `shared/` con sus tests y respeta
+el modo «Comprueba tu respuesta» (`src/components/practice/SolutionGate.tsx`).
+
+## Estilo de código
+
+- TypeScript estricto, React 19 con componentes de función y Tailwind v4 con los tokens de `src/styles/tokens.css`.
+- Imports con extensión explícita (`./x.ts`, `./y.tsx`).
+- La lógica pura (sin React ni DOM) va en `shared/`; los datos, en `content/`.
+- Textos de la interfaz en español. Los textos de la shell, la navegación y Ajustes están en `src/i18n/es.ts`.
+- Accesibilidad: todo usable con teclado, contraste AA, nada de scroll horizontal a 390 px y KaTeX con `htmlAndMathml`.
+- Sin dependencias nuevas sin hablarlo antes en un issue. Nada de analítica, CDN ni recursos de terceros.
+- Todo acceso a `localStorage` va en try/catch.
+
+## Antes de abrir el PR
+
+```sh
+npm ci --ignore-scripts
+npm run typecheck
+npm test
+npm run lint:install && npm run lint
+npm run build
+```
+
+## Lista de comprobación del PR
+
+- [ ] Todos los commits llevan `Signed-off-by` (DCO).
+- [ ] No hay enunciados, soluciones ni preguntas reales de actividades o exámenes, ni material copiado del curso.
+- [ ] Los ejemplos son originales.
+- [ ] No hay datos personales (nombres, correos, enlaces del campus).
+- [ ] Typecheck, tests, lint y build en verde.
+- [ ] Si toca la interfaz: funciona con teclado y a 390 px.
+- [ ] Si añade contenido: metadatos y fuente rellenos.

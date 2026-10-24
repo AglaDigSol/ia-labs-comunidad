@@ -53,7 +53,7 @@ describe("SYM-04 coverage of Sesiones 1-2", () => {
     expect(ALL_SYMBOLS.length).toBeGreaterThanOrEqual(80);
   });
 
-  it("D-06 readings are exact", () => {
+  it("readings are exact", () => {
     expect(symbolById("pertenencia")!.reading).toBe("a pertenece a A");
     expect(symbolById("pertenencia")!.altReadings).toContain("a es un elemento de A");
     expect(symbolById("cardinal")!.reading).toBe("cardinal de A");

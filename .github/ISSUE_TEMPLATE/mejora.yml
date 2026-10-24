@@ -1,22 +1,23 @@
-name: "Propuesta de mejora"
-description: "Sugiere una nueva función, optimización o ampliación pedagógica"
-title: "[Mejora]: "
-labels: ["enhancement"]
+name: Mejora
+description: Propón una mejora o un laboratorio nuevo.
+title: "[Mejora] "
+labels: ["mejora"]
 body:
-  - type: markdown
-    attributes:
-      value: "Cuéntanos tu propuesta para mejorar la experiencia de estudio."
   - type: textarea
-    id: motivacion
+    id: problema
     attributes:
-      label: "Problema o necesidad"
-      description: "¿Qué situación o concepto te gustaría poder practicar mejor?"
+      label: Qué problema resuelve
     validations:
       required: true
   - type: textarea
-    id: solucion
+    id: propuesta
     attributes:
-      label: "Solución propuesta"
-      description: "Cómo imaginas el laboratorio o la herramienta interactiva"
-    validations:
-      required: true
+      label: Propuesta
+      description: Recuerda el principio del proyecto, «comprobar y entrenar, no resolver».
+  - type: checkboxes
+    id: integridad
+    attributes:
+      label: Integridad
+      options:
+        - label: La propuesta no sirve para resolver actividades evaluables.
+          required: true

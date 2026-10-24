@@ -1,4 +1,4 @@
-// «Nuevo mazo» / «Editar mazo» (UI-SPEC section 8). Decks are per course and session (CARD-01).
+// «Nuevo mazo» / «Editar mazo». Decks are per course and session.
 import { COURSES as COURSE_DATA } from "../../../content/courses/index.ts";
 import { useEffect, useId, useState } from "react";
 import type { Course } from "../../../shared/srs/decks.ts";

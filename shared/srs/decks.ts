@@ -1,4 +1,4 @@
-// Seed flashcard decks generated from the symbol dictionary (D-05: reuse, not new content).
+// Seed flashcard decks generated from the symbol dictionary.
 // Built once at module load and never written to the store: only their schedule (srs/<cardId>)
 // and suspension (susp/<cardId>) are saved.
 import { ALL_SYMBOLS } from "../symbols/index.ts";

@@ -67,7 +67,7 @@ export function dismissToast(id?: number): void {
 }
 
 /**
- * Exam mode (D-04, UI-SPEC "Toasts during an attempt"): while on, only toasts with `exam: true` are shown.
+ * Exam mode: while on, only toasts with `exam: true` are shown.
  * A visible non-exam toast is moved to the hold; when the hold ends the latest held toast is shown.
  */
 export function holdToasts(on: boolean): void {

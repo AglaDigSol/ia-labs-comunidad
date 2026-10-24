@@ -1,12 +1,4 @@
-import {
-  Ban,
-  CheckCircle2,
-  GitBranch,
-  GraduationCap,
-  Info,
-  Keyboard,
-  ShieldCheck,
-} from "lucide-react";
+import { Ban, GitBranch, Info, Keyboard, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { toPlain, toTex, type Node } from "../../../../shared/logic/ast.ts";
@@ -34,7 +26,9 @@ import { CompareMode } from "./CompareMode.tsx";
 import { F1Explorer } from "./F1Explorer.tsx";
 import { FormulaField, SymbolKeypad } from "./FormulaInput.tsx";
 import { NormalForms } from "./NormalForms.tsx";
+import { TruthPractice } from "./TruthPractice.tsx";
 import { TruthTable, type TruthFormat } from "./TruthTable.tsx";
+import { SolutionGate } from "../../../components/practice/SolutionGate.tsx";
 
 const FORMAT_KEY = "ia-labs.logic-format";
 const EXAMPLES = ["p → q", "¬(p ∧ q)", "(p → q) ↔ (¬q → ¬p)"];
@@ -58,114 +52,6 @@ const VERDICT = {
   contingencia: { label: "Contingencia", tone: "warn", Icon: GitBranch },
 } as const;
 
-function AcademicLogicCheck({
-  kind,
-  trueCount,
-  total,
-  ast,
-}: {
-  kind: "tautologia" | "contradiccion" | "contingencia";
-  trueCount: number;
-  total: number;
-  ast: Node;
-}) {
-  const [selected, setSelected] = useState<
-    "tautologia" | "contradiccion" | "contingencia" | null
-  >(null);
-  const [checked, setChecked] = useState(false);
-
-  useEffect(() => {
-    setSelected(null);
-    setChecked(false);
-  }, [ast]);
-
-  const isCorrect = selected === kind;
-
-  const hint = useMemo(() => {
-    if (!checked || isCorrect) return null;
-    if (kind === "tautologia") {
-      return "Pista: Intenta buscar si alguna asignación produce Falso (0). Si en todos los casos la fórmula es Verdadera, es una tautología.";
-    }
-    if (kind === "contradiccion") {
-      return "Pista: Intenta buscar si alguna asignación produce Verdadero (1). Si no es posible hacerla verdadera, es una contradicción.";
-    }
-    return "Pista: Evalúa interpretaciones con valores opuestos. Si el resultado cambia según las variables, es una contingencia.";
-  }, [checked, isCorrect, kind]);
-
-  return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-raised p-4">
-      <div className="flex items-center gap-2">
-        <GraduationCap size={18} className="text-accent" aria-hidden="true" />
-        <h3 className="font-display text-[15px] font-semibold">
-          Comprueba tu respuesta
-        </h3>
-      </div>
-      <p className="text-[14px] text-muted">
-        Clasifica esta fórmula antes de consultar la tabla completa:
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
-        {(
-          [
-            { id: "tautologia", label: "Es tautología" },
-            { id: "contingencia", label: "Es contingencia" },
-            { id: "contradiccion", label: "Es contradicción" },
-          ] as const
-        ).map((opt) => (
-          <button
-            key={opt.id}
-            type="button"
-            aria-pressed={selected === opt.id}
-            onClick={() => {
-              setSelected(opt.id);
-              setChecked(false);
-            }}
-            className={cn(
-              "inline-flex min-h-9 items-center rounded-md border px-3 text-[14px] font-medium transition-colors",
-              selected === opt.id
-                ? "border-accent bg-accent/15 text-accent font-semibold"
-                : "border-border bg-sunken hover:bg-raised",
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
-        <button
-          type="button"
-          disabled={!selected}
-          onClick={() => setChecked(true)}
-          className="inline-flex min-h-9 items-center rounded-md bg-accent px-3 text-[14px] font-semibold text-accent-contrast hover:opacity-90 disabled:opacity-40"
-        >
-          Comprobar
-        </button>
-      </div>
-
-      {checked ? (
-        <div className="pt-1">
-          {isCorrect ? (
-            <Chip tone="ok" className="text-[13px]">
-              <CheckCircle2 size={16} aria-hidden="true" />
-              ¡Correcto! Es una{" "}
-              {kind === "tautologia"
-                ? "tautología"
-                : kind === "contradiccion"
-                  ? "contradicción"
-                  : "contingencia"}{" "}
-              ({trueCount} de {total} interpretaciones verdaderas).
-            </Chip>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              <Chip tone="warn" className="text-[13px]">
-                No coincide. Inténtalo de nuevo.
-              </Chip>
-              {hint ? <p className="text-[13px] text-muted">{hint}</p> : null}
-            </div>
-          )}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 type Shown = { ast: Node; table: Table };
 
 function SingleMode({
@@ -184,7 +70,6 @@ function SingleMode({
   const [subOverride, setSubOverride] = useState<boolean | null>(null);
   const [keypad, setKeypad] = useState(true);
   const [lastValid, setLastValid] = useState<Shown | null>(null);
-  const [showSolution, setShowSolution] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -298,75 +183,49 @@ function SingleMode({
           </div>
         ) : current ? (
           <div className={cn("flex flex-col gap-4", dimmed && "opacity-60")}>
-            {shown && verdict ? (
-              <AcademicLogicCheck
-                kind={verdict.kind}
-                trueCount={verdict.trueCount}
-                total={verdict.total}
-                ast={shown.ast}
-              />
+            <Tex
+              display
+              tex={toTex(current.ast)}
+              label="Fórmula normalizada"
+              className="text-[20px]"
+            />
+            <div className="flex flex-wrap items-center gap-4">{formatToggle}</div>
+            {shown ? (
+              <TruthPractice table={shown.table} format={format} formula={toPlain(shown.ast)} />
             ) : null}
-
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-sunken/40 px-3 py-2">
-              <div className="flex items-center gap-2 text-[13px] text-muted">
-                <Info size={16} aria-hidden="true" />
+            <SolutionGate resetKey={toPlain(current.ast)}>
+            {V && verdict ? (
+              <div
+                aria-live="polite"
+                className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-raised p-3"
+              >
+                <Chip
+                  tone={V.tone}
+                  className="text-[20px] font-semibold leading-[1.2]"
+                >
+                  <V.Icon size={20} strokeWidth={1.75} aria-hidden="true" />
+                  {V.label}
+                </Chip>
                 <span>
-                  Aviso de integridad: contrasta tus resultados tras intentar resolver el ejercicio por ti mismo.
+                  Verdadera en {verdict.trueCount} de {verdict.total} filas
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowSolution((s) => !s)}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-raised px-3 text-[13px] font-medium hover:bg-sunken"
-              >
-                {showSolution ? "Ocultar solución detallada" : "Ver la solución completa"}
-              </button>
-            </div>
-
-            {showSolution ? (
-              <>
-                {V && verdict ? (
-                  <div
-                    aria-live="polite"
-                    className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-raised p-3"
-                  >
-                    <Chip
-                      tone={V.tone}
-                      className="text-[20px] font-semibold leading-[1.2]"
-                    >
-                      <V.Icon size={20} strokeWidth={1.75} aria-hidden="true" />
-                      {V.label}
-                    </Chip>
-                    <span>
-                      Verdadera en {verdict.trueCount} de {verdict.total} filas
-                    </span>
-                  </div>
-                ) : null}
-                <Tex
-                  display
-                  tex={toTex(current.ast)}
-                  label="Fórmula normalizada"
-                  className="text-[20px]"
-                />
-                <div className="flex flex-wrap items-center gap-4">
-                  {formatToggle}
-                  {subCount > 0 ? (
-                    <Switch
-                      label="Mostrar pasos intermedios"
-                      checked={showSub}
-                      onCheckedChange={setSubOverride}
-                    />
-                  ) : null}
-                </div>
-                <TruthTable
-                  table={current.table}
-                  format={format}
-                  showSub={showSub}
-                  caption={`Tabla de verdad de ${toPlain(current.ast)}: ${current.table.rows.length} filas`}
-                />
-                <NormalForms table={current.table} />
-              </>
             ) : null}
+            {subCount > 0 ? (
+              <Switch
+                label="Mostrar pasos intermedios"
+                checked={showSub}
+                onCheckedChange={setSubOverride}
+              />
+            ) : null}
+            <TruthTable
+              table={current.table}
+              format={format}
+              showSub={showSub}
+              caption={`Tabla de verdad de ${toPlain(current.ast)}: ${current.table.rows.length} filas`}
+            />
+            <NormalForms table={current.table} />
+            </SolutionGate>
           </div>
         ) : null}
       </div>

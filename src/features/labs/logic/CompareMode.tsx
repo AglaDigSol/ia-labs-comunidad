@@ -13,6 +13,8 @@ import { Chip } from "../../../components/ui/chip.tsx";
 import { Switch } from "../../../components/ui/switch.tsx";
 import { FormulaField, SymbolKeypad } from "./FormulaInput.tsx";
 import { TruthTable, type TruthFormat } from "./TruthTable.tsx";
+import { ComparePractice } from "./ComparePractice.tsx";
+import { SolutionGate } from "../../../components/practice/SolutionGate.tsx";
 
 const DEBOUNCE_MS = 400;
 const EXAMPLES = [
@@ -152,6 +154,13 @@ export function CompareMode({
           </div>
         ) : ok ? (
           <div className="flex flex-col gap-4">
+            <ComparePractice
+              equivalent={ok.equivalent}
+              differing={ok.differing}
+              total={ok.rows.length}
+              resetKey={`${a}|${b}`}
+            />
+            <SolutionGate resetKey={`${a}|${b}`}>
             <div
               ref={verdictRef}
               tabIndex={-1}
@@ -197,6 +206,7 @@ export function CompareMode({
               format={format}
               caption={`Comparación de A y B: ${shownRows} filas`}
             />
+            </SolutionGate>
           </div>
         ) : (
           <div className="flex flex-col gap-3">

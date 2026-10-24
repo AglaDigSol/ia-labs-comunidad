@@ -9,7 +9,7 @@ import { Tex } from "../../../lib/tex.tsx";
 export const NO_STATIONARY =
   "No se pudo hallar una distribución estacionaria única. La matriz puede no ser irreducible.";
 
-// Verification only (D-07, MRKV-05): formulas, values and checks; no narrative, no copy affordance.
+// Verification only: formulas, values and checks; no narrative, no copy affordance.
 export function StationaryBlock({
   names,
   P,

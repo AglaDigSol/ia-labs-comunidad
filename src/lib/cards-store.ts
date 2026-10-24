@@ -1,6 +1,6 @@
 // Flashcards over the local KV store. Content (card/), schedule (srs/) and suspension (susp/) are
 // separate keys. Seed decks come from shared/srs/decks.ts and are never written to the store.
-// Every value read from KV is re-validated; entries that fail to parse are ignored (T-0405-01).
+// Every value read from KV is re-validated; entries that fail to parse are ignored.
 import { useEffect, useMemo } from "react";
 import { keys } from "../../shared/keys.ts";
 import { SEED_DECKS, seedCards, type Course } from "../../shared/srs/decks.ts";

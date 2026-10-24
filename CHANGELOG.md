@@ -1,60 +1,43 @@
-# Registro de cambios (Changelog)
+# Changelog
 
-Todos los cambios notables de este proyecto se documentarán en este archivo.
-El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
+[Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
+[versionado semántico](https://semver.org/lang/es/).
 
----
+## [Próximamente] (0.2)
 
-## [Próximamente] - 0.2.0
+- Modo «Comprueba tu respuesta» también para las formas normales (FND/FNC): hoy quedan dentro de «Ver la solución
+  completa», sin ejercicio propio.
+- i18n completo: mover a `src/i18n/` los textos internos de los laboratorios, las flashcards, la calculadora y el
+  calendario (hoy están en sus componentes) y añadir inglés.
+- Registro de plugins completo para módulos de terceros (hoy `src/config.ts` es un registro sencillo con
+  activar/desactivar).
+- Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
+- Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
 
-### Planificado
-- Modo interactivo «Comprueba tu respuesta» extendido con pistas guiadas en todos los laboratorios.
-- Sistema ampliado de localización e internacionalización (i18n) con soporte para inglés.
-- Nuevos módulos de simulación matemática y física.
-- Adaptador de almacenamiento desacoplado (`StorageAdapter`) para sincronización comunitaria opcional.
-
----
-
-## [0.1.0] - 2026-10-23
+## [0.1.0] - 2026-10-24
 
 ### Añadido
-- **Modo de Integridad Académica («Comprueba tu respuesta»):**
-  - Modo pedagógico interactivo en el Laboratorio de Lógica para clasificar fórmulas (tautología, contingencia o contradicción) con comprobación inmediata y pistas paso a paso.
-  - Modo pedagógico interactivo en el Laboratorio de Markov para calcular manualmente la probabilidad del primer paso ($v_1$) con pistas guiadas.
-  - Botón «Ver la solución completa» con aviso previo de integridad académica para contrastar resultados tras el desarrollo propio.
-- **Laboratorio de Simbología:**
-  - Diccionario interactivo de símbolos matemáticos y de inteligencia artificial.
-  - Renderizado tipográfico preciso con KaTeX (`htmlAndMathml`).
-  - Síntesis de voz accesible en español (`Web Speech API`) para practicar la lectura oral de fórmulas.
-  - Equivalencias de notación y sintaxis estándar en Python (NumPy / SciPy).
-- **Laboratorio de Lógica Proposicional:**
-  - Generador de tablas de verdad con soporte para sintaxis simbólica y ASCII.
-  - Comparador de equivalencia lógica entre fórmulas paso a paso.
-  - Conversión a Formas Normales Disyuntiva y Conjuntiva (FND y FNC).
-  - Explorador interactivo de compuertas y álgebra booleana (F₁).
-- **Laboratorio de Cadenas de Markov:**
-  - Aritmética racional exacta mediante números fraccionarios (sin errores de redondeo de punto flotante).
-  - Validación de matrices estocásticas y distribuciones de probabilidad.
-  - Evolución temporal paso a paso ($v_n = v_0 \cdot P^n$) con visualización tabular y gráfica.
-  - Resolución exacta del vector estacionario ($\pi P = \pi$) y problema inverso ($u_0 P = v$).
-- **Módulo de Flashcards con Repetición Espaciada (SM-2):**
-  - Mazos temáticos precargados a partir del diccionario de símbolos.
-  - Creación de mazos y tarjetas personalizadas con soporte para fórmulas matemáticas.
-  - Algoritmo de planificación SM-2 para optimizar la retención a largo plazo.
-- **Calculadora de Notas:**
-  - Ponderación de calificaciones conforme a guías docentes citadas.
-  - Cálculo de escenarios mínimos para aprobación y mención de honor con verificación de mínimos por bloque.
-- **Ajustes y Privacidad:**
-  - Persistencia 100% en el navegador (`localStorage`) sin envío de datos a servidores externos.
-  - Exportación e importación de copias de seguridad en formato JSON con validación de esquema y límite de 2 MB.
-  - Selector de tema visual (Claro, Oscuro y Sistema).
-  - Configuración estricta de privacidad sin rastreadores ni analítica de terceros.
-- **Licencia y Gobernanza:**
-  - Contenido educativo unificado bajo licencia **Creative Commons Atribución-CompartirIgual 4.0 Internacional (CC BY-SA 4.0)**, conforme a decisión expresa de la titular.
-  - Código fuente publicado bajo licencia de código abierto **MIT**.
-  - Política de contribución mediante DCO (`Signed-off-by: Nombre <email>`) validada en CI.
-- **Seguridad y CSP:**
-  - Modo `jitless` configurado en Zod para eliminar sondas `eval`/`Function` en navegadores bajo CSP `script-src 'self'`.
-  - `build.assetsInlineLimit: 0` en Vite para que las fuentes KaTeX (`woff2`) se emitan como archivos independientes y no como `data:` URI, garantizando compatibilidad total con `font-src 'self'`.
-  - Configuración Nginx (`nginx.conf`) con herencia explícita de cabeceras de seguridad en todos los bloques `location`.
-  - Monitorización automatizada de dependencias en raíz y `/tools/lint` mediante Dependabot.
+
+- Laboratorio de **Simbología**: diccionario con búsqueda, fichas KaTeX, «lectura en clase» con voz (Web Speech API) y
+  equivalente en Python/NumPy como texto.
+- Laboratorio de **Lógica**: tabla de verdad, comparar fórmulas, FND/FNC y explorador del espacio F₁.
+- Laboratorio de **Markov**: racionales exactos, validador de matrices estocásticas, evolución, distribución
+  estacionaria π y problema inverso.
+- Modo **«Comprueba tu respuesta»** por defecto en tablas de verdad, comparación de fórmulas y Markov (vₙ, π, u₀), con
+  pistas paso a paso; la solución completa queda detrás de «Ver la solución completa».
+- Módulo opcional **Calendario**: lo próximo con cuenta atrás, lista por semanas con filtros, hora de España y tuya,
+  aviso de cambio de hora, `.ics` suscribible (RFC 5545) y feed externo opcional en build (`CALENDAR_ICS_URL`).
+- Módulo opcional **Flashcards** SM-2 con mazos del diccionario y mazos propios con KaTeX.
+- Módulo opcional **Calculadora de notas** con mínimo de 5,0 por bloque y menciones, pesos con fuente citada y aviso
+  «Orientativa, no oficial».
+- `content/` con esquema genérico (materia, tema, nivel, idioma, autoría, licencia, fuente) validado con zod.
+- Ajustes con tema claro/oscuro y «Exportar / Importar mis datos» (JSON versionado, máximo 2 MB).
+- Persistencia local detrás de `StorageAdapter` (implementación con `localStorage`).
+- Despliegue: `dist/` estático, Dockerfile (Node + `nginx:alpine`), `nginx.conf` con CSP estricta, HSTS,
+  `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Robots-Tag` y `.ics` como `text/calendar`; ejemplo para Apache.
+- `noindex` en tres capas (meta, cabecera y `robots.txt`).
+- CI: typecheck, tests, build, ESLint, `npm audit`, gitleaks, lychee y DCO. Dependabot mensual y agrupado.
+
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.1.0

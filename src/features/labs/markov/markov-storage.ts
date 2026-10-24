@@ -1,4 +1,4 @@
-// Local-only persistence of the Markov editor (UI-SPEC default). Strings only: never Frac/BigInt.
+// Local-only persistence of the Markov editor. Strings only: never Frac/BigInt.
 
 export const MARKOV_KEY = "ia-labs.markov.v1";
 export const SIZES = [3, 4, 5] as const;

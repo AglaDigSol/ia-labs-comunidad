@@ -1,4 +1,4 @@
-// Lista de mazos (UI-SPEC section 8, CARD-01): today's count with the one primary «Repasar {n} tarjetas»,
+// Lista de mazos: today's count with the one primary «Repasar {n} tarjetas»,
 // decks grouped by course and ordered by session, flat rows with 1px separators.
 import { COURSES as COURSE_DATA } from "../../../content/courses/index.ts";
 import { ChevronRight, Layers } from "lucide-react";

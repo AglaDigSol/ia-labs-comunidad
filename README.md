@@ -1,140 +1,211 @@
 # IA Labs · Comunidad
 
-Plataforma comunitaria de laboratorios interactivos y herramientas de estudio para estudiantes del Máster Universitario en Inteligencia Artificial.
+Laboratorios interactivos para estudiar el Máster en Inteligencia Artificial: simbología matemática, lógica
+proposicional, cadenas de Markov, calendario de clases con tu zona horaria, flashcards con repaso espaciado y una
+calculadora de notas.
 
-Este proyecto es una iniciativa independiente y de código abierto desarrollada por estudiantes. **No es oficial ni está afiliado a la Universidad Internacional de Valencia (VIU).**
+> **Proyecto comunitario de estudiantes del Máster en IA. No oficial ni afiliado a la Universidad Internacional de Valencia (VIU).**
 
----
+La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies, ni analítica. Lo que guardas
+(flashcards, notas, preferencias) vive en el `localStorage` de tu navegador y puedes llevártelo con
+«Ajustes → Exportar mis datos».
 
-## Características
+## Qué incluye
 
-- 🧪 **Laboratorio de Simbología:** Diccionario interactivo de notación matemática y de IA, con renderizado KaTeX, lectura en voz alta (`Web Speech API`) y equivalentes en Python.
-- 📐 **Laboratorio de Lógica:** Generador de tablas de verdad, comparador de fórmulas, cálculo de formas normales (FND/FNC) y explorador de compuertas $F_1$.
-- 🎲 **Laboratorio de Cadenas de Markov:** Cálculo racional exacto (sin errores de coma flotante), verificación de matrices estocásticas, evolución paso a paso, cálculo del vector estacionario $\pi$ y problema inverso.
-- 🗂️ **Flashcards (SM-2):** Sistema de repaso espaciado con mazos predefinidos y creación de tarjetas propias con fórmulas matemáticas.
-- 📊 **Calculadora de Notas:** Estimación orientativa de calificaciones y mínimos de examen según las guías docentes citadas.
-- 🔒 **Privacidad Total:** Sin cookies de rastreo, sin analítica de terceros y con almacenamiento local en el navegador (`localStorage`).
+| Módulo | Qué hace | Interruptor |
+| --- | --- | --- |
+| Simbología | Diccionario de símbolos con búsqueda, fichas KaTeX, «lectura en clase» con voz (Web Speech) y el equivalente en Python/NumPy como texto. | siempre activo |
+| Lógica | Tablas de verdad, comparar dos fórmulas, FND/FNC y el espacio F₁. | siempre activo |
+| Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
+| Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
+| Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
+| Calculadora de notas | Nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
 
----
+Los módulos opcionales se activan o desactivan en [`src/config.ts`](src/config.ts):
 
-## Requisitos y ejecución local
-
-Se requiere **Node.js 22** o superior y **npm**:
-
-```bash
-# 1. Clonar el repositorio
-git clone https://github.com/AglaDigSol/ia-labs-comunidad.git
-cd ia-labs-comunidad
-
-# 2. Instalar dependencias (raíz y herramientas de lint)
-npm ci --ignore-scripts
-npm --prefix tools/lint ci --ignore-scripts
-
-# 3. Iniciar el servidor de desarrollo
-npm run dev
-```
-
-La aplicación estará disponible en `http://localhost:5173`.
-
-### Comprobaciones y validación
-
-```bash
-# Comprobación de tipos
-npm run typecheck
-
-# Linter (ESLint con typescript-eslint)
-npm run lint
-
-# Batería de pruebas unitarias y de integración
-npm run test
-
-# Construcción para producción
-npm run build
-```
-
----
-
-## Configuración modular
-
-En `src/config.ts` es posible activar o desactivar módulos opcionales según las necesidades de despliegue:
-
-```typescript
+```ts
 export const config = {
-  modules: {
-    flashcards: true,   // Repaso espaciado SM-2
-    calculadora: true,  // Calculadora de notas
-  },
+  modules: { calendario: true, flashcards: true, calculadora: true },
 } as const;
 ```
 
-Si un módulo se desactiva, no aparece en la navegación y su código no se descarga en el navegador.
+Si pones uno a `false`, desaparece de la navegación y de las rutas, y su código no llega a descargarse.
 
----
+### Modo «Comprueba tu respuesta»
 
-## Despliegue en producción
+Los laboratorios están pensados para **comprobar y entrenar, no para resolver**. Donde la app calcula un resultado
+(tabla de verdad, clasificación, equivalencia, evolución de Markov, π, u₀), la vista por defecto te pide tu resultado,
+lo corrige y te da pistas paso a paso. La solución completa queda detrás de «Ver la solución completa», con un aviso
+de integridad. El explorador de F₁ ya funcionaba así (rellenas la tabla y pulsas «Comprobar»).
 
-La build genera una SPA estática (`dist/`) lista para servirse con cualquier servidor web o contenedor.
+## Ejecutar en local
 
-### Opción A: Servidor web (Nginx / Apache / LiteSpeed)
+Necesitas Node.js 22.18 o superior.
 
-1. Construye el proyecto:
-   ```bash
-   npm run build
-   ```
-2. Publica el contenido de la carpeta `dist/` en el directorio raíz del servidor web (`DocumentRoot`).
-3. Asegúrate de configurar la redirección SPA al archivo `index.html` y las cabeceras de seguridad recomendadas.
-
-#### Cabeceras recomendadas (`nginx.conf` o `.htaccess`)
-- `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; font-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';`
-- `X-Frame-Options: DENY`
-- `X-Content-Type-Options: nosniff`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
-- `Strict-Transport-Security: max-age=31536000; includeSubDomains`
-- `X-Robots-Tag: noindex, nofollow`
-
-### Opción B: Docker
-
-El repositorio incluye un `Dockerfile` multi-etapa optimizado con `nginx:alpine`:
-
-```bash
-# Construir la imagen
-docker build -t ia-labs-comunidad .
-
-# Ejecutar el contenedor en el puerto 8080
-docker run -d -p 8080:80 --name ia-labs ia-labs-comunidad
+```sh
+npm ci --ignore-scripts
+npm run dev          # http://localhost:5173
+npm test             # vitest
+npm run typecheck
+npm run lint:install && npm run lint
+npm run build        # genera dist/
 ```
 
----
+## Generar `dist/`
 
-## Restringir el acceso (Cloudflare Access)
+```sh
+npm ci --ignore-scripts
+npm run build                      # VITE_BASE=/ por defecto
+VITE_BASE=/labs/ npm run build     # si el sitio va en una subcarpeta
+```
 
-Para compartir la plataforma de forma privada con compañeros de clase sin gestionar bases de datos ni contraseñas locales, se recomienda utilizar **Cloudflare Access (Zero Trust)**:
+`npm run build` hace `vite build` y después `node scripts/build-ics.ts dist`, que añade `calendario.ics`,
+`calendario-<materia>.ics` y `calendario.json`. El resultado es una carpeta estática (unos 2,2 MB, con las fuentes de
+KaTeX) que se sirve con cualquier servidor web.
 
-1. Accede al panel de **Cloudflare Zero Trust** → **Access** → **Applications**.
-2. Haz clic en **Add an Application** y selecciona **Self-hosted**.
-3. Introduce el subdominio asignado (por ejemplo, `labs-ai.docentes20.com`).
-4. En **Policies**, añade una regla de acceso:
-   - **Action:** `Allow`
-   - **Rule configuration:** `Include` → `Emails` o `Email domain` (los correos de los compañeros que tendrán acceso).
-5. Guarda la configuración. Los usuarios recibirán un código PIN de un solo uso (OTP) en su correo para ingresar. El plan gratuito de Cloudflare Zero Trust incluye hasta 50 usuarios sin coste.
+## Desplegar en un subdominio propio
 
----
+Ejemplo: `labs-ai.docentes20.com`.
 
-## Mantenimiento del repositorio en GitHub
+1. Crea el subdominio en tu DNS y apúntalo a tu servidor.
+2. Activa HTTPS (Let's Encrypt o el proxy de Cloudflare). HSTS se envía siempre: no sirvas el sitio por HTTP.
+3. Sube el contenido de `dist/` a la raíz del subdominio, o usa la imagen Docker.
 
-Para mantener la calidad y la integridad del proyecto en la rama principal (`main`):
+### Opción A: `dist/` estático detrás de nginx
 
-1. Ve a **Settings** → **Branches** → **Add branch protection rule** para `main`.
-2. Activa:
-   - **Require a pull request before merging.**
-   - **Require review from Code Owners** (atado al archivo `.github/CODEOWNERS`).
-   - **Require status checks to pass before merging** (marca los checks del workflow `CI`).
-   - Como mantenedora única, puedes marcar o mantener desmarcado **Do not allow bypassing the above settings** según prefieras gestionar emergencias directamente.
+Copia [`deploy/nginx.conf`](deploy/nginx.conf) y [`deploy/security-headers.conf`](deploy/security-headers.conf) a tu
+servidor, cambia `root` y `listen` (y añade tu bloque TLS). Incluye el fallback SPA, caché inmutable en `/assets/`, los
+`.ics` como `text/calendar` con caché de 1 h y todas las cabeceras.
 
----
+### Opción B: `dist/` estático en Apache
 
-## Licencias
+Sube `dist/` y copia [`deploy/htaccess.example`](deploy/htaccess.example) como `.htaccess` en la misma carpeta. Si el
+sitio va en una subcarpeta, añade `RewriteBase /labs/` y construye con `VITE_BASE=/labs/`.
 
-- **Código:** Licencia [MIT](LICENSE).
-- **Contenido (`content/`):** Licencia [Creative Commons Atribución-CompartirIgual 4.0 Internacional (CC BY-SA 4.0)](content/LICENSE).
+### Opción C: Docker
+
+```sh
+docker build -t ia-labs-comunidad .
+docker run -d --name ia-labs -p 8080:8080 --restart unless-stopped ia-labs-comunidad
+```
+
+El `Dockerfile` es multi-stage: compila con Node y sirve `dist/` con `nginx:alpine` en el puerto 8080. Pon delante tu
+proxy con TLS (nginx, Caddy, Traefik o Cloudflare Tunnel). Para una subcarpeta usa `--build-arg VITE_BASE=/labs/`.
+
+### Cabeceras recomendadas
+
+`deploy/nginx.conf` ya las envía:
+
+| Cabecera | Valor |
+| --- | --- |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self'; style-src 'self'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `no-referrer` |
+| `Permissions-Policy` | cámara, micrófono, geolocalización, pagos y sensores desactivados |
+| `X-Robots-Tag` | `noindex, nofollow` |
+
+Sobre la CSP:
+
+- No hay scripts inline: el tema se aplica con `public/theme-init.js`, un fichero externo.
+- `style-src-attr 'unsafe-inline'` es necesario porque KaTeX dibuja las fórmulas con atributos `style` y React aplica
+  props de estilo. No permite elementos `<style>` ni scripts.
+- Limitación conocida: algunos componentes de Radix (diálogos y selectores) intentan insertar un `<style>` pequeño
+  (bloqueo de scroll del fondo y ocultar la barra de scroll). La CSP lo bloquea y el navegador lo anota en la consola;
+  la app funciona igual, solo que la página de fondo puede desplazarse con un diálogo abierto.
+- No se usa COEP.
+
+El sitio no aparece en buscadores: `<meta name="robots" content="noindex, nofollow">`, la cabecera `X-Robots-Tag` y
+`robots.txt` con `Disallow: /`.
+
+## Calendario suscribible
+
+La app ofrece «Suscribirme» con la URL absoluta de `calendario.ics` (o de una materia), instrucciones para Google
+Calendar, Apple y Outlook, y «Descargar .ics» para una importación puntual. Los `.ics` siguen RFC 5545: `VTIMEZONE`
+Europe/Madrid, `TZID`, `UID` estables (`<id>@ia-labs-comunidad`), `DTSTAMP` y `SEQUENCE`. No llevan URL, descripciones
+ni asistentes.
+
+### Feed externo opcional (`CALENDAR_ICS_URL`)
+
+Puedes fusionar un feed iCalendar externo con el calendario de `content/`. Es una variable **solo de build**:
+
+```sh
+CALENDAR_ICS_URL="https://…" npm run build
+docker build --build-arg CALENDAR_ICS_URL="https://…" -t ia-labs-comunidad .
+```
+
+- Se toman solo los eventos cuyo título contiene un código de materia conocido. Se descartan `DESCRIPTION`, `URL`,
+  `LOCATION`, `ATTENDEE` y `ORGANIZER`.
+- Si un evento del feed coincide en materia y día con uno de `content/` a ±15 min, gana la hora del feed.
+- La URL nunca llega al navegador, al bundle, a `dist/` ni a git. Si la descarga falla, el build sigue solo con
+  `content/` y lo avisa en consola sin mostrar la URL.
+
+> **Advertencia:** si usas tu feed personal del campus, todo el que abra el sitio verá los eventos de ese feed (aunque no
+> tu token). No uses un feed con datos personales.
+
+Para refrescarlo hay que reconstruir el sitio. Ejemplo de cron en el servidor (cada día a las 06:15):
+
+```cron
+15 6 * * * cd /srv/ia-labs-comunidad && git pull -q && CALENDAR_ICS_URL="$(cat /etc/ia-labs/feed-url)" npm run build && rsync -a --delete dist/ /var/www/labs-ai/
+```
+
+## Restringir el acceso
+
+El sitio no tiene contraseña propia. Para que solo entren tus compañeros, pon **Cloudflare Access** delante del
+subdominio (gratis hasta 50 usuarios):
+
+1. En el panel de Cloudflare, abre **Zero Trust → Access → Applications → Add an application → Self-hosted**.
+2. Dominio de la aplicación: `labs-ai.docentes20.com`.
+3. Crea una política **Allow** con la regla *Emails* (la lista de correos de tus compañeros) o *Emails ending in* (el
+   dominio del correo del máster).
+4. En **Authentication**, usa *One-time PIN*: cada persona recibe un código de un solo uso en su correo.
+5. **Excepción para el calendario:** Google Calendar descarga las suscripciones desde sus servidores y no puede pasar por
+   Access. Crea una segunda aplicación *Self-hosted* para la ruta `labs-ai.docentes20.com/calendario*` con una política
+   **Bypass** (*Everyone*). Esos ficheros solo contienen el horario público. Si no quieres esa excepción, tus compañeros
+   pueden usar «Descargar .ics».
+
+## Privacidad
+
+- Sin cookies, sin analítica, sin rastreadores y sin CDN: fuentes del sistema, KaTeX y librerías se sirven desde el
+  propio sitio.
+- Sin claves de API en el frontend.
+- Los datos se guardan en `localStorage` de tu navegador, con try/catch: si el navegador lo bloquea, la app sigue
+  funcionando en memoria.
+- «Importar mis datos» acepta como máximo 2 MB (se comprueba antes de leer), valida la copia con zod (incluida su
+  `version`) y descarta las claves desconocidas. Nunca usa `eval` ni `innerHTML` con lo importado.
+
+## Contenido y licencias
+
+- Código: [MIT](LICENSE).
+- Contenido de [`content/`](content) (símbolos, notación, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
+- Cada paquete de contenido declara materia, tema, nivel, idioma, autoría, licencia y fuente, y se valida con zod en los
+  tests. Los pesos y las fechas se citan de las guías docentes como dato, sin copiar texto.
+- No se incluye material docente de la VIU (diapositivas, guías, enunciados ni soluciones).
+
+¿Quieres añadir un símbolo, una asignatura o un evento? Lee [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Mantenimiento
+
+### Proteger `main` en GitHub
+
+En **Settings → Branches → Add branch ruleset** (o *Add rule*) para `main`:
+
+1. **Require a pull request before merging**, con 1 aprobación y **Require review from Code Owners** (el fichero
+   [`.github/CODEOWNERS`](.github/CODEOWNERS) asigna todo a la mantenedora).
+2. **Require status checks to pass**: marca los jobs de CI (`build-test`, `lint`, `audit`, `gitleaks`, `links` y `dco`).
+3. **Block force pushes** y **Restrict deletions**.
+4. Como la dueña es la única mantenedora y no puede aprobar sus propios PR, añádela en **Bypass list** (*Allow specified
+   actors to bypass*), o deja sin marcar **Include administrators** / **Do not allow bypassing the above settings**. Así
+   puede fusionar sus PR cuando los checks estén en verde.
+
+### Dependencias
+
+Dependabot ([`.github/dependabot.yml`](.github/dependabot.yml)) propone cada mes un PR agrupado para npm y otro para
+GitHub Actions. Las versiones están fijadas con exactitud; ESLint vive aparte en `tools/lint/` porque typescript-eslint
+necesita la API de TypeScript ≤ 6.0 y la app usa TypeScript 7.
+
+### CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) ejecuta en cada push y PR: typecheck, tests y build; lint;
+`npm audit --omit=dev --audit-level=high`; gitleaks sobre todo el historial; comprobación de enlaces de los `.md` con
+lychee; y, en los PR, que todos los commits lleven `Signed-off-by` (DCO).

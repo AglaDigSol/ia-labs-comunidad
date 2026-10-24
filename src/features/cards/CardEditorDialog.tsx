@@ -1,6 +1,6 @@
-// Card editor (UI-SPEC section 8, CARD-02): «Anverso» and «Reverso» with a live KaTeX preview
-// (300 ms debounce). User text only reaches the DOM through RichText / renderUserTex (T-0409-01),
-// and both fields are capped at the CardSchema bound of 2000 characters (T-0409-03).
+// Card editor: «Anverso» and «Reverso» with a live KaTeX preview
+// (300 ms debounce). User text only reaches the DOM through RichText / renderUserTex,
+// and both fields are capped at the CardSchema bound of 2000 characters.
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog.tsx";

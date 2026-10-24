@@ -16,7 +16,7 @@ export const ContentMetaSchema = z.strictObject({
   /** Autoría: personas o colectivo que lo han escrito (alias si se prefiere). */
   author: z.string().trim().min(1).max(120),
   /** Licencia del contenido (identificador SPDX). */
-  license: z.literal("CC-BY-SA-4.0"),
+  license: z.literal("CC-BY-4.0"),
   /** De dónde sale: «Elaboración propia» o la referencia citada (solo como cita, nunca texto copiado). */
   source: z.string().trim().min(1).max(200),
   /** Última revisión (aaaa-mm-dd). */

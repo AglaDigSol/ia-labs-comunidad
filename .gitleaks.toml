@@ -1,0 +1,12 @@
+# gitleaks: reglas por defecto más una lista blanca mínima para falsos positivos conocidos
+# (nombres de claves de almacenamiento local, que no son secretos).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Nombres de claves del almacén local (no son secretos)"
+regexTarget = "line"
+regexes = [
+  '''MARKOV_KEY = "ia-labs\.[a-z0-9.]+"''',
+  '''key: "grade/[0-9A-Za-z]+/[a-z0-9-]+"''',
+]

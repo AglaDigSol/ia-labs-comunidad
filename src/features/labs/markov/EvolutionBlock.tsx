@@ -5,7 +5,7 @@ import { Chip } from "../../../components/ui/chip.tsx";
 import { Tex } from "../../../lib/tex.tsx";
 import { EvolutionChart } from "./EvolutionChart.tsx";
 
-// Verification only (D-07, MRKV-05): steps and numbers, no narrative conclusion, no copy affordance.
+// Verification only: steps and numbers, no narrative conclusion, no copy affordance.
 export function EvolutionBlock({
   names,
   vectors,

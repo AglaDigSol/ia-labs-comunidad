@@ -12,7 +12,7 @@ export const MIAR02: Course = {
     level: "máster",
     language: "es",
     author: "Comunidad IA Labs",
-    license: "CC-BY-SA-4.0",
+    license: "CC-BY-4.0",
     source: "Guía docente de 02MIAR (2026-2027), citada",
     updated: "2026-10-23",
   },

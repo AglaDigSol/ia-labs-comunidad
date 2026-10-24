@@ -13,9 +13,8 @@ export default defineConfig(({ mode }) => {
   return {
     base: normalizeBase(env.VITE_BASE ?? process.env.VITE_BASE),
     plugins: [react(), tailwindcss()],
-    build: {
-      assetsInlineLimit: 0,
-    },
+    // Sin data: URIs en el bundle (fuentes de KaTeX incluidas): la CSP solo permite 'self'.
+    build: { assetsInlineLimit: 0 },
     test: {
       environment: "node",
       include: ["src/**/*.test.{ts,tsx}", "shared/**/*.test.ts", "content/**/*.test.ts", "tests/**/*.test.ts"],
