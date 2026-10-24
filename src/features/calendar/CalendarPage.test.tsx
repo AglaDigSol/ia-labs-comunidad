@@ -50,3 +50,17 @@ describe("CalendarPage", () => {
     );
   });
 });
+
+describe("DualTime: day of each side", () => {
+  it("a Spain-midnight multi-day window shows Spain's own dates and both ends in Bogotá", async () => {
+    const { withTimes } = await import("../../../shared/calendar/model.ts");
+    const { DualTimeForTest } = await import("./CalendarPage.tsx");
+    const [e] = withTimes([
+      { id: "x-test", materia: "02MIAR", tipo: "test", titulo: "Test", inicio: "2026-11-14T00:00", fin: "2026-11-15T23:59" } as never,
+    ]);
+    const { container } = render(<DualTimeForTest e={e!} tz="America/Bogota" withDay />);
+    const text = container.textContent ?? "";
+    expect(text).toContain("sáb 14/11 00:00 – dom 15/11 23:59 España");
+    expect(text).toContain("vie 13/11 18:00 – dom 15/11 17:59");
+  });
+});

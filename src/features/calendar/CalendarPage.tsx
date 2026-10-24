@@ -2,7 +2,7 @@ import { CalendarClock, Copy, Download, Info, Rss, TriangleAlert } from "lucide-
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CALENDARIO } from "../../../content/calendario/index.ts";
 import { applyFilters, byWeek, dstNotice, nextClass, nextDeadline, withTimes, type Filters, type TimedEvent } from "../../../shared/calendar/model.ts";
-import { dayShift, diffFromMadrid, ES, fmtDay, fmtDiff, fmtTime, formatCountdown, isValidZone } from "../../../shared/calendar/time.ts";
+import { civilDate, dayShift, diffFromMadrid, ES, fmtDay, fmtDiff, fmtTime, formatCountdown, isValidZone } from "../../../shared/calendar/time.ts";
 import { CalendarEventSchema, EVENT_TYPE_LABELS, EVENT_TYPES, type CalendarEvent, type EventType } from "../../../shared/calendar/types.ts";
 import { keys } from "../../../shared/keys.ts";
 import { Button } from "../../components/ui/button.tsx";
@@ -39,19 +39,24 @@ function useEvents(): CalendarEvent[] {
   return events;
 }
 
-function DualTime({ e, tz }: { e: TimedEvent; tz: string }) {
+// Each side carries its own civil day: a Spain-midnight start is still the previous day in the
+// Americas, and multi-day windows (tests) must show both ends.
+function DualTime({ e, tz, withDay = false }: { e: TimedEvent; tz: string; withDay?: boolean }) {
   const same = tz === ES;
-  const shift = dayShift(tz, e.startMs);
-  const range = (zone: string) =>
-    `${fmtTime(zone, e.startMs)}${e.endMs ? `–${fmtTime(zone, e.endMs)}` : ""}`;
+  const range = (zone: string, showDay: boolean) => {
+    const endOtherDay = e.endMs !== undefined && e.endMs !== null && civilDate(zone, e.endMs) !== civilDate(zone, e.startMs);
+    const start = `${showDay || endOtherDay ? `${fmtDay(zone, e.startMs)} ` : ""}${fmtTime(zone, e.startMs)}`;
+    if (!e.endMs) return start;
+    return endOtherDay ? `${start} – ${fmtDay(zone, e.endMs)} ${fmtTime(zone, e.endMs)}` : `${start}–${fmtTime(zone, e.endMs)}`;
+  };
+  const localShowDay = withDay || dayShift(tz, e.startMs) !== 0;
   return (
     <span className="mono text-[14px]">
-      {`${range(ES)} España`}
+      {`${range(ES, withDay)} España`}
       {same ? null : (
         <>
           {" · "}
-          <strong className="font-semibold">{`${range(tz)} ${zoneLabel(tz)}`}</strong>
-          {shift !== 0 ? ` (${fmtDay(tz, e.startMs)})` : ""}
+          <strong className="font-semibold">{`${range(tz, localShowDay)} ${zoneLabel(tz)}`}</strong>
         </>
       )}
     </span>
@@ -87,8 +92,7 @@ function NextCard({ title, e, tz, now }: { title: string; e: TimedEvent | null; 
         <>
           <p className="font-semibold">{`${e.materia} · ${e.titulo}${e.grupo ? ` (${e.grupo})` : e.franja ? ` (${e.franja})` : ""}`}</p>
           <p className="text-[14px]">
-            {`${fmtDay(tz, e.startMs)} · `}
-            <DualTime e={e} tz={tz} />
+            <DualTime e={e} tz={tz} withDay />
           </p>
           <p className="text-[14px] text-muted">
             {e.startMs > now ? `Empieza en ${formatCountdown(e.startMs - now)}` : "En curso"}
@@ -353,3 +357,4 @@ export function CalendarPage() {
     </div>
   );
 }
+export { DualTime as DualTimeForTest };
