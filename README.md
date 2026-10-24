@@ -159,10 +159,18 @@ subdominio (gratis hasta 50 usuarios):
 3. Crea una política **Allow** con la regla *Emails* (la lista de correos de tus compañeros) o *Emails ending in* (el
    dominio del correo del máster).
 4. En **Authentication**, usa *One-time PIN*: cada persona recibe un código de un solo uso en su correo.
-5. **Excepción para el calendario:** Google Calendar descarga las suscripciones desde sus servidores y no puede pasar por
-   Access. Crea una segunda aplicación *Self-hosted* para la ruta `labs-ai.docentes20.com/calendario*` con una política
-   **Bypass** (*Everyone*). Esos ficheros solo contienen el horario público. Si no quieres esa excepción, tus compañeros
-   pueden usar «Descargar .ics».
+5. **Excepción para el calendario (enlace con clave):** Google Calendar descarga las suscripciones desde sus
+   servidores y no puede pasar por Access ni por ningún control propio del servidor. No abras `/calendario*` a todo el
+   mundo: compila con una clave larga, por ejemplo `CALENDAR_ICS_KEY=$(openssl rand -hex 24) npm run build`. Los
+   ficheros se llamarán `calendario-<clave>.ics` y `calendario-<clave>-<materia>.ics`, y ya no existirá
+   `calendario.ics`. Después:
+   - en Cloudflare Access, crea una aplicación *Self-hosted* con política **Bypass** solo para esas rutas exactas;
+   - si el servidor tiene además su propio control de acceso (por ejemplo, un script que comprueba el pase de Access en
+     cada petición), añade una excepción **solo para esos nombres exactos**.
+
+   La app muestra esos enlaces en «Suscribirme» únicamente a quien ya ha entrado, porque los lee de `calendario.json`,
+   que sigue protegido. Si la clave se filtra, genera otra y vuelve a compilar: los enlaces antiguos dejan de existir y
+   cada compañero vuelve a suscribirse. Si no quieres ninguna excepción, «Descargar .ics» funciona igual.
 
 ## Privacidad
 

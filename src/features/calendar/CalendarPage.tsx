@@ -16,18 +16,30 @@ import { allZones, CITIES, detectZone, zoneLabel } from "./zones.ts";
 const selectClass = "min-h-11 rounded-md border border-border bg-raised px-3 text-fg";
 
 /** Eventos del build (dist/calendario.json, que puede incluir el feed externo) o, si no hay, los de content/. */
-function useEvents(): CalendarEvent[] {
+type Subscription = { label: string; file: string };
+const SUB_FILE_RE = /^calendario[A-Za-z0-9-]*\.ics$/;
+
+function useEvents(): { events: CalendarEvent[]; subs: Subscription[] | null } {
   const [events, setEvents] = useState<CalendarEvent[]>(CALENDARIO.eventos);
+  const [subs, setSubs] = useState<Subscription[] | null>(null);
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const res = await fetch(`${import.meta.env.BASE_URL}calendario.json`, { cache: "no-cache" });
         if (!res.ok) return;
-        const body = (await res.json()) as { version?: unknown; eventos?: unknown };
+        const body = (await res.json()) as { version?: unknown; eventos?: unknown; suscripciones?: unknown };
         if (body.version !== 1 || !Array.isArray(body.eventos)) return;
         const parsed = body.eventos.map((e) => CalendarEventSchema.safeParse(e));
         if (alive && parsed.length > 0 && parsed.every((p) => p.success)) setEvents(parsed.map((p) => p.data!));
+        // Nombres de los .ics del build (pueden llevar la clave de CALENDAR_ICS_KEY).
+        const list = Array.isArray(body.suscripciones) ? body.suscripciones : [];
+        const ok = list.filter(
+          (x): x is Subscription =>
+            !!x && typeof x === "object" && typeof (x as Subscription).label === "string" &&
+            typeof (x as Subscription).file === "string" && SUB_FILE_RE.test((x as Subscription).file),
+        );
+        if (alive && ok.length > 0 && ok.length === list.length) setSubs(ok);
       } catch {
         // sin red o sin fichero (desarrollo): se usan los eventos de content/
       }
@@ -36,7 +48,7 @@ function useEvents(): CalendarEvent[] {
       alive = false;
     };
   }, []);
-  return events;
+  return { events, subs };
 }
 
 // Each side carries its own civil day: a Spain-midnight start is still the previous day in the
@@ -148,7 +160,11 @@ function ZonePicker({ tz, onChange }: { tz: string; onChange: (tz: string) => vo
   );
 }
 
-function SubscribeDialog({ materias }: { materias: string[] }) {
+function SubscribeDialog({ materias, subs }: { materias: string[]; subs: Subscription[] | null }) {
+  const list: Subscription[] = subs ?? [
+    { label: "Todas las materias", file: "calendario.ics" },
+    ...materias.map((m) => ({ label: m, file: `calendario-${m}.ics` })),
+  ];
   const base = typeof window === "undefined" ? "" : new URL(import.meta.env.BASE_URL, window.location.origin).toString();
   const url = (file: string) => `${base}${file}`;
   const [copied, setCopied] = useState<string | null>(null);
@@ -191,9 +207,8 @@ function SubscribeDialog({ materias }: { materias: string[] }) {
           dispositivo.
         </DialogDescription>
         <ul className="flex flex-col gap-3">
-          <Row label="Todas las materias" file="calendario.ics" />
-          {materias.map((m) => (
-            <Row key={m} label={m} file={`calendario-${m}.ics`} />
+          {list.map((x) => (
+            <Row key={x.file} label={x.label} file={x.file} />
           ))}
         </ul>
         <details className="text-[14px]">
@@ -223,7 +238,7 @@ function Labeled({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export function CalendarPage() {
-  const raw = useEvents();
+  const { events: raw, subs } = useEvents();
   const events = useMemo(() => withTimes(raw), [raw]);
   const now = useNow(30_000);
   const storedTz = useKv<string | null>(keys.pref.timeZone, null);
@@ -299,7 +314,7 @@ export function CalendarPage() {
           <h2 id="cal-list" className="text-[20px]">
             Por semanas
           </h2>
-          <SubscribeDialog materias={materias} />
+          <SubscribeDialog materias={materias} subs={subs} />
         </div>
         <div className="flex flex-wrap gap-3">
           <Labeled label="Materia">

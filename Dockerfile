@@ -9,7 +9,8 @@ COPY . .
 # solo se usa durante el build: no llega a la imagen final, ni al bundle, ni a dist/.
 ARG VITE_BASE=/
 ARG CALENDAR_ICS_URL=
-RUN VITE_BASE="$VITE_BASE" CALENDAR_ICS_URL="$CALENDAR_ICS_URL" npm run build
+ARG CALENDAR_ICS_KEY=
+RUN VITE_BASE="$VITE_BASE" CALENDAR_ICS_URL="$CALENDAR_ICS_URL" CALENDAR_ICS_KEY="$CALENDAR_ICS_KEY" npm run build
 
 # 2) nginx sin privilegios sirviendo dist/.
 FROM nginx:alpine

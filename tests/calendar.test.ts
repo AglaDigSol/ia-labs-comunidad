@@ -197,3 +197,27 @@ describe("feed externo (CALENDAR_ICS_URL)", () => {
     expect(r.files["calendario.ics"]).toContain("UID:02MIAR-S01@ia-labs-comunidad");
   });
 });
+
+describe("CALENDAR_ICS_KEY: .ics con clave en el nombre", () => {
+  const KEY = "a".repeat(16) + "-" + "b1".repeat(12);
+
+  it("con clave solo genera ficheros con la clave y la lista va en calendario.json", async () => {
+    const { files } = await buildCalendarFiles({ icsKey: KEY, today: "2026-10-24", log: () => {} });
+    const names = Object.keys(files);
+    expect(names).toContain(`calendario-${KEY}.ics`);
+    expect(names.some((n) => n.endsWith(".ics") && !n.includes(KEY))).toBe(false);
+    const json = JSON.parse(files["calendario.json"]!) as { suscripciones: Array<{ file: string }> };
+    expect(json.suscripciones.map((s) => s.file).every((f) => f.includes(KEY))).toBe(true);
+    for (const f of names.filter((n) => n.endsWith(".ics"))) expect(f).toMatch(/^calendario[A-Za-z0-9-]*\.ics$/);
+  });
+
+  it("sin clave mantiene calendario.ics", async () => {
+    const { files } = await buildCalendarFiles({ today: "2026-10-24", log: () => {} });
+    expect(Object.keys(files)).toContain("calendario.ics");
+  });
+
+  it("rechaza una clave corta o con caracteres no permitidos", async () => {
+    await expect(buildCalendarFiles({ icsKey: "corta", log: () => {} })).rejects.toThrow(/CALENDAR_ICS_KEY/);
+    await expect(buildCalendarFiles({ icsKey: "x".repeat(31) + "/", log: () => {} })).rejects.toThrow(/CALENDAR_ICS_KEY/);
+  });
+});

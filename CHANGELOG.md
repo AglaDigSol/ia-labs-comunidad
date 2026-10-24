@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.2)
+## [Próximamente] (0.3)
 
 - Modo «Comprueba tu respuesta» también para las formas normales (FND/FNC): hoy quedan dentro de «Ver la solución
   completa», sin ejercicio propio.
@@ -15,7 +15,10 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
 
-## [0.1.0] - 2026-10-24
+## [0.2.0] - 2026-10-24
+
+Primera versión publicada con las decisiones finales. Sustituye a las preliminares 0.1.0 y 0.1.1 del 23/10, que
+usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 ### Añadido
 
@@ -38,6 +41,12 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Robots-Tag` y `.ics` como `text/calendar`; ejemplo para Apache.
 - `noindex` en tres capas (meta, cabecera y `robots.txt`).
 - CI: typecheck, tests, build, ESLint, `npm audit`, gitleaks, lychee y DCO. Dependabot mensual y agrupado.
+- Enlace del calendario con clave (`CALENDAR_ICS_KEY`, solo en build): `calendario-<clave>.ics` para poder dejar pasar
+  únicamente esos ficheros en el servidor; la app lee los nombres de `calendario.json`.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.1.0
+### Corregido
+
+- Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
+
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.2.0
