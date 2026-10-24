@@ -22,3 +22,10 @@ necesita la API de TypeScript ≤ 6.0 y la app usa TypeScript 7.
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) ejecuta en cada push y PR: typecheck, tests y build; lint;
 `npm audit --omit=dev --audit-level=high`; gitleaks sobre todo el historial; comprobación de enlaces de los `.md` con
 lychee; y, en los PR, que todos los commits lleven `Signed-off-by` (DCO).
+
+## Versiones
+
+Para publicar una versión, sube `version` en `package.json` (y en `package-lock.json`) y añade su sección
+`## [x.y.z] - fecha` en `CHANGELOG.md` dentro del mismo PR. Cuando la CI termina en verde en `main`,
+[`.github/workflows/release.yml`](.github/workflows/release.yml) crea la etiqueta `vx.y.z` y la release con esa sección
+del CHANGELOG. Si la etiqueta ya existe no hace nada: nunca mueve una etiqueta publicada.

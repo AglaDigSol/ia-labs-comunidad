@@ -1,0 +1,71 @@
+name: Release
+
+# Cuando la CI termina en verde en main, etiqueta v<version de package.json> si esa etiqueta aún no existe
+# y publica la release con la sección correspondiente del CHANGELOG. Para sacar una versión nueva basta con
+# subir la versión en package.json (y en CHANGELOG.md) en un PR; nunca se mueve una etiqueta existente.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Versión de package.json
+        id: v
+        run: |
+          v=$(node -p "require('./package.json').version")
+          if ! printf '%s' "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Versión no válida: $v" >&2
+            exit 1
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notas desde CHANGELOG.md
+        if: steps.v.outputs.exists == 'false'
+        env:
+          V: ${{ steps.v.outputs.version }}
+        run: |
+          awk -v v="$V" '
+            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+            on && /^## \[/ { exit }
+            on && /^\[[^]]+\]: / { exit }
+            on { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if [ ! -s "$RUNNER_TEMP/notes.md" ]; then
+            echo "CHANGELOG.md no tiene la sección [$V]" >&2
+            exit 1
+          fi
+
+      - name: Etiqueta y release
+        if: steps.v.outputs.exists == 'false'
+        env:
+          V: ${{ steps.v.outputs.version }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$V" "$SHA" -m "v$V"
+          git push origin "refs/tags/v$V"
+          gh release create "v$V" --verify-tag --title "v$V" --notes-file "$RUNNER_TEMP/notes.md"
