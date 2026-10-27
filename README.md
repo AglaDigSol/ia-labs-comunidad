@@ -173,6 +173,90 @@ subdominio (gratis hasta 50 usuarios):
    que sigue protegido. Si la clave se filtra, genera otra y vuelve a compilar: los enlaces antiguos dejan de existir y
    cada compañero vuelve a suscribirse. Si no quieres ninguna excepción, «Descargar .ics» funciona igual.
 
+## Usar como dependencia
+
+Los laboratorios (Simbología, Lógica y Markov) y sus motores se pueden integrar en otra app de React. No hay paquete
+en npm: se instala el tarball de una etiqueta publicada y el paquete trae el código TypeScript, que compilan el Vite y
+el `tsc` de la app anfitriona.
+
+```json
+"dependencies": {
+  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.3.0"
+}
+```
+
+`npm ci --ignore-scripts` funciona con esa línea (el paquete no tiene scripts de instalación).
+
+**Dependencias compartidas.** `react`, `react-dom` y `react-router` son `peerDependencies` con versión exacta
+(19.3.1, 19.3.1 y 8.5.0): la app anfitriona las pone en sus `dependencies` y así solo hay una copia de React. Radix,
+KaTeX, zod, lucide-react, clsx, class-variance-authority y tailwind-merge son dependencias normales con versión exacta;
+si la app usa las mismas versiones, npm las comparte.
+
+**Requisitos de compilación.** TypeScript con `"moduleResolution": "bundler"`, `"jsx": "react-jsx"` y
+`"allowImportingTsExtensions": true` (los imports llevan la extensión `.ts`/`.tsx`), y Vite con
+`@vitejs/plugin-react`.
+
+**Rutas y pestañas.** `LabsRoutes` se monta dentro del router de la app, en una ruta con comodín. Los enlaces de las
+pestañas se resuelven respecto a esa ruta, así que no hace falta pasar `basePath` (existe por si se monta fuera de una
+ruta con comodín).
+
+```tsx
+import { lazy } from "react";
+import { Route, Routes } from "react-router";
+import { configureLabs, LabsRoutes, MemoryAdapter } from "ia-labs-comunidad";
+
+// Opcional: dónde guardan su estado los laboratorios (borrador de Markov y formato de las tablas).
+// Por defecto, localStorage. MemoryAdapter = no se guarda nada; o cualquier StorageAdapter propio.
+configureLabs({ storage: new MemoryAdapter() });
+
+const PythonPage = lazy(() => import("./python/PythonPage.tsx"));
+
+<Routes>
+  <Route
+    path="/laboratorios/*"
+    element={
+      <LabsRoutes
+        extraTabs={[{ id: "python", label: "Python", path: "python", element: <PythonPage /> }]}
+        renderHeaderAction={(tab) => (tab ? <MiBoton titulo={tab.label} /> : null)}
+      />
+    }
+  />
+</Routes>;
+```
+
+- `extraTabs`: pestañas propias, en ese orden, después de los tres laboratorios. `element` puede ser perezoso: hay un
+  `Suspense` alrededor. Una pestaña con el id o la ruta de un laboratorio se ignora.
+- `renderHeaderAction(tab)`: acción opcional junto al título «Laboratorios»; recibe la pestaña activa
+  (`{ id, label }`) o `null`.
+- `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el
+  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat })` guarda en localStorage con las claves
+  que elijas, por ejemplo las que ya usaba tu app.
+- También se exportan `SymbolsPage`, `LogicLabPage` y `MarkovLabPage` por separado, y los motores: símbolos
+  (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador, tabla de verdad, formas
+  canónicas, comparación, F₁, notación), Markov (matrices, evolución, sistemas, validación), racionales exactos y
+  repaso espaciado SM-2 (`review`, barajas, `dueSummary`, esquemas). Con `"sideEffects"` declarado, lo que no se usa
+  no entra en el bundle.
+- Subrutas: `ia-labs-comunidad/shared/*` y `ia-labs-comunidad/content/*` para importar un módulo concreto, y
+  `ia-labs-comunidad/tokens.css` para una app sin tokens de diseño propios.
+
+**Estilos.** Los componentes usan clases de Tailwind v4 y los tokens de color de `src/styles/tokens.css` (`bg-base`,
+`text-muted`, `border-accent`…). La app anfitriona tiene que pedir a Tailwind que lea el código del paquete,
+añadiendo a su CSS de entrada (el que hace `@import "tailwindcss"`) una línea `@source` con la ruta relativa desde ese
+fichero hasta `node_modules`. Si el CSS está en `src/styles/tokens.css`:
+
+```css
+@import "tailwindcss";
+@source "../../node_modules/ia-labs-comunidad/src";
+```
+
+Si la app no define los mismos tokens, puede importar `ia-labs-comunidad/tokens.css` como CSS de entrada (ya incluye
+`@import "tailwindcss"`) y añadirle la misma línea `@source`. Las fórmulas necesitan además
+`import "katex/dist/katex.min.css";`.
+
+La prueba [`tests/embed.test.tsx`](tests/embed.test.tsx) y el consumidor de
+[`tests/consumer/`](tests/consumer/consumer.tsx) (que la CI compila importando solo de `"ia-labs-comunidad"`) muestran
+el uso completo.
+
 ## Privacidad
 
 - Sin cookies, sin analítica, sin rastreadores y sin CDN: fuentes del sistema, KaTeX y librerías se sirven desde el

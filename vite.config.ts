@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
     build: { assetsInlineLimit: 0 },
     test: {
       environment: "node",
-      include: ["src/**/*.test.{ts,tsx}", "shared/**/*.test.ts", "content/**/*.test.ts", "tests/**/*.test.ts"],
+      include: ["src/**/*.test.{ts,tsx}", "shared/**/*.test.ts", "content/**/*.test.ts", "tests/**/*.test.{ts,tsx}"],
     },
   };
 });

@@ -1,0 +1,20 @@
+{
+  // Comprueba la API pública como la vería una app anfitriona: mismas opciones que una app Vite con
+  // React y TypeScript, e imports solo desde el nombre del paquete ("ia-labs-comunidad").
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "types": ["vite/client"]
+  },
+  "files": ["consumer.tsx", "../embed.test.tsx"]
+}

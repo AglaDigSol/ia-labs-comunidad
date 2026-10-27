@@ -23,6 +23,8 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
+      - name: Consumidor de la API (solo importa de "ia-labs-comunidad")
+        run: npm run typecheck:consumer
       - run: npx vitest run
       - run: npm run build
       - name: Tamaño de dist/

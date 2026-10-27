@@ -1,6 +1,6 @@
 {
   "name": "ia-labs-comunidad",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Laboratorios interactivos para estudiantes del Máster en IA: simbología, lógica, Markov, calendario, flashcards y calculadora de notas.",
   "license": "MIT",
@@ -9,6 +9,16 @@
     "url": "git+https://github.com/AglaDigSol/ia-labs-comunidad.git"
   },
   "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": "./src/embed/index.ts",
+    "./shared/*": "./shared/*",
+    "./content/*": "./content/*",
+    "./tokens.css": "./src/styles/tokens.css",
+    "./package.json": "./package.json"
+  },
   "engines": {
     "node": ">=22.18"
   },
@@ -18,6 +28,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "typecheck:consumer": "tsc -p tests/consumer/tsconfig.json --noEmit",
     "lint:install": "npm ci --prefix tools/lint --ignore-scripts --no-audit --no-fund",
     "lint": "tools/lint/node_modules/.bin/eslint -c tools/lint/eslint.config.js --max-warnings 0 ."
   },
@@ -32,11 +43,13 @@
     "clsx": "2.1.1",
     "katex": "0.19.0",
     "lucide-react": "1.61.0",
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
-    "react-router": "8.5.0",
     "tailwind-merge": "3.7.0",
     "zod": "4.6.7"
+  },
+  "peerDependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.5.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.3.3",
@@ -48,6 +61,9 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "jsdom": "30.1.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.5.0",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "vite": "8.3.5",

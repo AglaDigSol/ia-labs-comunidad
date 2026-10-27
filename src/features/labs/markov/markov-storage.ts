@@ -1,6 +1,8 @@
-// Local-only persistence of the Markov editor. Strings only: never Frac/BigInt.
+// Persistence of the Markov editor through labs-storage.ts (localStorage by default, or the store a
+// host app injects with configureLabs). Strings only: never Frac/BigInt.
+import { DEFAULT_LABS_KEYS, readLabItem, writeLabItem } from "../labs-storage.ts";
 
-export const MARKOV_KEY = "ia-labs.markov.v1";
+export const MARKOV_KEY = DEFAULT_LABS_KEYS.markov;
 export const SIZES = [3, 4, 5] as const;
 export type Size = (typeof SIZES)[number];
 
@@ -63,18 +65,11 @@ export function parseDraft(raw: string): MarkovDraft | null {
 }
 
 export function loadMarkovDraft(): MarkovDraft | null {
-  try {
-    const raw = localStorage.getItem(MARKOV_KEY);
-    return raw === null ? null : parseDraft(raw);
-  } catch {
-    return null;
-  }
+  const raw = readLabItem("markov");
+  return raw === null ? null : parseDraft(raw);
 }
 
 export function saveMarkovDraft(draft: MarkovDraft): void {
-  try {
-    localStorage.setItem(MARKOV_KEY, JSON.stringify(draft));
-  } catch {
-    // storage unavailable or full: the editor keeps working in memory
-  }
+  // If storage is unavailable or full, the editor keeps working in memory.
+  writeLabItem("markov", JSON.stringify(draft));
 }

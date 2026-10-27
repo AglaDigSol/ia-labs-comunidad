@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.3)
+## [Próximamente] (0.4)
 
 - Modo «Comprueba tu respuesta» también para las formas normales (FND/FNC): hoy quedan dentro de «Ver la solución
   completa», sin ejercicio propio.
@@ -14,6 +14,29 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.3.0] - 2026-10-27
+
+### Añadido
+
+- **Uso como dependencia**: entrada de biblioteca `src/embed/index.ts` y mapa `exports` en `package.json` (`.`,
+  `./shared/*`, `./content/*`, `./tokens.css`). Se instala desde el tarball de la etiqueta. Ver «Usar como
+  dependencia» en el README.
+- `LabsRoutes` acepta `extraTabs` (pestañas propias de la app anfitriona tras los tres laboratorios),
+  `renderHeaderAction` y `basePath`. Las pestañas se resuelven respecto a la ruta donde está montada el área.
+- `configureLabs({ storage })`: el borrador de Markov y el formato de las tablas de verdad pasan por un
+  `StorageAdapter` que puede inyectar la app anfitriona (por defecto, localStorage con las mismas claves de siempre).
+  `createLocalStorageLabsAdapter` permite elegir las claves.
+- Se exportan las páginas (`SymbolsPage`, `LogicLabPage`, `MarkovLabPage`) y los motores de símbolos, lógica, Markov,
+  racionales y SM-2.
+- Prueba de consumidor (`tests/embed.test.tsx`) y paso de CI que compila un consumidor mínimo importando solo de
+  `"ia-labs-comunidad"`.
+
+### Cambiado
+
+- `react`, `react-dom` y `react-router` pasan a `peerDependencies` (versión exacta) para que la app anfitriona tenga
+  una sola copia de React; siguen en `devDependencies` para la app independiente.
+- `package.json` declara `"sideEffects": ["*.css"]` para que el bundler descarte lo que no se usa.
 
 ## [0.2.0] - 2026-10-24
 
@@ -48,5 +71,6 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.2.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.3.0
 [0.2.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.2.0

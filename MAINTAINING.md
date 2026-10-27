@@ -29,3 +29,13 @@ Para publicar una versión, sube `version` en `package.json` (y en `package-lock
 `## [x.y.z] - fecha` en `CHANGELOG.md` dentro del mismo PR. Cuando la CI termina en verde en `main`,
 [`.github/workflows/release.yml`](.github/workflows/release.yml) crea la etiqueta `vx.y.z` y la release con esa sección
 del CHANGELOG. Si la etiqueta ya existe no hace nada: nunca mueve una etiqueta publicada.
+
+### API de la biblioteca
+
+Otras apps instalan este repositorio como dependencia desde el tarball de una etiqueta (ver «Usar como dependencia» en
+el README) e importan de [`src/embed/index.ts`](src/embed/index.ts) y de las subrutas de `exports`. Mientras el
+proyecto esté en 0.x, un cambio incompatible en esa API (quitar o renombrar una exportación, cambiar las props de
+`LabsRoutes` o la firma de `configureLabs`, mover un fichero publicado en `shared/*` o `content/*`, o cambiar las
+versiones de las `peerDependencies`) exige subir la versión **menor** (0.3.x → 0.4.0) y anotarlo en el CHANGELOG; los
+cambios compatibles pueden ir en un parche. `npm run typecheck:consumer` y `tests/embed.test.tsx` fallan si la API
+pública se rompe sin querer.

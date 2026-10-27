@@ -29,20 +29,16 @@ import { NormalForms } from "./NormalForms.tsx";
 import { TruthPractice } from "./TruthPractice.tsx";
 import { TruthTable, type TruthFormat } from "./TruthTable.tsx";
 import { SolutionGate } from "../../../components/practice/SolutionGate.tsx";
+import { readLabItem, writeLabItem } from "../labs-storage.ts";
 
-const FORMAT_KEY = "ia-labs.logic-format";
 const EXAMPLES = ["p → q", "¬(p ∧ q)", "(p → q) ↔ (¬q → ¬p)"];
 const DEBOUNCE_MS = 400;
 
 function readFormat(vParam: string | null): TruthFormat {
   if (vParam === "vf") return "VF";
   if (vParam === "01") return "10";
-  try {
-    const stored = localStorage.getItem(FORMAT_KEY);
-    if (stored === "10" || stored === "VF") return stored;
-  } catch {
-    // storage unavailable: use the default
-  }
+  const stored = readLabItem("logicFormat");
+  if (stored === "10" || stored === "VF") return stored;
   return NOTATION.truthValues;
 }
 
@@ -246,11 +242,7 @@ export function LogicLabPage() {
   const onFormat = (v: string) => {
     if (v !== "10" && v !== "VF") return;
     setFormat(v);
-    try {
-      localStorage.setItem(FORMAT_KEY, v);
-    } catch {
-      // ignore
-    }
+    writeLabItem("logicFormat", v);
   };
   const onMode = (v: string) => {
     if (v !== "una" && v !== "comparar") return;
