@@ -5,7 +5,10 @@ import { COURSES } from "../content/courses/index.ts";
 import { NOTATION } from "../content/notation/index.ts";
 import { SYMBOL_PACKS } from "../content/symbols/index.ts";
 import { BOOLE_PACK } from "../content/boole/practica.ts";
-import { BoolePackSchema } from "../shared/boole/schema.ts";
+import { CIRCUIT_PACK } from "../content/boole/circuitos.ts";
+import { BoolePackSchema, CircuitPackSchema } from "../shared/boole/schema.ts";
+import { circuitTruthTable, circuitToExpression, evaluateCircuit } from "../shared/boole/circuit.ts";
+import { evalBoole } from "../shared/boole/expr.ts";
 import { booleVars, literalCount, parseBoole } from "../shared/boole/expr.ts";
 import { minimizeBoole } from "../shared/boole/minimize.ts";
 import { CourseSchema } from "../shared/courses/types.ts";
@@ -95,5 +98,42 @@ describe("content/boole", () => {
   it("el esquema rechaza una estructura sin descripción", () => {
     const bad = { ...BOOLE_PACK, presets: { ...BOOLE_PACK.presets, dos: { name: "{0, 1}", description: "" } } };
     expect(BoolePackSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe("content/boole/circuitos", () => {
+  it("circuitos.ts cumple CircuitPackSchema (sin ciclos, todo definido, una salida, entre 2 y 6 puertas)", () => {
+    expect(issues(CircuitPackSchema.safeParse(CIRCUIT_PACK))).toEqual([]);
+    expect(CIRCUIT_PACK.circuits.length).toBeGreaterThanOrEqual(8);
+  });
+
+  it("es de elaboración propia y con licencia CC BY 4.0", () => {
+    expect(CIRCUIT_PACK.meta.source).toBe("Elaboración propia");
+    expect(CIRCUIT_PACK.meta.license).toBe("CC-BY-4.0");
+  });
+
+  for (const c of CIRCUIT_PACK.circuits) {
+    it(`${c.id}: «table» coincide con la evaluación del circuito y con su expresión`, () => {
+      const n = c.inputs.length;
+      const fromCircuit = circuitTruthTable(c).map((b) => (b ? "1" : "0")).join("");
+      const e = circuitToExpression(c);
+      const fromExpr = Array.from({ length: 1 << n }, (_, m) => {
+        const env = Object.fromEntries(c.inputs.map((x, i) => [x, ((m >> (n - 1 - i)) & 1) === 1]));
+        expect(evaluateCircuit(c, env).output).toBe(evalBoole(e, env));
+        return evalBoole(e, env) ? "1" : "0";
+      }).join("");
+      expect(fromCircuit).toBe(c.table);
+      expect(fromExpr).toBe(c.table);
+    });
+  }
+
+  it("el esquema rechaza un circuito con un ciclo, una entrada sin definir o una tabla mal medida", () => {
+    const base = CIRCUIT_PACK.circuits[0]!;
+    const cyclic = { ...base, gates: base.gates.map((g, i) => (i === 0 ? { ...g, inputs: [base.output] } : g)) };
+    expect(CircuitPackSchema.safeParse({ ...CIRCUIT_PACK, circuits: [cyclic, ...CIRCUIT_PACK.circuits.slice(1)] }).success).toBe(false);
+    const undef = { ...base, gates: base.gates.map((g, i) => (i === 0 ? { ...g, inputs: ["q"] } : g)) };
+    expect(CircuitPackSchema.safeParse({ ...CIRCUIT_PACK, circuits: [undef, ...CIRCUIT_PACK.circuits.slice(1)] }).success).toBe(false);
+    const short = { ...base, table: "01" };
+    expect(CircuitPackSchema.safeParse({ ...CIRCUIT_PACK, circuits: [short, ...CIRCUIT_PACK.circuits.slice(1)] }).success).toBe(false);
   });
 });

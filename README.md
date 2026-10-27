@@ -17,7 +17,7 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Simbología | Diccionario de símbolos con búsqueda, fichas KaTeX, «lectura en clase» con voz (Web Speech) y el equivalente en Python/NumPy como texto. | siempre activo |
 | Lógica | Tablas de verdad, comparar dos fórmulas, FND/FNC y el espacio F₁. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
-| Álgebra de Boole | ¿Es un álgebra de Boole? (axiomas B1–B5 sobre estructuras finitas, tablas y diagrama de Hasse) y simplificación paso a paso con leyes, comprobada en cada línea. ⊕ es la suma, no el XOR. | siempre activo |
+| Álgebra de Boole | ¿Es un álgebra de Boole? (axiomas B1–B5 sobre estructuras finitas, tablas y diagrama de Hasse), simplificación paso a paso con leyes, comprobada en cada línea, puertas y circuitos (circuito → función, función → circuito con solo NAND o solo NOR, y las siete puertas) y los espacios F₁ y F₂. ⊕ es la suma, no el XOR (que se escribe ⊻). | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
 | Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
 | Calculadora de notas | Nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
@@ -35,9 +35,11 @@ Si pones uno a `false`, desaparece de la navegación y de las rutas, y su códig
 ### Modo «Comprueba tu respuesta»
 
 Los laboratorios están pensados para **comprobar y entrenar, no para resolver**. Donde la app calcula un resultado
-(tabla de verdad, clasificación, equivalencia, evolución de Markov, π, u₀, axiomas B1–B5, simplificaciones), la vista por defecto te pide tu resultado,
+(tabla de verdad, clasificación, equivalencia, evolución de Markov, π, u₀, axiomas B1–B5, simplificaciones, la función de
+un circuito, las tablas de F₁ o una expresión para una función de F₂), la vista por defecto te pide tu resultado,
 lo corrige y te da pistas paso a paso. La solución completa queda detrás de «Ver la solución completa», con un aviso
-de integridad. El explorador de F₁ ya funcionaba así (rellenas la tabla y pulsas «Comprobar»).
+de integridad. El explorador de F₁ ya funcionaba así (rellenas la tabla y pulsas «Comprobar»). Los visualizadores, como
+«Función → circuito», enseñan el resultado directamente porque no hay nada que adivinar.
 
 ## Ejecutar en local
 
@@ -182,7 +184,7 @@ el `tsc` de la app anfitriona.
 
 ```json
 "dependencies": {
-  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.4.0"
+  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.5.0"
 }
 ```
 
@@ -235,7 +237,9 @@ const PythonPage = lazy(() => import("./python/PythonPage.tsx"));
 - También se exportan `SymbolsPage`, `LogicLabPage`, `MarkovLabPage` y `BooleLabPage` por separado, y los motores:
   símbolos (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador, tabla de verdad,
   formas canónicas, comparación, F₁, notación), álgebra de Boole (`parseBoole`, `checkAllAxioms`, `hasse`,
-  `checkStep`, `applicableLaws`, `minimizeBoole`…), Markov (matrices, evolución, sistemas, validación), racionales exactos y
+  `checkStep`, `applicableLaws`, `minimizeBoole`, circuitos con `validateNetlist`, `evaluateCircuit`,
+  `circuitToExpression`, `circuitFromExpression`, `toNand`, `toNor` y `layoutCircuit`, y Fₙ con `enumerateFn`,
+  `fnStructure`, `fnName` y `listFn`…), Markov (matrices, evolución, sistemas, validación), racionales exactos y
   repaso espaciado SM-2 (`review`, barajas, `dueSummary`, esquemas). Con `"sideEffects"` declarado, lo que no se usa
   no entra en el bundle.
 - Subrutas: `ia-labs-comunidad/shared/*` y `ia-labs-comunidad/content/*` para importar un módulo concreto, y
@@ -272,7 +276,7 @@ el uso completo.
 ## Contenido y licencias
 
 - Código: [MIT](LICENSE).
-- Contenido de [`content/`](content) (símbolos, notación, ejercicios de Boole, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
+- Contenido de [`content/`](content) (símbolos, notación, ejercicios y circuitos de Boole, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
 - Cada paquete de contenido declara materia, tema, nivel, idioma, autoría, licencia y fuente, y se valida con zod en los
   tests. Los pesos y las fechas se citan de las guías docentes como dato, sin copiar texto.
 - No se incluye material docente de la VIU (diapositivas, guías, enunciados ni soluciones).

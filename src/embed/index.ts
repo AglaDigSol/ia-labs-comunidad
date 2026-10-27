@@ -51,6 +51,8 @@ export * from "../../shared/boole/rewrite.ts";
 export * from "../../shared/boole/minimize.ts";
 export * from "../../shared/boole/presets.ts";
 export * from "../../shared/boole/schema.ts";
+export * from "../../shared/boole/circuit.ts";
+export * from "../../shared/boole/fn.ts";
 
 export * from "../../shared/rational.ts";
 
@@ -63,3 +65,4 @@ export * from "../../shared/srs/types.ts";
 export { SYMBOL_PACKS, type SymbolPack } from "../../content/symbols/index.ts";
 export { NOTATION } from "../../content/notation/index.ts";
 export { BOOLE_PACK } from "../../content/boole/practica.ts";
+export { CIRCUIT_PACK } from "../../content/boole/circuitos.ts";

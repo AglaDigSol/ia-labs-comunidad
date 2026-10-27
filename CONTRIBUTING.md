@@ -63,6 +63,15 @@ Edita `content/calendario/2026-27.ts`. Las horas son hora de pared de España (`
 `franja` solo para prácticas o exámenes con varias opciones, y sube `revision` si cambias la hora de un evento que ya se
 publicó (los calendarios suscritos lo actualizarán).
 
+### Un circuito (álgebra de Boole)
+
+1. Abre `content/boole/circuitos.ts` y añade un objeto con `id`, `title`, `level`, `inputs` (de 2 a 4 variables de una
+   letra), `gates` (de 2 a 6 puertas `{ id: "g1", type, inputs }`, con `type` = `or`, `and`, `xor`, `not`, `nor`,
+   `nand` o `xnor`), `output` (la puerta que da f) y `table` (la columna f de la tabla de verdad, de `00…0` a `11…1`).
+2. Dibújalo tú: nada de circuitos copiados de diapositivas, apuntes ni actividades.
+3. Ejecuta `npx vitest run tests/content.test.ts`: comprueba que no hay ciclos, que todo está definido y que `table`
+   coincide con lo que calcula el circuito.
+
 ### Una plantilla nueva de laboratorio o un módulo
 
 Los módulos se registran en `src/config.ts` (id, ruta, navegación, componente perezoso y contenido que usa). Copia la

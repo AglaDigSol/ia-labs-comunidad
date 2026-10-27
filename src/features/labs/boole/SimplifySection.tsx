@@ -13,7 +13,7 @@ import {
 } from "../../../../shared/boole/expr.ts";
 import { LAW_BY_ID, LAWS, isLawId, type LawId } from "../../../../shared/boole/laws.ts";
 import { minimizeBoole } from "../../../../shared/boole/minimize.ts";
-import { applicableLaws, checkStep } from "../../../../shared/boole/rewrite.ts";
+import { applicableLaws, checkStep, trivialStep, type TrivialStep } from "../../../../shared/boole/rewrite.ts";
 import { MAX_VARIABLES } from "../../../../shared/logic/truth-table.ts";
 import type { ParseError } from "../../../../shared/logic/parser.ts";
 import { BOOLE_PACK } from "../../../../content/boole/practica.ts";
@@ -68,6 +68,26 @@ function rebuild(start: string | null, steps: SavedStep[]): Line[] | null {
 }
 
 type Feedback = { tone: "ok" | "warn" | "crit"; text: string } | null;
+
+/** «Casi: …»: lo que aún se puede quitar de la expresión sin pensar. */
+function trivialStepText(t: TrivialStep): string {
+  switch (t.law) {
+    case "B3":
+      return t.op === "or"
+        ? "Casi: aún puedes quitar el 0 con B3 (identidad): a ⊕ 0 = a."
+        : "Casi: aún puedes quitar el 1 con B3 (identidad): 1 ⊙ a = a.";
+    case "dominacion":
+      return t.op === "or"
+        ? "Casi: aún puedes simplificar la suma con un 1 por dominación: a ⊕ 1 = 1."
+        : "Casi: aún puedes simplificar el producto con un 0 por dominación: a ⊙ 0 = 0.";
+    case "idempotencia":
+      return `Casi: ${booleToPlain(t.term)} aparece repetido; quita la copia con la idempotencia (${t.op === "or" ? "a ⊕ a = a" : "a ⊙ a = a"}).`;
+    case "involucion":
+      return "Casi: aún puedes quitar un doble complemento: (a′)′ = a.";
+    case "B5":
+      return `Casi: aún puedes cambiar ${t.constant}′ por ${t.constant === 0 ? 1 : 0} (B5, complementación).`;
+  }
+}
 
 export function SimplifySection({
   start,
@@ -188,8 +208,11 @@ export function SimplifySection({
       return;
     }
     const mine = literalCount(current);
+    const pending = mine <= m.minLiterals ? trivialStep(current) : null;
     setFinish(
-      mine <= m.minLiterals
+      pending
+        ? { tone: "warn", text: trivialStepText(pending) }
+        : mine <= m.minLiterals
         ? {
             tone: "ok",
             text: `¡Bien! Tu expresión tiene ${mine} ${mine === 1 ? "literal" : "literales"}: no hay una suma de productos ni un producto de sumas con menos.`,

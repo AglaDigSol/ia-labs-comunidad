@@ -1,5 +1,6 @@
 // Estructuras predefinidas del verificador. Las descripciones viven en content/boole/practica.ts.
 import { cube, divisors, MAX_ELEMENTS, powerSet, product, twoElement, type FiniteStructure } from "./algebra.ts";
+import { fnStructure } from "./fn.ts";
 
 export const PRESET_IDS = [
   "dos",
@@ -12,6 +13,7 @@ export const PRESET_IDS = [
   "div-8",
   "div-12",
   "div-30",
+  "f2",
 ] as const;
 export type PresetId = (typeof PRESET_IDS)[number];
 
@@ -45,6 +47,8 @@ export function presetStructure(id: PresetId): FiniteStructure {
       return divisors(12);
     case "div-30":
       return divisors(30);
+    case "f2":
+      return fnStructure(2);
   }
 }
 

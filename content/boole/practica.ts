@@ -77,6 +77,11 @@ export const BOOLE_PACK: BoolePack = {
       description:
         "Los ocho divisores de 30 = 2 · 3 · 5 con mcm, mcd y x′ = 30 / x. El 0 es 1, el 1 es 30, y su diagrama de Hasse vuelve a ser un cubo.",
     },
+    f2: {
+      name: "F₂ (funciones de dos variables)",
+      description:
+        "Las 16 funciones f(x, y), escritas con su vector de verdad (f(0,0), f(0,1), f(1,0), f(1,1)) y operadas punto a punto. El 0 es 0000 y el 1 es 1111; es isomorfa a {0, 1}⁴.",
+    },
   },
   product:
     "El producto B₁ × B₂ toma pares (x, y) y opera cada componente en su estructura. Elige dos estructuras: si el producto pasa de 16 elementos, no se construye.",

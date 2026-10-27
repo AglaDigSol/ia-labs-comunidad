@@ -93,22 +93,40 @@ export type BooleParseResult =
   | { ok: true; expr: BExpr; node: Node }
   | { ok: false; error: ParseError };
 
-/** Convierte un AST de lógica en una expresión de Boole, o null si usa ⊻, → o ↔. */
-export function fromLogicNode(node: Node): BExpr | null {
+/** Opciones de lectura: con `xor`, a ⊻ b se acepta y se desarrolla como a ⊙ b′ ⊕ a′ ⊙ b. */
+export type BooleReadOptions = { xor?: boolean };
+
+/**
+ * Convierte un AST de lógica en una expresión de Boole, o null si usa → o ↔ (o ⊻, salvo con
+ * `{ xor: true }`, que lo desarrolla).
+ */
+export function fromLogicNode(node: Node, options: BooleReadOptions = {}): BExpr | null {
   switch (node.kind) {
     case "var":
       return bvar(node.name);
     case "const":
       return bconst(node.value ? 1 : 0);
     case "not": {
-      const a = fromLogicNode(node.arg);
+      const a = fromLogicNode(node.arg, options);
       return a ? bnot(a) : null;
     }
     case "and":
-    case "or": {
-      const l = fromLogicNode(node.left);
-      const r = fromLogicNode(node.right);
-      return l && r ? { k: node.kind, args: [l, r] } : null;
+    case "or":
+    case "xor": {
+      if (node.kind === "xor" && !options.xor) return null;
+      const l = fromLogicNode(node.left, options);
+      const r = fromLogicNode(node.right, options);
+      if (!l || !r) return null;
+      if (node.kind === "xor") {
+        return {
+          k: "or",
+          args: [
+            { k: "and", args: [l, bnot(r)] },
+            { k: "and", args: [bnot(l), r] },
+          ],
+        };
+      }
+      return { k: node.kind, args: [l, r] };
     }
     default:
       return null;
@@ -132,20 +150,25 @@ export function toLogicNode(e: BExpr): Node {
   }
 }
 
-/** Lee una expresión de Boole: ⊕/+/∨ suma, ⊙/·/∧/yuxtaposición producto, ′/'/¬/~ complemento. */
-export function parseBoole(input: string): BooleParseResult {
+/**
+ * Lee una expresión de Boole: ⊕/+/∨ suma, ⊙/·/∧/yuxtaposición producto, ′/'/¬/~ complemento. Con
+ * `{ xor: true }` también acepta ⊻ (o ^), que se desarrolla con ⊕, ⊙ y ′.
+ */
+export function parseBoole(input: string, options: BooleReadOptions = {}): BooleParseResult {
   const r = parseFormula(input, BOOLE_PARSE_OPTIONS);
   if (!r.ok) return r;
-  const expr = fromLogicNode(r.ast);
+  const expr = fromLogicNode(r.ast, options);
   if (!expr) {
-    const at = Math.max(0, input.search(/[⊻^→⇒↔⇔≡⊃⟶⟷]|->|<->|=>|<=>|\bxor\b/i));
+    const at = Math.max(0, input.search(options.xor ? /[→⇒↔⇔≡⊃⟶⟷]|->|<->|=>|<=>/ : /[⊻^→⇒↔⇔≡⊃⟶⟷]|->|<->|=>|<=>|\bxor\b/i));
     return {
       ok: false,
       error: {
         code: "unexpected-token",
         start: at,
         end: at + 1,
-        message: "En este laboratorio solo se usan ⊕ (suma), ⊙ (producto), ′ (complemento), 0 y 1.",
+        message: options.xor
+          ? "Aquí se usan ⊕ (suma), ⊙ (producto), ′ (complemento), ⊻ (XOR), 0 y 1."
+          : "En este laboratorio solo se usan ⊕ (suma), ⊙ (producto), ′ (complemento), 0 y 1.",
       },
     };
   }

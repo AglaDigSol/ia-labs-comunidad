@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.5)
+## [Próximamente] (0.6)
 
 - Modo «Comprueba tu respuesta» también para las formas normales (FND/FNC): hoy quedan dentro de «Ver la solución
   completa», sin ejercicio propio.
@@ -14,6 +14,58 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.5.0] - 2026-10-27
+
+### Añadido
+
+- **Álgebra de Boole · Puertas y circuitos** (sección nueva del laboratorio, `?s=circuitos`):
+  - **Circuito → función** («Comprueba tu respuesta»): la app dibuja uno de 8 circuitos originales de 2 a 6 puertas y
+    escribes la función f(x, y, z…) con ⊕, ⊙, ′ y, si quieres, ⊻. Se comprueba por tabla de verdad y, si no coincide,
+    se explica la primera fila en la que difieren, con una pista opcional que da el valor de cada cable en esa fila.
+    Los cables intermedios llevan etiquetas A, B, C… que puedes usar en tu respuesta o comprobar una a una. La lectura
+    del circuito y su forma mínima quedan detrás de «Ver la solución completa».
+  - **Función → circuito** (visualizador): escribes una expresión y la app dibuja el circuito que sale de su árbol. Con
+    «Solo NAND» o «Solo NOR» lo redibuja con una sola puerta universal y comprueba por tabla de verdad que calcula lo
+    mismo.
+  - **Las siete puertas**: OR, AND, XOR, NOT, NOR, NAND y XNOR con su símbolo ANSI (SVG propio que sigue al tema), su
+    función en la notación de clase (XOR como ⊻ y XNOR como (⊻)′, también desarrolladas) y su tabla.
+  - Los circuitos se dibujan por capas, con puntos de paso para los cables largos y un canal por señal entre columnas;
+    si no caben, se desplazan dentro de su recuadro. Cada SVG lleva `role="img"` y un `aria-label` que lo describe como
+    expresión.
+- **Álgebra de Boole · Funciones Fₙ** (`?s=funciones`):
+  - F₁ con los nombres de `content/notation` (Id, f, g, h): rellenas las tablas de ⊕ y ⊙ y la fila de ′ y la app las
+    corrige; las tablas completas quedan detrás del aviso.
+  - F₂: práctica «escribe una expresión» para un vector de verdad al azar (con la primera fila distinta si falla), la
+    lista de las 16 funciones con su suma de productos mínima y su nombre habitual (constantes, proyecciones,
+    complementos, OR, AND, XOR, XNOR, NAND, NOR, implicaciones y sus negaciones), y un botón que abre F₂ en el
+    verificador.
+  - Estructura predefinida **F₂** en «¿Es un álgebra de Boole?»: los 16 vectores de verdad con ⊕, ⊙ y ′ punto a punto
+    (isomorfa a {0, 1}⁴), con su diagrama de Hasse de 16 elementos.
+- Motores en `shared/boole/circuit.ts` (netlist y `validateNetlist` sin ciclos, con todo definido y una salida;
+  `evaluateCircuit`, `circuitToExpression`, `circuitToPlain`/`circuitToTex` con ⊻, `circuitFromExpression`, `toNand`,
+  `toNor`, `circuitLayers` y `layoutCircuit`) y `shared/boole/fn.ts` (`enumerateFn`, `fnOr`, `fnAnd`, `fnComp`,
+  `fnExpression`, `fnName`, `listFn` y `fnStructure`), con sus tests, exportados también desde la entrada de la
+  biblioteca junto con `CIRCUIT_PACK`.
+- Contenido `content/boole/circuitos.ts` (CC BY 4.0, elaboración propia) con un esquema zod de netlist
+  (`CircuitPackSchema`) que comprueba también que no hay ciclos y que la tabla de verdad de cada circuito coincide.
+- `parseBoole(input, { xor: true })` acepta ⊻ (y ^) y lo desarrolla como a ⊙ b′ ⊕ a′ ⊙ b. Sin opciones se comporta
+  como antes.
+
+### Cambiado
+
+- El selector de secciones del laboratorio de Boole tiene cuatro opciones y se reparte en dos filas en pantallas
+  estrechas.
+- El borrador de Boole (misma clave, `ia-labs.boole.v1`) pasa a la versión 2 del esquema: guarda también el circuito
+  elegido, la expresión y el modo del visualizador y la función de F₂ que se practica. Los borradores de la versión 1
+  se siguen leyendo y se completan con los valores por defecto.
+- `PRESET_IDS` incluye `f2`, así que `BoolePack.presets` necesita su descripción.
+
+### Corregido
+
+- «Simplificar paso a paso»: «He terminado» ya no felicita si la expresión tiene el mínimo de literales pero aún
+  sobra algo trivial (x ⊙ y ⊕ 0, x ⊙ 1, x ⊕ 1, x ⊙ 0, x ⊕ x, (x′)′ o 0′). Ahora contesta, por ejemplo, «Casi: aún
+  puedes quitar el 0 con B3 (identidad): a ⊕ 0 = a.».
 
 ## [0.4.0] - 2026-10-27
 
@@ -115,7 +167,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.4.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.5.0
 [0.4.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.4.0
 [0.3.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.3.0
 [0.2.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.2.0

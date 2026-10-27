@@ -6,7 +6,13 @@ import {
   ALL_SYMBOLS,
   BOOLE_PACK,
   BooleLabPage,
+  CIRCUIT_PACK,
   checkAllAxioms,
+  circuitFromExpression,
+  circuitsEquivalent,
+  fnStructure,
+  listFn,
+  toNand,
   checkStep,
   divisors,
   LAWS,
@@ -26,6 +32,8 @@ import {
   type BExpr,
   type CardView,
   type LawId,
+  type Netlist,
+  type TruthVector,
   type LabsExtraTab,
   type StorageAdapter,
   type SymbolEntry,
@@ -66,3 +74,8 @@ export const firstLaw: LawId | undefined = LAWS[0]?.id;
 const parsed = parseBoole(BOOLE_PACK.practice[0]?.expr ?? "x");
 export const start: BExpr | null = parsed.ok ? parsed.expr : null;
 export const step = start ? checkStep(start, start, "B1") : null;
+export const nand: Netlist = toNand(CIRCUIT_PACK.circuits[0]!);
+export const sameNand: boolean = circuitsEquivalent(CIRCUIT_PACK.circuits[0]!, nand);
+export const built: Netlist | null = start ? circuitFromExpression(start) : null;
+export const f2Size: number = fnStructure(2).elements.length;
+export const vectors: TruthVector[] = listFn(2).map((f) => f.vector);

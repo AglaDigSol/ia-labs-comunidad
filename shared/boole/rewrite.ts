@@ -99,3 +99,44 @@ export function applicableLaws(e: BExpr): LawId[] {
     (id) => id !== "B1" && id !== "B2" && rewritesOnce(e, id).some((r) => booleKey(r) !== k),
   );
 }
+
+/** Algo que aún se puede quitar sin pensar: una constante neutra o dominante, un término repetido… */
+export type TrivialStep =
+  | { law: "B3"; constant: 0 | 1; op: "or" | "and" }
+  | { law: "dominacion"; constant: 0 | 1; op: "or" | "and" }
+  | { law: "idempotencia"; op: "or" | "and"; term: BExpr }
+  | { law: "involucion" }
+  | { law: "B5"; constant: 0 | 1 };
+
+/**
+ * Busca (en preorden) la primera parte trivialmente eliminable de la expresión: a ⊕ 0 o a ⊙ 1
+ * (B3, identidad), a ⊕ 1 o a ⊙ 0 (dominación), a ⊕ a o a ⊙ a (idempotencia), (a′)′ (doble
+ * complemento) o 0′ y 1′ (B5). «He terminado» la usa antes de felicitar: una expresión como
+ * x ⊙ y ⊕ 0 tiene ya el mínimo de literales, pero aún no está simplificada.
+ */
+export function trivialStep(e: BExpr): TrivialStep | null {
+  const x = normalizeBoole(e);
+  const visit = (t: BExpr): TrivialStep | null => {
+    if (t.k === "not") {
+      if (t.a.k === "not") return { law: "involucion" };
+      if (t.a.k === "const") return { law: "B5", constant: t.a.v };
+      return visit(t.a);
+    }
+    if (t.k !== "or" && t.k !== "and") return null;
+    const neutral = t.k === "or" ? 0 : 1;
+    for (const a of t.args) {
+      if (a.k === "const") {
+        return a.v === neutral ? { law: "B3", constant: a.v, op: t.k } : { law: "dominacion", constant: a.v, op: t.k };
+      }
+    }
+    const keys = t.args.map(booleKey);
+    const dup = keys.findIndex((k, i) => keys.indexOf(k) !== i);
+    if (dup >= 0) return { law: "idempotencia", op: t.k, term: t.args[dup]! };
+    for (const a of t.args) {
+      const r = visit(a);
+      if (r) return r;
+    }
+    return null;
+  };
+  return visit(x);
+}

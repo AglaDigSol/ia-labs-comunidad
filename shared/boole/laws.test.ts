@@ -3,7 +3,7 @@ import { parseFormula } from "../logic/parser.ts";
 import { toPlain } from "../logic/ast.ts";
 import { booleToPlain, booleToTex, literalCount, parseBoole, sameBoole, type BExpr } from "./expr.ts";
 import { LAWS, type LawId } from "./laws.ts";
-import { applicableLaws, checkStep, lawJustifies, lawsJustifying } from "./rewrite.ts";
+import { applicableLaws, checkStep, lawJustifies, lawsJustifying, trivialStep } from "./rewrite.ts";
 
 const p = (s: string): BExpr => {
   const r = parseBoole(s);
@@ -170,5 +170,29 @@ describe("pistas: leyes aplicables", () => {
   });
   it("una variable sola no admite ninguna", () => {
     expect(applicableLaws(p("x"))).toEqual([]);
+  });
+});
+
+describe("trivialStep («He terminado» antes de felicitar)", () => {
+  it("encuentra constantes neutras, dominantes, términos repetidos y dobles complementos", () => {
+    expect(trivialStep(p("x ⊙ y ⊕ 0"))).toEqual({ law: "B3", constant: 0, op: "or" });
+    expect(trivialStep(p("x ⊙ 1 ⊕ y"))).toEqual({ law: "B3", constant: 1, op: "and" });
+    expect(trivialStep(p("x ⊙ y ⊕ 1"))).toEqual({ law: "dominacion", constant: 1, op: "or" });
+    expect(trivialStep(p("(x ⊕ y) ⊙ 0"))).toEqual({ law: "dominacion", constant: 0, op: "and" });
+    expect(trivialStep(p("x ⊙ y ⊕ x ⊙ y"))).toMatchObject({ law: "idempotencia", op: "or" });
+    expect(trivialStep(p("z ⊕ x ⊙ x"))).toMatchObject({ law: "idempotencia", op: "and" });
+    expect(trivialStep(p("(x′)′ ⊙ y"))).toEqual({ law: "involucion" });
+    expect(trivialStep(p("x ⊙ 0′"))).toEqual({ law: "B5", constant: 0 });
+  });
+
+  it("coincide con las leyes que applicableLaws ve aplicables", () => {
+    for (const s of ["x ⊙ y ⊕ 0", "x ⊙ y ⊕ 1", "x ⊕ x", "x ⊙ 1"]) {
+      const t = trivialStep(p(s))!;
+      expect(applicableLaws(p(s))).toContain(t.law);
+    }
+  });
+
+  it("nada que quitar en una expresión ya limpia", () => {
+    for (const s of ["x ⊙ y", "x′ ⊙ z ⊕ y ⊙ z", "(x ⊕ y)′", "0", "1", "x"]) expect(trivialStep(p(s)), s).toBeNull();
   });
 });
