@@ -6,8 +6,15 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   ALL_SYMBOLS,
+  BOOLE_PACK,
   buildTable,
   configureLabs,
+  createLocalStorageLabsAdapter,
+  DEFAULT_LABS_KEYS,
+  divisors,
+  isBooleanAlgebra,
+  minimizeBoole,
+  parseBoole,
   evolve,
   frac,
   LabsRoutes,
@@ -63,9 +70,9 @@ function renderAt(url: string, mount = "/laboratorios", onHeader?: (a: LabsActiv
 const tabNames = () => screen.getAllByRole("tab").map((t) => t.textContent);
 
 describe("LabsRoutes como dependencia", () => {
-  it("muestra los tres laboratorios y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
+  it("muestra los cuatro laboratorios y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
     renderAt("/laboratorios/python");
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov", "Álgebra de Boole", "Python"]);
     expect(await screen.findByText("Zona de Python del anfitrión")).toBeTruthy();
     const tab = screen.getByRole("tab", { name: "Python" });
     expect(tab.getAttribute("aria-selected")).toBe("true");
@@ -93,7 +100,31 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov", "Álgebra de Boole"]);
+  });
+
+  it("una pestaña extra tampoco puede ocupar la ruta de Boole", () => {
+    render(
+      <MemoryRouter initialEntries={["/laboratorios/simbolos"]}>
+        <Routes>
+          <Route
+            path="/laboratorios/*"
+            element={<LabsRoutes extraTabs={[{ id: "x", label: "X", path: "boole", element: <p>X</p> }, python]} />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov", "Álgebra de Boole", "Python"]);
+  });
+
+  it("abre el laboratorio de Boole y guarda su borrador en el almacén del anfitrión", async () => {
+    renderAt("/laboratorios/boole");
+    expect(await screen.findByRole("heading", { level: 1, name: "Álgebra de Boole" }, { timeout: 5000 })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Álgebra de Boole" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByTestId("header-action").textContent).toBe("Álgebra de Boole");
+    fireEvent.change(screen.getByLabelText("Estructura (B, ⊕, ⊙, ′, 0, 1)"), { target: { value: "div-12" } });
+    await waitFor(() => expect(JSON.parse(String(storage.load()?.boole)).kind).toBe("div-12"));
+    expect(localStorage.length).toBe(0);
   });
 
   it("guarda el estado en el almacén que inyecta el anfitrión, no en localStorage", async () => {
@@ -111,5 +142,22 @@ describe("LabsRoutes como dependencia", () => {
     expect(table?.ok && table.rows).toHaveLength(4);
     expect(evolve([[frac(1n)]], [frac(1n)], 1).vectors).toHaveLength(2);
     expect(review(null, 5, "2026-10-27").n).toBe(1);
+    expect(isBooleanAlgebra(divisors(30))).toBe(true);
+    expect(isBooleanAlgebra(divisors(12))).toBe(false);
+    const e = parseBoole("x ⊕ x ⊙ y");
+    const m = e.ok ? minimizeBoole(e.expr) : null;
+    expect(m?.ok && m.minLiterals).toBe(1);
+    expect(BOOLE_PACK.practice.length).toBeGreaterThanOrEqual(12);
+  });
+
+  it("createLocalStorageLabsAdapter: la clave de Boole tiene un valor por defecto y se puede cambiar", () => {
+    const def = createLocalStorageLabsAdapter({ markov: "host.markov" });
+    def.save({ boole: "{}" });
+    expect(localStorage.getItem(DEFAULT_LABS_KEYS.boole)).toBe("{}");
+    expect(DEFAULT_LABS_KEYS.boole).toBe("ia-labs.boole.v1");
+    const own = createLocalStorageLabsAdapter({ boole: "host.boole" });
+    own.save({ boole: "[]" });
+    expect(localStorage.getItem("host.boole")).toBe("[]");
+    expect(own.load()?.boole).toBe("[]");
   });
 });

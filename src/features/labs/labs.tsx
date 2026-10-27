@@ -3,18 +3,19 @@ import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-rou
 import { cn } from "../../lib/cn.ts";
 
 export const LABS: Array<{
-  id: "simbolos" | "logica" | "markov";
+  id: "simbolos" | "logica" | "markov" | "boole";
   path: string;
-  label: "Simbología" | "Lógica" | "Markov";
+  label: "Simbología" | "Lógica" | "Markov" | "Álgebra de Boole";
 }> = [
   { id: "simbolos", path: "simbolos", label: "Simbología" },
   { id: "logica", path: "logica", label: "Lógica" },
   { id: "markov", path: "markov", label: "Markov" },
+  { id: "boole", path: "boole", label: "Álgebra de Boole" },
 ];
 
-/** Pestaña adicional que una app anfitriona añade después de los tres laboratorios. */
+/** Pestaña adicional que una app anfitriona añade después de los laboratorios. */
 export interface LabsExtraTab {
-  /** Identificador único (no puede coincidir con simbolos, logica ni markov). */
+  /** Identificador único (no puede coincidir con simbolos, logica, markov ni boole). */
   id: string;
   /** Texto de la pestaña. */
   label: string;
@@ -28,7 +29,7 @@ export interface LabsExtraTab {
 export type LabsActiveTab = { id: string; label: string };
 
 export interface LabsRoutesProps {
-  /** Pestañas propias de la app anfitriona, en este orden, tras Simbología, Lógica y Markov. */
+  /** Pestañas propias de la app anfitriona, en este orden, tras Simbología, Lógica, Markov y Álgebra de Boole. */
   extraTabs?: LabsExtraTab[];
   /** Acción opcional a la derecha del título «Laboratorios» (recibe la pestaña activa o null). */
   renderHeaderAction?: (active: LabsActiveTab | null) => ReactNode;
@@ -42,6 +43,7 @@ export interface LabsRoutesProps {
 const SymbolsPage = lazy(() => import("./symbols/SymbolsPage.tsx").then((m) => ({ default: m.SymbolsPage })));
 const LogicLabPage = lazy(() => import("./logic/LogicLabPage.tsx").then((m) => ({ default: m.LogicLabPage })));
 const MarkovLabPage = lazy(() => import("./markov/MarkovLabPage.tsx").then((m) => ({ default: m.MarkovLabPage })));
+const BooleLabPage = lazy(() => import("./boole/BooleLabPage.tsx").then((m) => ({ default: m.BooleLabPage })));
 
 function LabFallback() {
   return <div aria-busy="true" className="min-h-[240px] animate-pulse rounded-md bg-sunken motion-reduce:animate-none" />;
@@ -73,7 +75,7 @@ function LabTab({ tab, to, active }: { tab: Tab; to: string; active: boolean }) 
       role="tab"
       aria-selected={active}
       className={cn(
-        "flex min-h-11 items-center border-b-2 px-4 text-[14px]",
+        "flex min-h-11 items-center whitespace-nowrap border-b-2 px-4 text-[14px]",
         active ? "border-accent font-semibold text-fg" : "border-transparent text-muted hover:text-fg",
       )}
     >
@@ -116,6 +118,7 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath }: Lab
           <Route path="simbolos" element={<SymbolsPage />} />
           <Route path="logica" element={<LogicLabPage />} />
           <Route path="markov" element={<MarkovLabPage />} />
+          <Route path="boole" element={<BooleLabPage />} />
           {extras.map((t) => (
             <Route key={t.id} path={`${t.path}/*`} element={t.element} />
           ))}

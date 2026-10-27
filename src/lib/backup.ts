@@ -7,7 +7,7 @@ import { importKv, snapshotKv, type ImportReport } from "./kv-store.ts";
 export const BACKUP_APP = "ia-labs-comunidad";
 export const BACKUP_VERSION = 1;
 /** Claves de localStorage ajenas al almacén KV que también viajan en la copia. */
-export const EXTRA_KEYS = [DEFAULT_LABS_KEYS.markov, DEFAULT_LABS_KEYS.logicFormat] as const;
+export const EXTRA_KEYS = [DEFAULT_LABS_KEYS.markov, DEFAULT_LABS_KEYS.logicFormat, DEFAULT_LABS_KEYS.boole] as const;
 
 const BackupSchema = z.strictObject({
   app: z.literal(BACKUP_APP),

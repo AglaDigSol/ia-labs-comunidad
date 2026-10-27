@@ -14,6 +14,8 @@ export function FormulaField({
   onChange,
   error,
   inputRef,
+  placeholder = "p → q",
+  notation = "logica",
 }: {
   id: string;
   label: string;
@@ -21,6 +23,9 @@ export function FormulaField({
   onChange: (v: string) => void;
   error?: ParseError | null;
   inputRef: RefObject<HTMLInputElement | null>;
+  placeholder?: string;
+  /** "logica" avisa de que ⊕ se lee como ⊻; en "boole", ⊕ es la suma y no hay aviso. */
+  notation?: "logica" | "boole";
 }) {
   const mirror = useRef<HTMLDivElement>(null);
   const [undo, setUndo] = useState<string | null>(null);
@@ -79,7 +84,7 @@ export function FormulaField({
               "relative h-12 w-full rounded-md border bg-transparent px-3 font-mono text-[16px] text-fg placeholder:text-muted",
               error ? "border-crit" : "border-border",
             )}
-            placeholder="p → q"
+            placeholder={placeholder}
           />
         </div>
         <button
@@ -116,7 +121,7 @@ export function FormulaField({
           </Button>
         </p>
       ) : null}
-      {value.includes("⊕") ? (
+      {notation === "logica" && value.includes("⊕") ? (
         <div className="flex flex-col items-start gap-2">
           <Chip tone="info" className="whitespace-normal font-normal">
             {NOTATION.oplus.note}
@@ -130,7 +135,9 @@ export function FormulaField({
   );
 }
 
-const KEYS: Array<{ glyph: string; label: string }> = [
+export type KeypadKey = { glyph: string; label: string };
+
+const KEYS: KeypadKey[] = [
   { glyph: "¬", label: "negación" },
   { glyph: "∧", label: "conjunción" },
   { glyph: "∨", label: "disyunción" },
@@ -149,9 +156,16 @@ const keyClass =
 export function SymbolKeypad({
   targetRef,
   onChange,
+  keys = KEYS,
+  vars = VARS,
+  moreVars = MORE_VARS,
 }: {
   targetRef: RefObject<HTMLInputElement | null>;
   onChange: (v: string) => void;
+  /** Teclas de operadores (por defecto, las de lógica proposicional). */
+  keys?: KeypadKey[];
+  vars?: string[];
+  moreVars?: string[];
 }) {
   const [more, setMore] = useState(false);
 
@@ -192,7 +206,7 @@ export function SymbolKeypad({
       className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 flex flex-col gap-2 rounded-lg border border-border bg-raised p-2 lg:static"
     >
       <div className="flex flex-wrap gap-1">
-        {KEYS.map((k) => (
+        {keys.map((k) => (
           <button
             key={k.glyph}
             type="button"
@@ -207,7 +221,7 @@ export function SymbolKeypad({
         ))}
       </div>
       <div className="flex flex-wrap gap-1">
-        {VARS.map((v) => (
+        {vars.map((v) => (
           <button
             key={v}
             type="button"
@@ -220,6 +234,7 @@ export function SymbolKeypad({
             {v}
           </button>
         ))}
+        {moreVars.length > 0 ? (
         <button
           type="button"
           aria-label="más variables"
@@ -231,8 +246,9 @@ export function SymbolKeypad({
         >
           + var
         </button>
+        ) : null}
         {more
-          ? MORE_VARS.map((v) => (
+          ? moreVars.map((v) => (
               <button
                 key={v}
                 type="button"

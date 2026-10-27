@@ -4,6 +4,10 @@ import { describe, expect, it } from "vitest";
 import { COURSES } from "../content/courses/index.ts";
 import { NOTATION } from "../content/notation/index.ts";
 import { SYMBOL_PACKS } from "../content/symbols/index.ts";
+import { BOOLE_PACK } from "../content/boole/practica.ts";
+import { BoolePackSchema } from "../shared/boole/schema.ts";
+import { booleVars, literalCount, parseBoole } from "../shared/boole/expr.ts";
+import { minimizeBoole } from "../shared/boole/minimize.ts";
 import { CourseSchema } from "../shared/courses/types.ts";
 import { NotationSchema } from "../shared/logic/notation.ts";
 import { SymbolPackSchema } from "../shared/symbols/schema.ts";
@@ -64,5 +68,32 @@ describe("content/notation", () => {
   it("F₁ debe tener los cuatro pares distintos", () => {
     const bad = { ...NOTATION, f1: NOTATION.f1.map((e) => ({ ...e, values: [0, 0] as const })) };
     expect(NotationSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe("content/boole", () => {
+  it("practica.ts cumple BoolePackSchema", () => {
+    expect(issues(BoolePackSchema.safeParse(BOOLE_PACK))).toEqual([]);
+  });
+
+  it("es de elaboración propia y con licencia CC BY 4.0", () => {
+    expect(BOOLE_PACK.meta.source).toBe("Elaboración propia");
+    expect(BOOLE_PACK.meta.license).toBe("CC-BY-4.0");
+  });
+
+  it("cada expresión se lee en modo Boole, tiene como mucho 4 variables y se puede simplificar", () => {
+    for (const p of BOOLE_PACK.practice) {
+      const r = parseBoole(p.expr);
+      expect(r.ok, p.id).toBe(true);
+      if (!r.ok) continue;
+      expect(booleVars(r.expr).length, p.id).toBeLessThanOrEqual(4);
+      const m = minimizeBoole(r.expr);
+      expect(m.ok && literalCount(r.expr) > m.minLiterals, p.id).toBe(true);
+    }
+  });
+
+  it("el esquema rechaza una estructura sin descripción", () => {
+    const bad = { ...BOOLE_PACK, presets: { ...BOOLE_PACK.presets, dos: { name: "{0, 1}", description: "" } } };
+    expect(BoolePackSchema.safeParse(bad).success).toBe(false);
   });
 });

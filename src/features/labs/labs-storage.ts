@@ -1,16 +1,18 @@
-// Persistencia de los laboratorios (borrador de Markov y formato de las tablas de verdad), detrás de la
-// misma interfaz StorageAdapter que usa el almacén KV. La app independiente guarda cada valor en su
-// propia clave de localStorage, como siempre; una app que integra los laboratorios puede inyectar su
-// almacén con configureLabs({ storage }) (por ejemplo, MemoryAdapter para que no se guarde nada).
+// Persistencia de los laboratorios (borrador de Markov, formato de las tablas de verdad y borrador del
+// laboratorio de álgebra de Boole), detrás de la misma interfaz StorageAdapter que usa el almacén KV.
+// La app independiente guarda cada valor en su propia clave de localStorage, como siempre; una app que
+// integra los laboratorios puede inyectar su almacén con configureLabs({ storage }) (por ejemplo,
+// MemoryAdapter para que no se guarde nada).
 import type { StorageAdapter } from "../../lib/storage-adapter.ts";
 
-/** Valores que guardan los laboratorios. Todos son cadenas (JSON en el caso de Markov). */
-export type LabsStorageKey = "markov" | "logicFormat";
+/** Valores que guardan los laboratorios. Todos son cadenas (JSON en el caso de Markov y Boole). */
+export type LabsStorageKey = "markov" | "logicFormat" | "boole";
 
 /** Claves de localStorage de la app independiente. */
 export const DEFAULT_LABS_KEYS = {
   markov: "ia-labs.markov.v1",
   logicFormat: "ia-labs.logic-format",
+  boole: "ia-labs.boole.v1",
 } as const satisfies Record<LabsStorageKey, string>;
 
 const LAB_KEYS = Object.keys(DEFAULT_LABS_KEYS) as LabsStorageKey[];
@@ -25,7 +27,8 @@ function getStorage(): Storage | null {
 
 /**
  * Adaptador por defecto: un valor por clave de localStorage. `keys` permite conservar las claves que
- * ya usaba una app anfitriona (así no se pierden los borradores al migrar).
+ * ya usaba una app anfitriona (así no se pierden los borradores al migrar). Las claves que no se pasan
+ * usan las de DEFAULT_LABS_KEYS (por ejemplo, `boole`, añadida en 0.4.0).
  */
 export function createLocalStorageLabsAdapter(keys: Partial<Record<LabsStorageKey, string>> = {}): StorageAdapter {
   const map: Record<LabsStorageKey, string> = { ...DEFAULT_LABS_KEYS, ...keys };

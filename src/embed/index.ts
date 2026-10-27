@@ -13,6 +13,7 @@ export {
 export { SymbolsPage } from "../features/labs/symbols/SymbolsPage.tsx";
 export { LogicLabPage } from "../features/labs/logic/LogicLabPage.tsx";
 export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
+export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
 
 // ---------------------------------------------------------------- Configuración y almacenamiento
 export {
@@ -43,6 +44,14 @@ export * from "../../shared/markov/evolution.ts";
 export * from "../../shared/markov/systems.ts";
 export * from "../../shared/markov/validate.ts";
 
+export * from "../../shared/boole/expr.ts";
+export * from "../../shared/boole/algebra.ts";
+export * from "../../shared/boole/laws.ts";
+export * from "../../shared/boole/rewrite.ts";
+export * from "../../shared/boole/minimize.ts";
+export * from "../../shared/boole/presets.ts";
+export * from "../../shared/boole/schema.ts";
+
 export * from "../../shared/rational.ts";
 
 export * from "../../shared/srs/sm2.ts";
@@ -53,3 +62,4 @@ export * from "../../shared/srs/types.ts";
 // ---------------------------------------------------------------- Contenido (CC BY 4.0)
 export { SYMBOL_PACKS, type SymbolPack } from "../../content/symbols/index.ts";
 export { NOTATION } from "../../content/notation/index.ts";
+export { BOOLE_PACK } from "../../content/boole/practica.ts";

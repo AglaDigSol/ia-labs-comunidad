@@ -13,6 +13,21 @@ export type ParseErrorCode =
   | "unmatched-close"
   | "mismatched-paren";
 
+/**
+ * Opciones del analizador. Por defecto (sin opciones) se comporta como siempre: ⊕ es la disyunción
+ * exclusiva y no hay producto por yuxtaposición. El laboratorio de álgebra de Boole usa
+ * `{ oplus: "or", juxtaposition: true }`: ⊕ es la suma booleana (∨) y «xy» es x ⊙ y.
+ */
+export type ParseOptions = {
+  /** Cómo se lee ⊕: "xor" (por defecto, lógica) o "or" (suma booleana de las álgebras de Boole). */
+  oplus?: "xor" | "or";
+  /**
+   * Producto por yuxtaposición: «xy», «x′y» o «x(y + z)» se leen como productos. Las variables pasan
+   * a ser de una letra, con subíndice numérico opcional (x1, x_2).
+   */
+  juxtaposition?: boolean;
+};
+
 export type ParseError = {
   code: ParseErrorCode;
   message: string;
@@ -59,7 +74,14 @@ const KEYWORDS: Record<string, "not" | BinKind> = {
 const isLetter = (c: string) => /^[A-Za-z]$/.test(c);
 const isIdent = (c: string) => /^[A-Za-z0-9_]$/.test(c);
 
-export function tokenize(input: string): { ok: true; tokens: Token[] } | { ok: false; error: ParseError } {
+const SINGLE_VAR = /[A-Za-z](?:_?\d+)?/y;
+
+export function tokenize(
+  input: string,
+  options: ParseOptions = {},
+): { ok: true; tokens: Token[] } | { ok: false; error: ParseError } {
+  const oplusKind: BinKind = options.oplus === "or" ? "or" : "xor";
+  const juxt = options.juxtaposition === true;
   const tokens: Token[] = [];
   let i = 0;
   while (i < input.length) {
@@ -79,6 +101,13 @@ export function tokenize(input: string): { ok: true; tokens: Token[] } | { ok: f
       while (j < input.length && isIdent(input[j]!)) j++;
       const word = input.slice(i, j);
       const kw = KEYWORDS[word.toLowerCase()];
+      if (!kw && juxt) {
+        SINGLE_VAR.lastIndex = i;
+        const m = SINGLE_VAR.exec(input)!;
+        tokens.push({ type: "var", name: m[0], start: i, end: i + m[0].length, text: m[0] });
+        i += m[0].length;
+        continue;
+      }
       if (kw === "not") tokens.push({ type: "not", start: i, end: j, text: word });
       else if (kw) tokens.push({ type: "bin", bin: kw, start: i, end: j, text: word });
       else tokens.push({ type: "var", name: word, start: i, end: j, text: word });
@@ -111,7 +140,7 @@ export function tokenize(input: string): { ok: true; tokens: Token[] } | { ok: f
       i++;
       continue;
     }
-    const bin = BIN_CHARS[c];
+    const bin = c === "⊕" ? oplusKind : BIN_CHARS[c];
     if (bin) {
       tokens.push({ type: "bin", bin, start: i, end: i + 1, text: c, oplus: c === "⊕" });
       i++;
@@ -152,6 +181,7 @@ class Fail extends Error {
 
 export function parseFormula(
   input: string,
+  options: ParseOptions = {},
 ): { ok: true; ast: Node; usedOplus: boolean } | { ok: false; error: ParseError } {
   if (input.trim() === "") {
     return { ok: false, error: { code: "empty", message: "Escribe una fórmula.", start: 0, end: 0 } };
@@ -167,7 +197,8 @@ export function parseFormula(
       ),
     };
   }
-  const lexed = tokenize(input);
+  const lexed = tokenize(input, options);
+  const juxt = options.juxtaposition === true;
   if (!lexed.ok) return lexed;
   const toks = lexed.tokens;
   let pos = 0;
@@ -244,6 +275,14 @@ export function parseFormula(
         pos++;
         const right = parseExpr(rbp);
         left = { kind: t.bin!, left, right };
+        continue;
+      }
+      if (operandStart(t) && juxt) {
+        // Producto implícito: «xy» = x ⊙ y, con la misma precedencia que ⊙.
+        const [lbp, rbp] = BP.and;
+        if (lbp < minBp) break;
+        const right = parseExpr(rbp);
+        left = { kind: "and", left, right };
         continue;
       }
       if (operandStart(t)) {

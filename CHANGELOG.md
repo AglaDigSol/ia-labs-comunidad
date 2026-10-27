@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.4)
+## [Próximamente] (0.5)
 
 - Modo «Comprueba tu respuesta» también para las formas normales (FND/FNC): hoy quedan dentro de «Ver la solución
   completa», sin ejercicio propio.
@@ -14,6 +14,50 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.4.0] - 2026-10-27
+
+### Añadido
+
+- **Laboratorio «Álgebra de Boole»** (pestaña nueva tras Markov, en la app y en `LabsRoutes`), con la notación de
+  clase: ⊕ suma, ⊙ producto y ′ complemento. También acepta +, ·, ∨, ∧, ¬, ~ y el producto por yuxtaposición (xy).
+  - **¿Es un álgebra de Boole?** Estructuras finitas (B, ⊕, ⊙, ′, 0, 1) de hasta 16 elementos: {0, 1}, P(A) con
+    |A| ≤ 3, {0, 1}ⁿ con n ≤ 3, divisores de n (6, 8, 12 y 30) con mcm, mcd y n/x, el producto de dos de ellas y una
+    personalizada de hasta 4 elementos con tablas editables. Muestra las tablas de ⊕, ⊙ y ′ y el diagrama de Hasse
+    del orden a ≤ b ⇔ a ⊕ b = b en SVG accesible. Modo «Comprueba tu respuesta» para B1–B5: marcas si cada axioma se
+    cumple y, si no, das un contraejemplo; pistas progresivas tras un intento fallido y la solución completa (con el
+    primer contraejemplo de cada axioma) detrás del aviso de integridad.
+  - **Simplificar paso a paso.** Derivaciones línea a línea a partir de 13 expresiones originales o de una propia:
+    cada paso se comprueba por tabla de verdad (con una fila donde difieren si no es equivalente) y se contrasta con
+    la ley elegida (B1–B5, idempotencia, dominación, absorción, doble complemento, De Morgan y consenso) mediante
+    reescritura sobre el árbol módulo conmutatividad y asociatividad. «Pista» lista las leyes aplicables y «He
+    terminado» compara con la forma mínima (Quine–McCluskey) sin enseñarla.
+- Motores puros en `shared/boole/` (`algebra.ts`, `expr.ts`, `laws.ts`, `rewrite.ts`, `minimize.ts`, `presets.ts`,
+  `schema.ts`) con sus tests, exportados también desde la entrada de la biblioteca junto con `BooleLabPage` y
+  `BOOLE_PACK`.
+- Contenido `content/boole/practica.ts` (CC BY 4.0, elaboración propia) validado con zod.
+- `parseFormula(input, options)` acepta `{ oplus: "or", juxtaposition: true }`. Sin opciones se comporta igual que
+  antes: el laboratorio de lógica sigue leyendo ⊕ como ⊻.
+- Clave `boole` en `DEFAULT_LABS_KEYS` (`ia-labs.boole.v1`) y opción `boole` en `createLocalStorageLabsAdapter`; si
+  no se pasa, se usa la clave por defecto. El borrador viaja también en «Exportar mis datos».
+- Símbolo nuevo en el diccionario: el orden ≤ de un álgebra de Boole.
+
+### Cambiado
+
+- La ficha «Axiomas del álgebra de Boole (B1–B5)» usa la numeración de clase: conmutativas, asociativas, identidad,
+  distributivas y complementación.
+- `FormulaField` y `SymbolKeypad` aceptan notación y teclas propias (por defecto, las de lógica).
+- `LABS` incluye `boole`: una pestaña extra con id o ruta `boole` se ignora.
+
+### Corregido
+
+- CSP: zod ya no lanza su sonda `new Function` al cargar (se anotaba como `securitypolicyviolation` en todas las
+  páginas). `z.config({ jitless: true })` pasa a `src/zod-config.ts`, importado el primero y declarado en
+  `"sideEffects"`.
+
+### Próximamente
+
+- Álgebra de Boole: puertas y circuitos, y el espacio Fₙ.
 
 ## [0.3.0] - 2026-10-27
 
@@ -71,6 +115,7 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.3.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.4.0
 [0.3.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.3.0
 [0.2.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.2.0

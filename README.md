@@ -1,7 +1,7 @@
 # IA Labs · Comunidad
 
 Laboratorios interactivos para estudiar el Máster en Inteligencia Artificial: simbología matemática, lógica
-proposicional, cadenas de Markov, calendario de clases con tu zona horaria, flashcards con repaso espaciado y una
+proposicional, cadenas de Markov, álgebras de Boole, calendario de clases con tu zona horaria, flashcards con repaso espaciado y una
 calculadora de notas.
 
 > **Proyecto comunitario de estudiantes del Máster en IA. No oficial ni afiliado a la Universidad Internacional de Valencia (VIU).**
@@ -17,6 +17,7 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Simbología | Diccionario de símbolos con búsqueda, fichas KaTeX, «lectura en clase» con voz (Web Speech) y el equivalente en Python/NumPy como texto. | siempre activo |
 | Lógica | Tablas de verdad, comparar dos fórmulas, FND/FNC y el espacio F₁. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
+| Álgebra de Boole | ¿Es un álgebra de Boole? (axiomas B1–B5 sobre estructuras finitas, tablas y diagrama de Hasse) y simplificación paso a paso con leyes, comprobada en cada línea. ⊕ es la suma, no el XOR. | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
 | Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
 | Calculadora de notas | Nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
@@ -34,7 +35,7 @@ Si pones uno a `false`, desaparece de la navegación y de las rutas, y su códig
 ### Modo «Comprueba tu respuesta»
 
 Los laboratorios están pensados para **comprobar y entrenar, no para resolver**. Donde la app calcula un resultado
-(tabla de verdad, clasificación, equivalencia, evolución de Markov, π, u₀), la vista por defecto te pide tu resultado,
+(tabla de verdad, clasificación, equivalencia, evolución de Markov, π, u₀, axiomas B1–B5, simplificaciones), la vista por defecto te pide tu resultado,
 lo corrige y te da pistas paso a paso. La solución completa queda detrás de «Ver la solución completa», con un aviso
 de integridad. El explorador de F₁ ya funcionaba así (rellenas la tabla y pulsas «Comprobar»).
 
@@ -175,13 +176,13 @@ subdominio (gratis hasta 50 usuarios):
 
 ## Usar como dependencia
 
-Los laboratorios (Simbología, Lógica y Markov) y sus motores se pueden integrar en otra app de React. No hay paquete
+Los laboratorios (Simbología, Lógica, Markov y Álgebra de Boole) y sus motores se pueden integrar en otra app de React. No hay paquete
 en npm: se instala el tarball de una etiqueta publicada y el paquete trae el código TypeScript, que compilan el Vite y
 el `tsc` de la app anfitriona.
 
 ```json
 "dependencies": {
-  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.3.0"
+  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.4.0"
 }
 ```
 
@@ -205,7 +206,7 @@ import { lazy } from "react";
 import { Route, Routes } from "react-router";
 import { configureLabs, LabsRoutes, MemoryAdapter } from "ia-labs-comunidad";
 
-// Opcional: dónde guardan su estado los laboratorios (borrador de Markov y formato de las tablas).
+// Opcional: dónde guardan su estado los laboratorios (borrador de Markov, formato de las tablas y borrador de Boole).
 // Por defecto, localStorage. MemoryAdapter = no se guarda nada; o cualquier StorageAdapter propio.
 configureLabs({ storage: new MemoryAdapter() });
 
@@ -224,16 +225,17 @@ const PythonPage = lazy(() => import("./python/PythonPage.tsx"));
 </Routes>;
 ```
 
-- `extraTabs`: pestañas propias, en ese orden, después de los tres laboratorios. `element` puede ser perezoso: hay un
+- `extraTabs`: pestañas propias, en ese orden, después de los cuatro laboratorios. `element` puede ser perezoso: hay un
   `Suspense` alrededor. Una pestaña con el id o la ruta de un laboratorio se ignora.
 - `renderHeaderAction(tab)`: acción opcional junto al título «Laboratorios»; recibe la pestaña activa
   (`{ id, label }`) o `null`.
 - `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el
-  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat })` guarda en localStorage con las claves
-  que elijas, por ejemplo las que ya usaba tu app.
-- También se exportan `SymbolsPage`, `LogicLabPage` y `MarkovLabPage` por separado, y los motores: símbolos
-  (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador, tabla de verdad, formas
-  canónicas, comparación, F₁, notación), Markov (matrices, evolución, sistemas, validación), racionales exactos y
+  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole })` guarda en localStorage con las
+  claves que elijas, por ejemplo las que ya usaba tu app; las que no pases usan `DEFAULT_LABS_KEYS`.
+- También se exportan `SymbolsPage`, `LogicLabPage`, `MarkovLabPage` y `BooleLabPage` por separado, y los motores:
+  símbolos (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador, tabla de verdad,
+  formas canónicas, comparación, F₁, notación), álgebra de Boole (`parseBoole`, `checkAllAxioms`, `hasse`,
+  `checkStep`, `applicableLaws`, `minimizeBoole`…), Markov (matrices, evolución, sistemas, validación), racionales exactos y
   repaso espaciado SM-2 (`review`, barajas, `dueSummary`, esquemas). Con `"sideEffects"` declarado, lo que no se usa
   no entra en el bundle.
 - Subrutas: `ia-labs-comunidad/shared/*` y `ia-labs-comunidad/content/*` para importar un módulo concreto, y
@@ -270,7 +272,7 @@ el uso completo.
 ## Contenido y licencias
 
 - Código: [MIT](LICENSE).
-- Contenido de [`content/`](content) (símbolos, notación, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
+- Contenido de [`content/`](content) (símbolos, notación, ejercicios de Boole, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
 - Cada paquete de contenido declara materia, tema, nivel, idioma, autoría, licencia y fuente, y se valida con zod en los
   tests. Los pesos y las fechas se citan de las guías docentes como dato, sin copiar texto.
 - No se incluye material docente de la VIU (diapositivas, guías, enunciados ni soluciones).
