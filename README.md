@@ -19,6 +19,7 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Predicados | Evaluar fórmulas con ∀ y ∃ en un dominio finito (extensiones con casillas, paso a paso por instancias, testigos y contraejemplos), negar paso a paso con las leyes de la negación, comprobado en cada línea, y traducir frases a fórmulas. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
 | Álgebra de Boole | ¿Es un álgebra de Boole? (axiomas B1–B5 sobre estructuras finitas, tablas y diagrama de Hasse), simplificación paso a paso con leyes, comprobada en cada línea, puertas y circuitos (circuito → función, función → circuito con solo NAND o solo NOR, y las siete puertas) y los espacios F₁ y F₂. ⊕ es la suma, no el XOR (que se escribe ⊻). | siempre activo |
+| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias y FND/FNC; evaluar y negar con cuantificadores; Venn, igualdades, inclusión–exclusión, partes y producto; Σm y ΠM, Karnaugh y simplificar con leyes. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
 | Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
 | Calculadora de notas | Nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
@@ -180,7 +181,7 @@ subdominio (gratis hasta 50 usuarios):
 
 ## Usar como dependencia
 
-Los laboratorios (Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole y Markov) y sus motores se pueden integrar en otra app de React. No hay paquete
+Los laboratorios (Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole y Markov), el banco de ejercicios y sus motores se pueden integrar en otra app de React. No hay paquete
 en npm: se instala el tarball de una etiqueta publicada y el paquete trae el código TypeScript, que compilan el Vite y
 el `tsc` de la app anfitriona.
 
@@ -210,7 +211,7 @@ import { lazy } from "react";
 import { Route, Routes } from "react-router";
 import { configureLabs, LabsRoutes, MemoryAdapter } from "ia-labs-comunidad";
 
-// Opcional: dónde guardan su estado los laboratorios (borrador de Markov, formato de las tablas y borrador de Boole).
+// Opcional: dónde guardan su estado los laboratorios (borradores de Markov y Boole, formato de las tablas y progreso de los ejercicios).
 // Por defecto, localStorage. MemoryAdapter = no se guarda nada; o cualquier StorageAdapter propio.
 configureLabs({ storage: new MemoryAdapter() });
 
@@ -229,15 +230,16 @@ const PythonPage = lazy(() => import("./python/PythonPage.tsx"));
 </Routes>;
 ```
 
-- `extraTabs`: pestañas propias, en ese orden, después de los seis laboratorios. `element` puede ser perezoso: hay un
+- `extraTabs`: pestañas propias, en ese orden, después de los seis laboratorios y de «Ejercicios». `element` puede ser perezoso: hay un
   `Suspense` alrededor. Una pestaña con el id o la ruta de un laboratorio se ignora.
 - `renderHeaderAction(tab)`: acción opcional junto al título «Laboratorios»; recibe la pestaña activa
   (`{ id, label }`) o `null`.
 - `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el
-  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole })` guarda en localStorage con las
+  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises })` guarda en localStorage con las
   claves que elijas, por ejemplo las que ya usaba tu app; las que no pases usan `DEFAULT_LABS_KEYS`.
-- También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `MarkovLabPage` y `BooleLabPage` por
-  separado, y los motores: símbolos (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador,
+- También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `SetsLabPage`, `MarkovLabPage`, `BooleLabPage` y
+  `ExercisesPage` por separado, y los motores: banco de ejercicios (`EXERCISE_TYPES`, `exerciseType`, cada tipo con
+  `generate(semilla, nivel)`, `createRng`, `seedToText`/`seedFromText`), símbolos (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador,
   tabla de verdad, formas canónicas, comparación, F₁, notación), lógica de predicados (`parsePredicate`,
   `predToPlain`, `predToTex`, `analyzeVariables`, `evaluatePred`, `evaluationSteps`, `witnesses`,
   `findPredDifference`, `checkNegationStep`, `pushNegation` y `PREDICADOS_PACK`), álgebra de Boole (`parseBoole`, `checkAllAxioms`, `hasse`,
