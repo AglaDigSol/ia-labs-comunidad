@@ -15,6 +15,11 @@ import {
   isBooleanAlgebra,
   minimizeBoole,
   parseBoole,
+  checkKMapGroups,
+  KARNAUGH_PACK,
+  kmapSolution,
+  readIndexList,
+  vectorFromLists,
   evolve,
   frac,
   LabsRoutes,
@@ -148,6 +153,10 @@ describe("LabsRoutes como dependencia", () => {
     const m = e.ok ? minimizeBoole(e.expr) : null;
     expect(m?.ok && m.minLiterals).toBe(1);
     expect(BOOLE_PACK.practice.length).toBeGreaterThanOrEqual(12);
+    const v = vectorFromLists(3, [1, 3, 5, 7]);
+    expect(checkKMapGroups(v, kmapSolution(v, "sop"), "sop").status).toBe("minimal");
+    expect(readIndexList("Σm(1, 3)", 3)).toEqual({ ok: true, indices: [1, 3] });
+    expect(KARNAUGH_PACK.exercises.length).toBeGreaterThanOrEqual(8);
   });
 
   it("createLocalStorageLabsAdapter: la clave de Boole tiene un valor por defecto y se puede cambiar", () => {

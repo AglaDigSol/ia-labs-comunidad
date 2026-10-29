@@ -28,6 +28,10 @@ import {
   SymbolsPage,
   USER_ID_RE,
   parseBoole,
+  KARNAUGH_PACK,
+  kmapLayout,
+  canonicalSum,
+  type KMapMode,
   type AxiomResult,
   type BExpr,
   type CardView,
@@ -79,3 +83,7 @@ export const sameNand: boolean = circuitsEquivalent(CIRCUIT_PACK.circuits[0]!, n
 export const built: Netlist | null = start ? circuitFromExpression(start) : null;
 export const f2Size: number = fnStructure(2).elements.length;
 export const vectors: TruthVector[] = listFn(2).map((f) => f.vector);
+export const kmapMode: KMapMode = "pos";
+export const kmapRows: number = kmapLayout(["w", "x", "y", "z"]).rowCodes.length;
+export const sigma: BExpr = canonicalSum(["x", "y"], [1, 2]);
+export const kmapExercises: number = KARNAUGH_PACK.exercises.length;
