@@ -14,6 +14,7 @@ export { SymbolsPage } from "../features/labs/symbols/SymbolsPage.tsx";
 export { LogicLabPage } from "../features/labs/logic/LogicLabPage.tsx";
 export { PredicatesLabPage } from "../features/labs/predicates/PredicatesLabPage.tsx";
 export { SetsLabPage } from "../features/labs/sets/SetsLabPage.tsx";
+export { ExercisesPage } from "../features/labs/exercises/ExercisesPage.tsx";
 export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
 export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
 
@@ -46,6 +47,14 @@ export * from "../../shared/sets/laws.ts";
 export * from "../../shared/sets/cardinal.ts";
 export * from "../../shared/sets/finite.ts";
 export * from "../../shared/sets/schema.ts";
+
+export * from "../../shared/exercises/types.ts";
+export * from "../../shared/exercises/random.ts";
+export * from "../../shared/exercises/logic.ts";
+export * from "../../shared/exercises/predicates.ts";
+export * from "../../shared/exercises/sets.ts";
+export * from "../../shared/exercises/boole.ts";
+export * from "../../shared/exercises/registry.ts";
 
 export * from "../../shared/markov/matrix.ts";
 export * from "../../shared/markov/evolution.ts";

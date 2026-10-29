@@ -8,6 +8,15 @@ import {
   BooleLabPage,
   SetsLabPage,
   SETS_PACK,
+  ExercisesPage,
+  EXERCISE_TYPES,
+  LOGIC_TRUTH_TABLE,
+  exerciseType,
+  seedFromText,
+  seedToText,
+  type ExerciseLevel,
+  type ExerciseType,
+  type FormulaInstance,
   checkSetStep,
   parseSetExpr,
   solveRegions,
@@ -79,6 +88,7 @@ export function HostApp() {
         <Route path="/markov" element={<MarkovLabPage />} />
         <Route path="/boole" element={<BooleLabPage />} />
         <Route path="/conjuntos" element={<SetsLabPage />} />
+        <Route path="/ejercicios" element={<ExercisesPage />} />
       </Routes>
     </MemoryRouter>
   );
@@ -113,3 +123,8 @@ export const setExpr: SetExpr | null = setParsed.ok ? setParsed.expr : null;
 const setLaw: SetLawId = "demorgan";
 export const setStep = setExpr ? checkSetStep(setExpr, setExpr, setLaw) : null;
 export const noRegions = solveRegions(["A", "B"], []).ok;
+const level: ExerciseLevel = "medio";
+const tableType: ExerciseType<FormulaInstance> = LOGIC_TRUTH_TABLE;
+export const generated: string = tableType.generate(seedFromText(seedToText(42)) ?? 0, level).formula;
+export const exerciseIds: string[] = EXERCISE_TYPES.map((t) => t.id);
+export const knownType: boolean = exerciseType("conjuntos-venn") !== null;

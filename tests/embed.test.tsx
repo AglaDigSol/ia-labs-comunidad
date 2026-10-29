@@ -30,6 +30,8 @@ import {
   MemoryAdapter,
   parseFormula,
   review,
+  EXERCISE_TYPES,
+  SETS_VENN,
   type LabsActiveTab,
   type LabsExtraTab,
 } from "../src/embed/index.ts";
@@ -79,9 +81,9 @@ function renderAt(url: string, mount = "/laboratorios", onHeader?: (a: LabsActiv
 const tabNames = () => screen.getAllByRole("tab").map((t) => t.textContent);
 
 describe("LabsRoutes como dependencia", () => {
-  it("muestra los seis laboratorios y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
+  it("muestra los seis laboratorios, «Ejercicios» y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
     renderAt("/laboratorios/python");
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Ejercicios", "Python"]);
     expect(await screen.findByText("Zona de Python del anfitrión")).toBeTruthy();
     const tab = screen.getByRole("tab", { name: "Python" });
     expect(tab.getAttribute("aria-selected")).toBe("true");
@@ -109,7 +111,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Ejercicios"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Boole", () => {
@@ -123,7 +125,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Ejercicios", "Python"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Predicados", () => {
@@ -137,7 +139,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Ejercicios", "Python"]);
   });
 
   it("abre el laboratorio de predicados sin guardar nada en localStorage", async () => {
@@ -188,6 +190,17 @@ describe("LabsRoutes como dependencia", () => {
     expect(l.ok && r.ok && compareSetExprs(l.expr, r.expr).equal).toBe(true);
     expect(l.ok && r.ok && checkSetStep(l.expr, r.expr, "demorgan")).toEqual({ ok: true, lawMatches: true, suggestions: [] });
     expect(SETS_PACK.cardinal.length).toBeGreaterThanOrEqual(3);
+    expect(EXERCISE_TYPES.length).toBeGreaterThanOrEqual(14);
+    expect(SETS_VENN.generate(1, "medio")).toEqual(SETS_VENN.generate(1, "medio"));
+  });
+
+  it("abre el banco de ejercicios en la última pestaña y guarda el progreso en el almacén del anfitrión", async () => {
+    renderAt("/laboratorios/ejercicios?t=conjuntos-partes&n=basico&s=1");
+    expect(await screen.findByRole("heading", { level: 1, name: "Banco de ejercicios" }, { timeout: 5000 })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Ejercicios" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByTestId("header-action").textContent).toBe("Ejercicios");
+    expect(tabNames().slice(-2)).toEqual(["Ejercicios", "Python"]);
+    expect(localStorage.length).toBe(0);
   });
 
   it("abre el laboratorio de conjuntos en su pestaña", async () => {
@@ -195,6 +208,12 @@ describe("LabsRoutes como dependencia", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Conjuntos" }, { timeout: 5000 })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Conjuntos" }).getAttribute("aria-selected")).toBe("true");
     expect(screen.getByTestId("header-action").textContent).toBe("Conjuntos");
+  });
+
+  it("createLocalStorageLabsAdapter: el progreso de los ejercicios tiene su clave por defecto", () => {
+    expect(DEFAULT_LABS_KEYS.exercises).toBe("ia-labs.exercises.v1");
+    createLocalStorageLabsAdapter().save({ exercises: '{"v":1,"progress":{}}' });
+    expect(localStorage.getItem("ia-labs.exercises.v1")).toBe('{"v":1,"progress":{}}');
   });
 
   it("createLocalStorageLabsAdapter: la clave de Boole tiene un valor por defecto y se puede cambiar", () => {
