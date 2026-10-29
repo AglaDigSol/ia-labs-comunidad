@@ -178,7 +178,12 @@ describe("Simplificar paso a paso", () => {
 
   it("un borrador de la versión 1 se sigue leyendo y se completa con los campos nuevos", () => {
     const v1 = { v: 1, kind: "div-6", p1: "dos", p2: "dos", custom: null, start: "x ⊕ 0", steps: [] };
-    expect(parseBooleDraft(JSON.stringify(v1))).toEqual({ ...v1, v: 2, circuit: null, build: "", buildMode: "basicas", f2: null });
+    expect(parseBooleDraft(JSON.stringify(v1))).toEqual({ ...v1, v: 3, circuit: null, build: "", buildMode: "basicas", f2: null, kmap: null });
+  });
+
+  it("un borrador de la versión 2 se sigue leyendo, sin función de Karnaugh", () => {
+    const v2 = { v: 2, kind: "dos", p1: "dos", p2: "dos", custom: null, start: null, steps: [], circuit: null, build: "", buildMode: "basicas", f2: 3 };
+    expect(parseBooleDraft(JSON.stringify(v2))).toEqual({ ...v2, v: 3, kmap: null });
   });
 
   it("un borrador dañado se descarta", () => {
@@ -187,11 +192,29 @@ describe("Simplificar paso a paso", () => {
     expect(
       parseBooleDraft(JSON.stringify({ v: 1, kind: "dos", p1: "dos", p2: "dos", custom: { plus: [[9]], times: [[0]], comp: [0] }, start: null, steps: [] })),
     ).toBeNull();
-    const v2 = { v: 2, kind: "dos", p1: "dos", p2: "dos", custom: null, start: null, steps: [], circuit: null, build: "", buildMode: "basicas", f2: null };
-    expect(parseBooleDraft(JSON.stringify(v2))).toEqual(v2);
-    expect(parseBooleDraft(JSON.stringify({ ...v2, buildMode: "xor" }))).toBeNull();
-    expect(parseBooleDraft(JSON.stringify({ ...v2, f2: 16 }))).toBeNull();
-    expect(parseBooleDraft(JSON.stringify({ ...v2, v: 3 }))).toBeNull();
+    const v3 = {
+      v: 3,
+      kind: "dos",
+      p1: "dos",
+      p2: "dos",
+      custom: null,
+      start: null,
+      steps: [],
+      circuit: null,
+      build: "",
+      buildMode: "basicas",
+      f2: null,
+      kmap: { choice: "vector", vars: ["x", "y"], vector: "01X1", expr: null },
+    };
+    expect(parseBooleDraft(JSON.stringify(v3))).toEqual(v3);
+    expect(parseBooleDraft(JSON.stringify({ ...v3, buildMode: "xor" }))).toBeNull();
+    expect(parseBooleDraft(JSON.stringify({ ...v3, f2: 16 }))).toBeNull();
+    expect(parseBooleDraft(JSON.stringify({ ...v3, v: 4 }))).toBeNull();
+    // Función de Karnaugh dañada: vector de otra longitud, una sola variable o un carácter extraño.
+    expect(parseBooleDraft(JSON.stringify({ ...v3, kmap: { ...v3.kmap, vector: "01X" } }))).toBeNull();
+    expect(parseBooleDraft(JSON.stringify({ ...v3, kmap: { ...v3.kmap, vars: ["x"], vector: "01" } }))).toBeNull();
+    expect(parseBooleDraft(JSON.stringify({ ...v3, kmap: { ...v3.kmap, vector: "01?1" } }))).toBeNull();
+    expect(parseBooleDraft(JSON.stringify({ ...v3, kmap: { ...v3.kmap, vars: ["x", "x"] } }))).toBeNull();
   });
 });
 

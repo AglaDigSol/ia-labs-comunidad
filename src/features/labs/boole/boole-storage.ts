@@ -1,10 +1,13 @@
 // Borrador del laboratorio de álgebra de Boole (estructura elegida, tablas personalizadas, la
-// derivación en curso, el circuito elegido, la expresión del visualizador de circuitos y la función
-// de F₂ que se practica). Se guarda como JSON en la clave «boole» de labs-storage.ts (localStorage por
-// defecto, o el almacén que inyecte la app anfitriona). Todo se valida al leer: si algo no encaja, se
-// descarta el borrador. Versión 2 (0.5.0): los borradores de la versión 1 se leen y se completan con
-// los valores por defecto de los campos nuevos.
+// derivación en curso, el circuito elegido, la expresión del visualizador de circuitos, la función
+// de F₂ que se practica y la función de «Karnaugh y formas canónicas»). Se guarda como JSON en la
+// clave «boole» de labs-storage.ts (localStorage por defecto, o el almacén que inyecte la app
+// anfitriona). Todo se valida al leer: si algo no encaja, se descarta el borrador. Versión 3 (0.7.0):
+// los borradores de las versiones 1 y 2 se leen y se completan con los valores por defecto de los
+// campos nuevos.
 import { MAX_CUSTOM_ELEMENTS } from "../../../../shared/boole/algebra.ts";
+import { isBooleVector } from "../../../../shared/boole/canonical.ts";
+import { KMAP_MAX_VARS, KMAP_MIN_VARS } from "../../../../shared/boole/karnaugh.ts";
 import { isLawId, type LawId } from "../../../../shared/boole/laws.ts";
 import { isPresetId, isStructureKind, type PresetId, type StructureKind } from "../../../../shared/boole/presets.ts";
 import { readLabItem, writeLabItem } from "../labs-storage.ts";
@@ -20,8 +23,15 @@ export const BUILD_MODES = ["basicas", "nand", "nor"] as const;
 export type BuildMode = (typeof BUILD_MODES)[number];
 const isBuildMode = (x: unknown): x is BuildMode => typeof x === "string" && (BUILD_MODES as readonly string[]).includes(x);
 
+/**
+ * Función de «Karnaugh y formas canónicas»: de dónde sale (`choice`: id de content/boole/karnaugh.ts,
+ * «expresion», «vector» o «mapa» si se ha editado a mano), sus variables, su vector (0, 1 o X por
+ * fila) y, si viene de una expresión escrita, el texto.
+ */
+export type KmapDraft = { choice: string; vars: string[]; vector: string; expr: string | null };
+
 export interface BooleDraft {
-  v: 2;
+  v: 3;
   kind: StructureKind;
   p1: PresetId;
   p2: PresetId;
@@ -35,10 +45,12 @@ export interface BooleDraft {
   buildMode: BuildMode;
   /** Función de F₂ que se practica (índice 0–15 de su vector de verdad), o null. */
   f2: number | null;
+  /** Función de «Karnaugh y formas canónicas», o null si aún no se ha elegido. */
+  kmap: KmapDraft | null;
 }
 
 export const EMPTY_DRAFT: BooleDraft = {
-  v: 2,
+  v: 3,
   kind: "dos",
   p1: "dos",
   p2: "partes-1",
@@ -49,6 +61,7 @@ export const EMPTY_DRAFT: BooleDraft = {
   build: "",
   buildMode: "basicas",
   f2: null,
+  kmap: null,
 };
 
 const isIdx = (x: unknown, n: number) => Number.isInteger(x) && (x as number) >= 0 && (x as number) < n;
@@ -65,6 +78,17 @@ function parseCustom(x: unknown): CustomTables | null {
   return { plus: c.plus, times: c.times, comp: c.comp as number[] };
 }
 
+function parseKmap(x: unknown): KmapDraft | null {
+  if (typeof x !== "object" || x === null) return null;
+  const k = x as Record<string, unknown>;
+  if (typeof k.choice !== "string" || !/^[a-z0-9-]{1,60}$/.test(k.choice)) return null;
+  if (!Array.isArray(k.vars) || k.vars.length < KMAP_MIN_VARS || k.vars.length > KMAP_MAX_VARS) return null;
+  if (!k.vars.every((v) => typeof v === "string" && /^[A-Za-z][A-Za-z0-9_]{0,15}$/.test(v))) return null;
+  if (new Set(k.vars).size !== k.vars.length || !isBooleVector(k.vector, k.vars.length)) return null;
+  if (k.expr !== null && (typeof k.expr !== "string" || k.expr.length > MAX_EXPR)) return null;
+  return { choice: k.choice, vars: k.vars as string[], vector: k.vector, expr: k.expr as string | null };
+}
+
 export function parseBooleDraft(raw: string): BooleDraft | null {
   if (raw.length > MAX_BYTES) return null;
   let data: unknown;
@@ -75,7 +99,7 @@ export function parseBooleDraft(raw: string): BooleDraft | null {
   }
   if (typeof data !== "object" || data === null) return null;
   const d = data as Record<string, unknown>;
-  if ((d.v !== 1 && d.v !== 2) || !isStructureKind(d.kind) || !isPresetId(d.p1) || !isPresetId(d.p2)) return null;
+  if ((d.v !== 1 && d.v !== 2 && d.v !== 3) || !isStructureKind(d.kind) || !isPresetId(d.p1) || !isPresetId(d.p2)) return null;
   const custom = d.custom === null ? null : parseCustom(d.custom);
   if (d.custom !== null && custom === null) return null;
   if (d.start !== null && (typeof d.start !== "string" || d.start.length > MAX_EXPR)) return null;
@@ -87,13 +111,18 @@ export function parseBooleDraft(raw: string): BooleDraft | null {
     if (typeof st.expr !== "string" || st.expr.length > MAX_EXPR || !isLawId(st.law)) return null;
     steps.push({ expr: st.expr, law: st.law });
   }
-  const base = { v: 2 as const, kind: d.kind, p1: d.p1, p2: d.p2, custom, start: d.start as string | null, steps };
+  const base = { v: 3 as const, kind: d.kind, p1: d.p1, p2: d.p2, custom, start: d.start as string | null, steps };
   // Versión 1: aún no había circuitos ni Fₙ.
   if (d.v === 1) return { ...EMPTY_DRAFT, ...base };
   if (d.circuit !== null && (typeof d.circuit !== "string" || !/^[a-z0-9-]{1,60}$/.test(d.circuit))) return null;
   if (typeof d.build !== "string" || d.build.length > MAX_EXPR || !isBuildMode(d.buildMode)) return null;
   if (d.f2 !== null && !(Number.isInteger(d.f2) && (d.f2 as number) >= 0 && (d.f2 as number) < 16)) return null;
-  return { ...base, circuit: d.circuit as string | null, build: d.build, buildMode: d.buildMode, f2: d.f2 as number | null };
+  const v2 = { ...base, circuit: d.circuit as string | null, build: d.build, buildMode: d.buildMode, f2: d.f2 as number | null };
+  // Versión 2: aún no había Karnaugh.
+  if (d.v === 2) return { ...v2, kmap: null };
+  const kmap = d.kmap === null ? null : parseKmap(d.kmap);
+  if (d.kmap !== null && kmap === null) return null;
+  return { ...v2, kmap };
 }
 
 export function loadBooleDraft(): BooleDraft {
