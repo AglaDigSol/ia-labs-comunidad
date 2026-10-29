@@ -19,7 +19,7 @@ export const LOGIC_LIMITS: Record<ExerciseLevel, { vars: string[]; ops: [number,
 
 const v = (name: string): Node => ({ kind: "var", name });
 /** ¬, sin acumular dobles negaciones (¬¬p se escribe p). */
-export const neg = (n: Node): Node => (n.kind === "not" ? n.arg : { kind: "not", arg: n });
+const neg = (n: Node): Node => (n.kind === "not" ? n.arg : { kind: "not", arg: n });
 const bin = (kind: Bin, left: Node, right: Node): Node => ({ kind, left, right });
 
 /** Número de conectivas binarias. */
