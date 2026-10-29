@@ -43,18 +43,21 @@ export function KarnaughPractice({
   vector,
   onEdit,
   startEditing = false,
+  onSolved,
 }: {
   vars: string[];
   vector: string;
-  /** Nuevo vector tras cambiar una celda a mano. */
-  onEdit: (vector: string) => void;
+  /** Nuevo vector tras cambiar una celda a mano. Sin él, el mapa no se puede editar (banco de ejercicios). */
+  onEdit?: (vector: string) => void;
   /** Empezar con «Cambiar su valor» (mapa en blanco). */
   startEditing?: boolean;
+  /** Se llama al comprobar una agrupación mínima. */
+  onSolved?: () => void;
 }) {
   const layout = useMemo(() => kmapLayout(vars), [vars]);
   const n = vars.length;
   const [mode, setMode] = useState<KMapMode>("sop");
-  const [tool, setTool] = useState<Tool>(startEditing ? "editar" : "agrupar");
+  const [tool, setTool] = useState<Tool>(startEditing && onEdit ? "editar" : "agrupar");
   const [selection, setSelection] = useState<Set<number>>(new Set());
   const [groups, setGroups] = useState<Implicant[]>([]);
   const [message, setMessage] = useState<Message>(null);
@@ -87,7 +90,7 @@ export function KarnaughPractice({
   };
 
   const activate = (m: number) => {
-    if (tool === "editar") {
+    if (tool === "editar" && onEdit) {
       onEdit(vector.slice(0, m) + NEXT_VALUE[vector[m]!]! + vector.slice(m + 1));
       return;
     }
@@ -174,6 +177,7 @@ export function KarnaughPractice({
   const check = () => {
     setMessage(null);
     setResult(live);
+    if (live.status === "minimal") onSolved?.();
   };
 
   const resultView = (c: KMapCheck) => {
@@ -234,21 +238,23 @@ export function KarnaughPractice({
             Los 0 (producto de sumas)
           </ToggleGroupItem>
         </ToggleGroup>
-        <ToggleGroup
-          type="single"
-          value={tool}
-          aria-label="Al pulsar una celda"
-          onValueChange={(v) => {
-            if (v === "agrupar" || v === "editar") {
-              setTool(v);
-              setSelection(new Set());
-            }
-          }}
-          className="self-start"
-        >
-          <ToggleGroupItem value="agrupar">Agrupar</ToggleGroupItem>
-          <ToggleGroupItem value="editar">Cambiar su valor</ToggleGroupItem>
-        </ToggleGroup>
+        {onEdit ? (
+          <ToggleGroup
+            type="single"
+            value={tool}
+            aria-label="Al pulsar una celda"
+            onValueChange={(v) => {
+              if (v === "agrupar" || v === "editar") {
+                setTool(v);
+                setSelection(new Set());
+              }
+            }}
+            className="self-start"
+          >
+            <ToggleGroupItem value="agrupar">Agrupar</ToggleGroupItem>
+            <ToggleGroupItem value="editar">Cambiar su valor</ToggleGroupItem>
+          </ToggleGroup>
+        ) : null}
       </div>
       <p className="text-[14px] text-muted">
         {tool === "agrupar"
