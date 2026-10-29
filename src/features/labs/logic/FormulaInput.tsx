@@ -21,11 +21,12 @@ export function FormulaField({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  error?: ParseError | null;
+  /** Error del analizador (de lógica o de cualquier otro laboratorio): solo se usan el mensaje y la posición. */
+  error?: Pick<ParseError, "message" | "start" | "end"> | null;
   inputRef: RefObject<HTMLInputElement | null>;
   placeholder?: string;
-  /** "logica" avisa de que ⊕ se lee como ⊻; en "boole", ⊕ es la suma y no hay aviso. */
-  notation?: "logica" | "boole";
+  /** "logica" avisa de que ⊕ se lee como ⊻; en "boole", ⊕ es la suma, y en "predicados" no se usa: no hay aviso. */
+  notation?: "logica" | "boole" | "predicados";
 }) {
   const mirror = useRef<HTMLDivElement>(null);
   const [undo, setUndo] = useState<string | null>(null);

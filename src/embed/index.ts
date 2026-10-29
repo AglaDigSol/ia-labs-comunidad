@@ -12,6 +12,7 @@ export {
 } from "../features/labs/labs.tsx";
 export { SymbolsPage } from "../features/labs/symbols/SymbolsPage.tsx";
 export { LogicLabPage } from "../features/labs/logic/LogicLabPage.tsx";
+export { PredicatesLabPage } from "../features/labs/predicates/PredicatesLabPage.tsx";
 export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
 export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
 
@@ -56,6 +57,13 @@ export * from "../../shared/boole/fn.ts";
 export * from "../../shared/boole/canonical.ts";
 export * from "../../shared/boole/karnaugh.ts";
 
+export * from "../../shared/predicates/ast.ts";
+export * from "../../shared/predicates/parser.ts";
+export * from "../../shared/predicates/evaluate.ts";
+export * from "../../shared/predicates/equivalence.ts";
+export * from "../../shared/predicates/negation.ts";
+export * from "../../shared/predicates/schema.ts";
+
 export * from "../../shared/rational.ts";
 
 export * from "../../shared/srs/sm2.ts";
@@ -69,3 +77,4 @@ export { NOTATION } from "../../content/notation/index.ts";
 export { BOOLE_PACK } from "../../content/boole/practica.ts";
 export { CIRCUIT_PACK } from "../../content/boole/circuitos.ts";
 export { KARNAUGH_PACK } from "../../content/boole/karnaugh.ts";
+export { PREDICADOS_PACK } from "../../content/predicados/practica.ts";

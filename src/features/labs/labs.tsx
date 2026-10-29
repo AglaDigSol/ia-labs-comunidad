@@ -3,19 +3,20 @@ import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-rou
 import { cn } from "../../lib/cn.ts";
 
 export const LABS: Array<{
-  id: "simbolos" | "logica" | "markov" | "boole";
+  id: "simbolos" | "logica" | "predicados" | "markov" | "boole";
   path: string;
-  label: "Simbología" | "Lógica" | "Markov" | "Álgebra de Boole";
+  label: "Simbología" | "Lógica" | "Predicados" | "Markov" | "Álgebra de Boole";
 }> = [
   { id: "simbolos", path: "simbolos", label: "Simbología" },
   { id: "logica", path: "logica", label: "Lógica" },
+  { id: "predicados", path: "predicados", label: "Predicados" },
   { id: "markov", path: "markov", label: "Markov" },
   { id: "boole", path: "boole", label: "Álgebra de Boole" },
 ];
 
 /** Pestaña adicional que una app anfitriona añade después de los laboratorios. */
 export interface LabsExtraTab {
-  /** Identificador único (no puede coincidir con simbolos, logica, markov ni boole). */
+  /** Identificador único (no puede coincidir con simbolos, logica, predicados, markov ni boole). */
   id: string;
   /** Texto de la pestaña. */
   label: string;
@@ -29,7 +30,7 @@ export interface LabsExtraTab {
 export type LabsActiveTab = { id: string; label: string };
 
 export interface LabsRoutesProps {
-  /** Pestañas propias de la app anfitriona, en este orden, tras Simbología, Lógica, Markov y Álgebra de Boole. */
+  /** Pestañas propias de la app anfitriona, en este orden, tras Simbología, Lógica, Predicados, Markov y Álgebra de Boole. */
   extraTabs?: LabsExtraTab[];
   /** Acción opcional a la derecha del título «Laboratorios» (recibe la pestaña activa o null). */
   renderHeaderAction?: (active: LabsActiveTab | null) => ReactNode;
@@ -42,6 +43,9 @@ export interface LabsRoutesProps {
 
 const SymbolsPage = lazy(() => import("./symbols/SymbolsPage.tsx").then((m) => ({ default: m.SymbolsPage })));
 const LogicLabPage = lazy(() => import("./logic/LogicLabPage.tsx").then((m) => ({ default: m.LogicLabPage })));
+const PredicatesLabPage = lazy(() =>
+  import("./predicates/PredicatesLabPage.tsx").then((m) => ({ default: m.PredicatesLabPage })),
+);
 const MarkovLabPage = lazy(() => import("./markov/MarkovLabPage.tsx").then((m) => ({ default: m.MarkovLabPage })));
 const BooleLabPage = lazy(() => import("./boole/BooleLabPage.tsx").then((m) => ({ default: m.BooleLabPage })));
 
@@ -117,6 +121,7 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath }: Lab
           <Route index element={<Navigate to="simbolos" replace />} />
           <Route path="simbolos" element={<SymbolsPage />} />
           <Route path="logica" element={<LogicLabPage />} />
+          <Route path="predicados" element={<PredicatesLabPage />} />
           <Route path="markov" element={<MarkovLabPage />} />
           <Route path="boole" element={<BooleLabPage />} />
           {extras.map((t) => (

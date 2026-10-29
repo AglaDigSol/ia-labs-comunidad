@@ -1,7 +1,7 @@
 # IA Labs · Comunidad
 
 Laboratorios interactivos para estudiar el Máster en Inteligencia Artificial: simbología matemática, lógica
-proposicional, cadenas de Markov, álgebras de Boole, calendario de clases con tu zona horaria, flashcards con repaso espaciado y una
+proposicional y de predicados, cadenas de Markov, álgebras de Boole, calendario de clases con tu zona horaria, flashcards con repaso espaciado y una
 calculadora de notas.
 
 > **Proyecto comunitario de estudiantes del Máster en IA. No oficial ni afiliado a la Universidad Internacional de Valencia (VIU).**
@@ -16,6 +16,7 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | --- | --- | --- |
 | Simbología | Diccionario de símbolos con búsqueda, fichas KaTeX, «lectura en clase» con voz (Web Speech) y el equivalente en Python/NumPy como texto. | siempre activo |
 | Lógica | Tablas de verdad (también paso a paso, una subfórmula cada vez), comparar dos fórmulas, FND/FNC y el espacio F₁. | siempre activo |
+| Predicados | Evaluar fórmulas con ∀ y ∃ en un dominio finito (extensiones con casillas, paso a paso por instancias, testigos y contraejemplos), negar paso a paso con las leyes de la negación, comprobado en cada línea, y traducir frases a fórmulas. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
 | Álgebra de Boole | ¿Es un álgebra de Boole? (axiomas B1–B5 sobre estructuras finitas, tablas y diagrama de Hasse), simplificación paso a paso con leyes, comprobada en cada línea, puertas y circuitos (circuito → función, función → circuito con solo NAND o solo NOR, y las siete puertas) y los espacios F₁ y F₂. ⊕ es la suma, no el XOR (que se escribe ⊻). | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
@@ -179,7 +180,7 @@ subdominio (gratis hasta 50 usuarios):
 
 ## Usar como dependencia
 
-Los laboratorios (Simbología, Lógica, Markov y Álgebra de Boole) y sus motores se pueden integrar en otra app de React. No hay paquete
+Los laboratorios (Simbología, Lógica, Predicados, Markov y Álgebra de Boole) y sus motores se pueden integrar en otra app de React. No hay paquete
 en npm: se instala el tarball de una etiqueta publicada y el paquete trae el código TypeScript, que compilan el Vite y
 el `tsc` de la app anfitriona.
 
@@ -228,16 +229,18 @@ const PythonPage = lazy(() => import("./python/PythonPage.tsx"));
 </Routes>;
 ```
 
-- `extraTabs`: pestañas propias, en ese orden, después de los cuatro laboratorios. `element` puede ser perezoso: hay un
+- `extraTabs`: pestañas propias, en ese orden, después de los cinco laboratorios. `element` puede ser perezoso: hay un
   `Suspense` alrededor. Una pestaña con el id o la ruta de un laboratorio se ignora.
 - `renderHeaderAction(tab)`: acción opcional junto al título «Laboratorios»; recibe la pestaña activa
   (`{ id, label }`) o `null`.
 - `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el
   almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole })` guarda en localStorage con las
   claves que elijas, por ejemplo las que ya usaba tu app; las que no pases usan `DEFAULT_LABS_KEYS`.
-- También se exportan `SymbolsPage`, `LogicLabPage`, `MarkovLabPage` y `BooleLabPage` por separado, y los motores:
-  símbolos (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador, tabla de verdad,
-  formas canónicas, comparación, F₁, notación), álgebra de Boole (`parseBoole`, `checkAllAxioms`, `hasse`,
+- También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `MarkovLabPage` y `BooleLabPage` por
+  separado, y los motores: símbolos (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador,
+  tabla de verdad, formas canónicas, comparación, F₁, notación), lógica de predicados (`parsePredicate`,
+  `predToPlain`, `predToTex`, `analyzeVariables`, `evaluatePred`, `evaluationSteps`, `witnesses`,
+  `findPredDifference`, `checkNegationStep`, `pushNegation` y `PREDICADOS_PACK`), álgebra de Boole (`parseBoole`, `checkAllAxioms`, `hasse`,
   `checkStep`, `applicableLaws`, `minimizeBoole`, circuitos con `validateNetlist`, `evaluateCircuit`,
   `circuitToExpression`, `circuitFromExpression`, `toNand`, `toNor` y `layoutCircuit`, y Fₙ con `enumerateFn`,
   `fnStructure`, `fnName` y `listFn`…), Markov (matrices, evolución, sistemas, validación), racionales exactos y
@@ -277,7 +280,7 @@ el uso completo.
 ## Contenido y licencias
 
 - Código: [MIT](LICENSE).
-- Contenido de [`content/`](content) (símbolos, notación, ejercicios y circuitos de Boole, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
+- Contenido de [`content/`](content) (símbolos, notación, ejercicios y circuitos de Boole, dominios y ejercicios de predicados, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
 - Cada paquete de contenido declara materia, tema, nivel, idioma, autoría, licencia y fuente, y se valida con zod en los
   tests. Los pesos y las fechas se citan de las guías docentes como dato, sin copiar texto.
 - No se incluye material docente de la VIU (diapositivas, guías, enunciados ni soluciones).
