@@ -349,7 +349,7 @@ function PracticeView({
         </p>
       )}
 
-      <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 border-t border-border bg-base py-3">
+      <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3">
         <Button variant={solved ? "primary" : "secondary"} onClick={() => next()}>
           <SkipForward size={16} aria-hidden="true" />
           Siguiente ejercicio
