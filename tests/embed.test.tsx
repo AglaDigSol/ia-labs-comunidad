@@ -8,6 +8,10 @@ import {
   ALL_SYMBOLS,
   BOOLE_PACK,
   buildTable,
+  checkSetStep,
+  compareSetExprs,
+  parseSetExpr,
+  SETS_PACK,
   configureLabs,
   createLocalStorageLabsAdapter,
   DEFAULT_LABS_KEYS,
@@ -70,9 +74,9 @@ function renderAt(url: string, mount = "/laboratorios", onHeader?: (a: LabsActiv
 const tabNames = () => screen.getAllByRole("tab").map((t) => t.textContent);
 
 describe("LabsRoutes como dependencia", () => {
-  it("muestra los cuatro laboratorios y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
+  it("muestra los cinco laboratorios y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
     renderAt("/laboratorios/python");
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov", "Álgebra de Boole", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Conjuntos", "Markov", "Álgebra de Boole", "Python"]);
     expect(await screen.findByText("Zona de Python del anfitrión")).toBeTruthy();
     const tab = screen.getByRole("tab", { name: "Python" });
     expect(tab.getAttribute("aria-selected")).toBe("true");
@@ -100,7 +104,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov", "Álgebra de Boole"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Conjuntos", "Markov", "Álgebra de Boole"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Boole", () => {
@@ -114,7 +118,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov", "Álgebra de Boole", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Conjuntos", "Markov", "Álgebra de Boole", "Python"]);
   });
 
   it("abre el laboratorio de Boole y guarda su borrador en el almacén del anfitrión", async () => {
@@ -148,6 +152,18 @@ describe("LabsRoutes como dependencia", () => {
     const m = e.ok ? minimizeBoole(e.expr) : null;
     expect(m?.ok && m.minLiterals).toBe(1);
     expect(BOOLE_PACK.practice.length).toBeGreaterThanOrEqual(12);
+    const l = parseSetExpr("(A ∪ B)ᶜ");
+    const r = parseSetExpr("Aᶜ ∩ Bᶜ");
+    expect(l.ok && r.ok && compareSetExprs(l.expr, r.expr).equal).toBe(true);
+    expect(l.ok && r.ok && checkSetStep(l.expr, r.expr, "demorgan")).toEqual({ ok: true, lawMatches: true, suggestions: [] });
+    expect(SETS_PACK.cardinal.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("abre el laboratorio de conjuntos en su pestaña", async () => {
+    renderAt("/laboratorios/conjuntos");
+    expect(await screen.findByRole("heading", { level: 1, name: "Conjuntos" }, { timeout: 5000 })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Conjuntos" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByTestId("header-action").textContent).toBe("Conjuntos");
   });
 
   it("createLocalStorageLabsAdapter: la clave de Boole tiene un valor por defecto y se puede cambiar", () => {

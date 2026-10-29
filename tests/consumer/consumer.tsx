@@ -6,6 +6,13 @@ import {
   ALL_SYMBOLS,
   BOOLE_PACK,
   BooleLabPage,
+  SetsLabPage,
+  SETS_PACK,
+  checkSetStep,
+  parseSetExpr,
+  solveRegions,
+  type SetExpr,
+  type SetLawId,
   CIRCUIT_PACK,
   checkAllAxioms,
   circuitFromExpression,
@@ -59,6 +66,7 @@ export function HostApp() {
         <Route path="/logica" element={<LogicLabPage />} />
         <Route path="/markov" element={<MarkovLabPage />} />
         <Route path="/boole" element={<BooleLabPage />} />
+        <Route path="/conjuntos" element={<SetsLabPage />} />
       </Routes>
     </MemoryRouter>
   );
@@ -79,3 +87,8 @@ export const sameNand: boolean = circuitsEquivalent(CIRCUIT_PACK.circuits[0]!, n
 export const built: Netlist | null = start ? circuitFromExpression(start) : null;
 export const f2Size: number = fnStructure(2).elements.length;
 export const vectors: TruthVector[] = listFn(2).map((f) => f.vector);
+const setParsed = parseSetExpr(SETS_PACK.venn[0]?.expr ?? "A");
+export const setExpr: SetExpr | null = setParsed.ok ? setParsed.expr : null;
+const setLaw: SetLawId = "demorgan";
+export const setStep = setExpr ? checkSetStep(setExpr, setExpr, setLaw) : null;
+export const noRegions = solveRegions(["A", "B"], []).ok;
