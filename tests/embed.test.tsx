@@ -70,9 +70,9 @@ function renderAt(url: string, mount = "/laboratorios", onHeader?: (a: LabsActiv
 const tabNames = () => screen.getAllByRole("tab").map((t) => t.textContent);
 
 describe("LabsRoutes como dependencia", () => {
-  it("muestra los cuatro laboratorios y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
+  it("muestra los cinco laboratorios y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
     renderAt("/laboratorios/python");
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov", "Álgebra de Boole", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Markov", "Álgebra de Boole", "Python"]);
     expect(await screen.findByText("Zona de Python del anfitrión")).toBeTruthy();
     const tab = screen.getByRole("tab", { name: "Python" });
     expect(tab.getAttribute("aria-selected")).toBe("true");
@@ -100,7 +100,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov", "Álgebra de Boole"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Markov", "Álgebra de Boole"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Boole", () => {
@@ -114,7 +114,29 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Markov", "Álgebra de Boole", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Markov", "Álgebra de Boole", "Python"]);
+  });
+
+  it("una pestaña extra tampoco puede ocupar la ruta de Predicados", () => {
+    render(
+      <MemoryRouter initialEntries={["/laboratorios/simbolos"]}>
+        <Routes>
+          <Route
+            path="/laboratorios/*"
+            element={<LabsRoutes extraTabs={[{ id: "predicados", label: "Mía", path: "mia", element: <p>Mía</p> }, python]} />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Markov", "Álgebra de Boole", "Python"]);
+  });
+
+  it("abre el laboratorio de predicados sin guardar nada en localStorage", async () => {
+    renderAt("/laboratorios/predicados");
+    expect(await screen.findByRole("heading", { level: 1, name: "Lógica de predicados" }, { timeout: 5000 })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Predicados" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByTestId("header-action").textContent).toBe("Predicados");
+    expect(localStorage.length).toBe(0);
   });
 
   it("abre el laboratorio de Boole y guarda su borrador en el almacén del anfitrión", async () => {

@@ -12,6 +12,7 @@ export {
 } from "../features/labs/labs.tsx";
 export { SymbolsPage } from "../features/labs/symbols/SymbolsPage.tsx";
 export { LogicLabPage } from "../features/labs/logic/LogicLabPage.tsx";
+export { PredicatesLabPage } from "../features/labs/predicates/PredicatesLabPage.tsx";
 export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
 export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
 

@@ -24,6 +24,13 @@ import {
   MarkovLabPage,
   MemoryAdapter,
   NOTATION,
+  PREDICADOS_PACK,
+  PredicatesLabPage,
+  evaluatePred,
+  parsePredicate,
+  pushNegation,
+  type PredFormula,
+  type PredInterpretation,
   searchSymbols,
   SymbolsPage,
   USER_ID_RE,
@@ -57,6 +64,7 @@ export function HostApp() {
         />
         <Route path="/simbolos" element={<SymbolsPage />} />
         <Route path="/logica" element={<LogicLabPage />} />
+        <Route path="/predicados" element={<PredicatesLabPage />} />
         <Route path="/markov" element={<MarkovLabPage />} />
         <Route path="/boole" element={<BooleLabPage />} />
       </Routes>
@@ -79,3 +87,8 @@ export const sameNand: boolean = circuitsEquivalent(CIRCUIT_PACK.circuits[0]!, n
 export const built: Netlist | null = start ? circuitFromExpression(start) : null;
 export const f2Size: number = fnStructure(2).elements.length;
 export const vectors: TruthVector[] = listFn(2).map((f) => f.vector);
+const pred = parsePredicate(PREDICADOS_PACK.negation[0]?.formula ?? "∀x P(x)");
+export const predFormula: PredFormula | null = pred.ok ? pred.formula : null;
+const numbers: PredInterpretation = { domain: ["1", "2"], predicates: { P: [["2"]] } };
+export const someEven: boolean = predFormula ? evaluatePred({ kind: "exists", variable: "x", body: { kind: "pred", name: "P", args: [{ name: "x" }] } }, numbers) : false;
+export const negSteps: number = predFormula ? pushNegation({ kind: "not", arg: predFormula }).length : 0;
