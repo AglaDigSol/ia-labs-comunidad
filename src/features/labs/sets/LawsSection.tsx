@@ -119,20 +119,12 @@ function StepsPractice({ initial }: { initial: Pair | null }) {
   const [ownRight, setOwnRight] = useState(initial?.right ?? "");
   const [leftError, setLeftError] = useState<ParseError | null>(null);
   const [rightError, setRightError] = useState<ParseError | null>(null);
-  const [lines, setLines] = useState<Line[] | null>(() => {
-    const s = initial ? parse(initial.left) : null;
-    return s ? [{ expr: s, law: null, warning: null }] : null;
+  const [start, setStart] = useState<{ left: SetExpr; target: SetExpr | null } | null>(() => {
+    const l = initial ? parse(initial.left) : null;
+    return l ? { left: l, target: initial ? parse(initial.right) : null } : null;
   });
-  const [target, setTarget] = useState<SetExpr | null>(() => (initial ? parse(initial.right) : null));
-  const [next, setNext] = useState("");
-  const [nextError, setNextError] = useState<ParseError | null>(null);
-  const [law, setLaw] = useState<SetLawId | "">("");
-  const [feedback, setFeedback] = useState<Feedback>(null);
-  const [hint, setHint] = useState<string | null>(null);
-
-  const current = lines ? lines[lines.length - 1]!.expr : null;
-  const reached = current !== null && target !== null && lines!.length > 1 && sameSetExpr(current, target);
-  const startKey = lines ? `${setToPlain(lines[0]!.expr)}=${target ? setToPlain(target) : ""}` : "";
+  // Cambia con cada «Empezar»: reinicia la demostración aunque la igualdad sea la misma.
+  const [begins, setBegins] = useState(0);
 
   const begin = () => {
     const pair: Pair =
@@ -153,56 +145,8 @@ function StepsPractice({ initial }: { initial: Pair | null }) {
     }
     setLeftError(null);
     setRightError(null);
-    setLines([{ expr: l.expr, law: null, warning: null }]);
-    setTarget(t);
-    setFeedback(null);
-    setHint(null);
-    setNext("");
-    setLaw("");
-  };
-
-  const addStep = () => {
-    if (!lines || !current) return;
-    setHint(null);
-    const r = parseSetExpr(next);
-    if (!r.ok) {
-      setNextError(r.error);
-      setFeedback(null);
-      return;
-    }
-    setNextError(null);
-    if (law === "") {
-      setFeedback({ tone: "warn", text: "Elige la ley que aplicas en este paso." });
-      return;
-    }
-    if (lines.length > MAX_STEPS) {
-      setFeedback({ tone: "warn", text: `La derivación admite como mucho ${MAX_STEPS} pasos.` });
-      return;
-    }
-    const c = checkSetStep(current, r.expr, law);
-    if (!c.ok) {
-      const { label, before } = c.region;
-      setFeedback({
-        tone: "crit",
-        text: `No es igual a la expresión anterior: la región ${label} ${before ? "está en la anterior y no en la nueva" : "está en la nueva y no en la anterior"}.`,
-      });
-      return;
-    }
-    const warning = c.lawMatches ? null : softWarning(law, c.suggestions);
-    setLines([...lines, { expr: r.expr, law, warning }]);
-    setFeedback(warning ? { tone: "warn", text: warning } : { tone: "ok", text: `Paso correcto: ${SET_LAW_BY_ID[law].name}.` });
-    setNext("");
-    setLaw("");
-  };
-
-  const showHint = () => {
-    if (!current) return;
-    const laws = setApplicableLaws(current);
-    setHint(
-      laws.length === 0
-        ? "Ninguna ley cambia directamente esta expresión."
-        : `Leyes con alguna instancia aplicable ahora: ${laws.map((id) => SET_LAW_BY_ID[id].name).join(", ")}. No tienes que usarlas todas.`,
-    );
+    setStart({ left: l.expr, target: t });
+    setBegins((b) => b + 1);
   };
 
   return (
@@ -258,8 +202,8 @@ function StepsPractice({ initial }: { initial: Pair | null }) {
             />
           </>
         ) : null}
-        <Button variant={lines ? "secondary" : "primary"} className="self-start" onClick={begin}>
-          {lines ? "Empezar con esta igualdad" : "Empezar"}
+        <Button variant={start ? "secondary" : "primary"} className="self-start" onClick={begin}>
+          {start ? "Empezar con esta igualdad" : "Empezar"}
         </Button>
         <details className="text-[14px]">
           <summary className="flex min-h-11 cursor-pointer items-center">Cómo escribir</summary>
@@ -268,130 +212,203 @@ function StepsPractice({ initial }: { initial: Pair | null }) {
       </div>
 
       <div className="flex min-w-0 flex-col gap-4 lg:col-span-7">
-        {!lines ? (
+        {!start ? (
           <p className="text-muted">Elige una igualdad y pulsa «Empezar» para escribir tu demostración paso a paso.</p>
         ) : (
-          <>
-            {target ? (
-              <p className="text-[14px]">
-                <span className="text-muted">Objetivo: </span>
-                <Tex tex={`${setToTex(lines[0]!.expr)} = ${setToTex(target)}`} label={`${setToPlain(lines[0]!.expr)} = ${setToPlain(target)}`} />
-              </p>
-            ) : null}
-            <section aria-labelledby="sets-derivation-title" className="flex flex-col gap-2">
-              <h2 id="sets-derivation-title" className="font-display text-[20px] font-semibold">
-                Tu demostración
-              </h2>
-              <ol className="flex flex-col gap-2" aria-label="Pasos de la demostración">
-                {lines.map((line, i) => (
-                  <li key={i} className="flex flex-col gap-1 rounded-md border border-border bg-raised p-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[14px] text-muted">{i === 0 ? "Inicio" : `Paso ${i}`}</span>
-                      {line.law ? <Chip tone={line.warning ? "warn" : "ok"}>{SET_LAW_BY_ID[line.law].name}</Chip> : null}
-                    </div>
-                    <div className="max-w-full overflow-x-auto py-1 text-[18px]">
-                      {i > 0 ? <span aria-hidden="true">= </span> : null}
-                      <Tex tex={setToTex(line.expr)} label={`${i === 0 ? "Inicio" : `Paso ${i}`}: ${setToPlain(line.expr)}`} />
-                    </div>
-                    {line.warning ? <p className="text-[14px] text-warn">{line.warning}</p> : null}
-                  </li>
-                ))}
-              </ol>
-            </section>
-
-            {reached ? (
-              <Status>
-                <Verdict tone="ok">
-                  <Check size={16} aria-hidden="true" />
-                  {`¡Igualdad demostrada! Has llegado a ${setToPlain(target!)}.`}
-                </Verdict>
-              </Status>
-            ) : null}
-
-            <section aria-labelledby="sets-next-title" className="flex flex-col gap-3 rounded-lg border border-border bg-raised p-3">
-              <h2 id="sets-next-title" className="font-display text-[20px] font-semibold">
-                Siguiente paso
-              </h2>
-              <SetExprField
-                id="laws-next"
-                label="Nueva expresión"
-                value={next}
-                onChange={(v) => {
-                  setNext(v);
-                  setNextError(null);
-                }}
-                error={nextError}
-                placeholder="A ∩ Bᶜ"
-              />
-              <label htmlFor="laws-law" className="text-[14px] font-semibold">
-                Ley que aplicas
-              </label>
-              <select
-                id="laws-law"
-                className={cn(selectClass, "w-full font-body")}
-                value={law}
-                onChange={(e) => setLaw(isSetLawId(e.target.value) ? e.target.value : "")}
-              >
-                <option value="">Elige la ley…</option>
-                {SET_LAWS.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="primary" onClick={addStep}>
-                  <Check size={16} aria-hidden="true" />
-                  Comprobar paso
-                </Button>
-                <Button variant="ghost" onClick={showHint}>
-                  <Lightbulb size={16} aria-hidden="true" />
-                  Pista
-                </Button>
-                <Button
-                  variant="ghost"
-                  disabled={lines.length <= 1}
-                  onClick={() => {
-                    setLines(lines.slice(0, -1));
-                    setFeedback(null);
-                    setHint(null);
-                  }}
-                >
-                  <Undo2 size={16} aria-hidden="true" />
-                  Deshacer último paso
-                </Button>
-                <Button
-                  variant="ghost"
-                  disabled={lines.length <= 1}
-                  onClick={() => {
-                    setLines(lines.slice(0, 1));
-                    setFeedback(null);
-                    setHint(null);
-                  }}
-                >
-                  <RotateCcw size={16} aria-hidden="true" />
-                  Borrar los pasos
-                </Button>
-              </div>
-              <Status>
-                {feedback ? (
-                  <p className={cn(feedback.tone === "ok" ? "text-ok" : feedback.tone === "warn" ? "text-warn" : "text-crit")}>
-                    {feedback.text}
-                  </p>
-                ) : null}
-                {hint ? <p>{hint}</p> : null}
-              </Status>
-            </section>
-
-            {target ? (
-              <SolutionGate resetKey={startKey}>
-                <RegionsCheck left={lines[0]!.expr} right={target} />
-              </SolutionGate>
-            ) : null}
-          </>
+          <SetProof key={begins} start={start.left} target={start.target} />
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * La demostración paso a paso desde `start`: cada línea se comprueba por regiones y con la ley
+ * elegida; si hay `target`, avisa al llegar. La usan el laboratorio y el banco de ejercicios.
+ */
+export function SetProof({
+  start,
+  target,
+  onSolved,
+}: {
+  start: SetExpr;
+  target: SetExpr | null;
+  /** Se llama al llegar al lado derecho con un paso correcto. */
+  onSolved?: () => void;
+}) {
+  const [lines, setLines] = useState<Line[]>(() => [{ expr: start, law: null, warning: null }]);
+  const [next, setNext] = useState("");
+  const [nextError, setNextError] = useState<ParseError | null>(null);
+  const [law, setLaw] = useState<SetLawId | "">("");
+  const [feedback, setFeedback] = useState<Feedback>(null);
+  const [hint, setHint] = useState<string | null>(null);
+
+  const current = lines[lines.length - 1]!.expr;
+  const reached = target !== null && lines.length > 1 && sameSetExpr(current, target);
+  const startKey = `${setToPlain(start)}=${target ? setToPlain(target) : ""}`;
+
+  const addStep = () => {
+    setHint(null);
+    const r = parseSetExpr(next);
+    if (!r.ok) {
+      setNextError(r.error);
+      setFeedback(null);
+      return;
+    }
+    setNextError(null);
+    if (law === "") {
+      setFeedback({ tone: "warn", text: "Elige la ley que aplicas en este paso." });
+      return;
+    }
+    if (lines.length > MAX_STEPS) {
+      setFeedback({ tone: "warn", text: `La derivación admite como mucho ${MAX_STEPS} pasos.` });
+      return;
+    }
+    const c = checkSetStep(current, r.expr, law);
+    if (!c.ok) {
+      const { label, before } = c.region;
+      setFeedback({
+        tone: "crit",
+        text: `No es igual a la expresión anterior: la región ${label} ${before ? "está en la anterior y no en la nueva" : "está en la nueva y no en la anterior"}.`,
+      });
+      return;
+    }
+    const warning = c.lawMatches ? null : softWarning(law, c.suggestions);
+    setLines([...lines, { expr: r.expr, law, warning }]);
+    if (target !== null && sameSetExpr(r.expr, target)) onSolved?.();
+    setFeedback(warning ? { tone: "warn", text: warning } : { tone: "ok", text: `Paso correcto: ${SET_LAW_BY_ID[law].name}.` });
+    setNext("");
+    setLaw("");
+  };
+
+  const showHint = () => {
+    const laws = setApplicableLaws(current);
+    setHint(
+      laws.length === 0
+        ? "Ninguna ley cambia directamente esta expresión."
+        : `Leyes con alguna instancia aplicable ahora: ${laws.map((id) => SET_LAW_BY_ID[id].name).join(", ")}. No tienes que usarlas todas.`,
+    );
+  };
+
+  return (
+    <>
+      {target ? (
+        <p className="text-[14px]">
+          <span className="text-muted">Objetivo: </span>
+          <Tex tex={`${setToTex(lines[0]!.expr)} = ${setToTex(target)}`} label={`${setToPlain(lines[0]!.expr)} = ${setToPlain(target)}`} />
+        </p>
+      ) : null}
+      <section aria-labelledby="sets-derivation-title" className="flex flex-col gap-2">
+        <h2 id="sets-derivation-title" className="font-display text-[20px] font-semibold">
+          Tu demostración
+        </h2>
+        <ol className="flex flex-col gap-2" aria-label="Pasos de la demostración">
+          {lines.map((line, i) => (
+            <li key={i} className="flex flex-col gap-1 rounded-md border border-border bg-raised p-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[14px] text-muted">{i === 0 ? "Inicio" : `Paso ${i}`}</span>
+                {line.law ? <Chip tone={line.warning ? "warn" : "ok"}>{SET_LAW_BY_ID[line.law].name}</Chip> : null}
+              </div>
+              <div className="max-w-full overflow-x-auto py-1 text-[18px]">
+                {i > 0 ? <span aria-hidden="true">= </span> : null}
+                <Tex tex={setToTex(line.expr)} label={`${i === 0 ? "Inicio" : `Paso ${i}`}: ${setToPlain(line.expr)}`} />
+              </div>
+              {line.warning ? <p className="text-[14px] text-warn">{line.warning}</p> : null}
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {reached ? (
+        <Status>
+          <Verdict tone="ok">
+            <Check size={16} aria-hidden="true" />
+            {`¡Igualdad demostrada! Has llegado a ${setToPlain(target!)}.`}
+          </Verdict>
+        </Status>
+      ) : null}
+
+      <section aria-labelledby="sets-next-title" className="flex flex-col gap-3 rounded-lg border border-border bg-raised p-3">
+        <h2 id="sets-next-title" className="font-display text-[20px] font-semibold">
+          Siguiente paso
+        </h2>
+        <SetExprField
+          id="laws-next"
+          label="Nueva expresión"
+          value={next}
+          onChange={(v) => {
+            setNext(v);
+            setNextError(null);
+          }}
+          error={nextError}
+          placeholder="A ∩ Bᶜ"
+        />
+        <label htmlFor="laws-law" className="text-[14px] font-semibold">
+          Ley que aplicas
+        </label>
+        <select
+          id="laws-law"
+          className={cn(selectClass, "w-full font-body")}
+          value={law}
+          onChange={(e) => setLaw(isSetLawId(e.target.value) ? e.target.value : "")}
+        >
+          <option value="">Elige la ley…</option>
+          {SET_LAWS.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="primary" onClick={addStep}>
+            <Check size={16} aria-hidden="true" />
+            Comprobar paso
+          </Button>
+          <Button variant="ghost" onClick={showHint}>
+            <Lightbulb size={16} aria-hidden="true" />
+            Pista
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={lines.length <= 1}
+            onClick={() => {
+              setLines(lines.slice(0, -1));
+              setFeedback(null);
+              setHint(null);
+            }}
+          >
+            <Undo2 size={16} aria-hidden="true" />
+            Deshacer último paso
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={lines.length <= 1}
+            onClick={() => {
+              setLines(lines.slice(0, 1));
+              setFeedback(null);
+              setHint(null);
+            }}
+          >
+            <RotateCcw size={16} aria-hidden="true" />
+            Borrar los pasos
+          </Button>
+        </div>
+        <Status>
+          {feedback ? (
+            <p className={cn(feedback.tone === "ok" ? "text-ok" : feedback.tone === "warn" ? "text-warn" : "text-crit")}>
+              {feedback.text}
+            </p>
+          ) : null}
+          {hint ? <p>{hint}</p> : null}
+        </Status>
+      </section>
+
+      {target ? (
+        <SolutionGate resetKey={startKey}>
+          <RegionsCheck left={lines[0]!.expr} right={target} />
+        </SolutionGate>
+      ) : null}
+    </>
   );
 }
 
@@ -426,19 +443,10 @@ function RegionsCheck({ left, right }: { left: SetExpr; right: SetExpr }) {
 function DecidePractice({ onProve }: { onProve: (p: Pair) => void }) {
   const [choice, setChoice] = useState<string>(SETS_PACK.identities[0]!.id);
   const [own, setOwn] = useState<Pair>({ left: "", right: "" });
-  const [claim, setClaim] = useState<"si" | "no" | null>(null);
-  const [checked, setChecked] = useState(false);
 
   const pair: Pair = choice === "propia" ? own : SETS_PACK.identities.find((p) => p.id === choice)!;
   const leftR = useMemo(() => parseSetExpr(pair.left), [pair.left]);
   const rightR = useMemo(() => parseSetExpr(pair.right), [pair.right]);
-  const ready = leftR.ok && rightR.ok;
-  const cmp = ready ? compareSetExprs(leftR.expr, rightR.expr) : null;
-  const reset = () => {
-    setClaim(null);
-    setChecked(false);
-  };
-  const right = cmp !== null && claim !== null && (claim === "si") === cmp.equal;
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-12">
@@ -452,7 +460,6 @@ function DecidePractice({ onProve }: { onProve: (p: Pair) => void }) {
           value={choice}
           onChange={(e) => {
             setChoice(e.target.value);
-            reset();
           }}
         >
           {LEVELS.map((level) => (
@@ -476,7 +483,6 @@ function DecidePractice({ onProve }: { onProve: (p: Pair) => void }) {
               value={own.left}
               onChange={(v) => {
                 setOwn((o) => ({ ...o, left: v }));
-                reset();
               }}
               error={!leftR.ok && own.left !== "" ? leftR.error : null}
             />
@@ -486,7 +492,6 @@ function DecidePractice({ onProve }: { onProve: (p: Pair) => void }) {
               value={own.right}
               onChange={(v) => {
                 setOwn((o) => ({ ...o, right: v }));
-                reset();
               }}
               error={!rightR.ok && own.right !== "" ? rightR.error : null}
               placeholder="Aᶜ ∩ Bᶜ"
@@ -495,88 +500,129 @@ function DecidePractice({ onProve }: { onProve: (p: Pair) => void }) {
         ) : null}
       </div>
 
-      <section aria-labelledby="decide-title" className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-raised p-3 lg:col-span-7">
-        <h2 id="decide-title" className="font-display text-[20px] font-semibold">
-          ¿Son iguales?
-        </h2>
-        {ready ? (
-          <div className="max-w-full overflow-x-auto py-1 text-[20px]">
-            <Tex
-              tex={`${setToTex(leftR.expr)} \\overset{?}{=} ${setToTex(rightR.expr)}`}
-              label={`¿${setToPlain(leftR.expr)} es igual a ${setToPlain(rightR.expr)}?`}
+      <EqualityQuestion
+        key={`${pair.left}|${pair.right}`}
+        left={leftR.ok ? leftR.expr : null}
+        right={rightR.ok ? rightR.expr : null}
+        onProve={() => onProve(pair)}
+      />
+    </div>
+  );
+}
+
+/**
+ * «¿Son iguales?» para dos expresiones (null si aún no se leen): el contraejemplo o la confirmación
+ * solo aparecen después de responder. `onProve` ofrece demostrarla; `onSolved` se llama al acertar.
+ */
+export function EqualityQuestion({
+  left,
+  right,
+  onProve,
+  onSolved,
+}: {
+  left: SetExpr | null;
+  right: SetExpr | null;
+  onProve?: () => void;
+  onSolved?: () => void;
+}) {
+  const [claim, setClaim] = useState<"si" | "no" | null>(null);
+  const [checked, setChecked] = useState(false);
+  const ready = left !== null && right !== null;
+  const cmp = ready ? compareSetExprs(left, right) : null;
+  const correct = cmp !== null && claim !== null && (claim === "si") === cmp.equal;
+
+  return (
+    <section aria-labelledby="decide-title" className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-raised p-3 lg:col-span-7">
+      <h2 id="decide-title" className="font-display text-[20px] font-semibold">
+        ¿Son iguales?
+      </h2>
+      {ready ? (
+        <div className="max-w-full overflow-x-auto py-1 text-[20px]">
+          <Tex
+            tex={`${setToTex(left)} \\overset{?}{=} ${setToTex(right)}`}
+            label={`¿${setToPlain(left)} es igual a ${setToPlain(right)}?`}
+          />
+        </div>
+      ) : (
+        <p className="text-muted">Escribe las dos expresiones.</p>
+      )}
+      <fieldset className="flex flex-wrap gap-3">
+        <legend className="mb-1 text-[14px] font-semibold">Tu respuesta</legend>
+        {(
+          [
+            ["si", "Son iguales"],
+            ["no", "No son iguales"],
+          ] as const
+        ).map(([v, text]) => (
+          <label key={v} className="flex min-h-11 items-center gap-2">
+            <input
+              type="radio"
+              name="decide-claim"
+              checked={claim === v}
+              onChange={() => {
+                setClaim(v);
+                setChecked(false);
+              }}
             />
-          </div>
+            {text}
+          </label>
+        ))}
+      </fieldset>
+      <Button
+        variant="primary"
+        className="self-start"
+        disabled={!ready}
+        onClick={() => {
+          setChecked(true);
+          if (correct) onSolved?.();
+        }}
+      >
+        <Check size={16} aria-hidden="true" />
+        Comprobar
+      </Button>
+      {checked && cmp && left && right ? (
+        claim === null ? (
+          <Status>
+            <span>Elige una respuesta.</span>
+          </Status>
         ) : (
-          <p className="text-muted">Escribe las dos expresiones.</p>
-        )}
-        <fieldset className="flex flex-wrap gap-3">
-          <legend className="mb-1 text-[14px] font-semibold">Tu respuesta</legend>
-          {(
-            [
-              ["si", "Son iguales"],
-              ["no", "No son iguales"],
-            ] as const
-          ).map(([v, text]) => (
-            <label key={v} className="flex min-h-11 items-center gap-2">
-              <input
-                type="radio"
-                name="decide-claim"
-                checked={claim === v}
-                onChange={() => {
-                  setClaim(v);
-                  setChecked(false);
-                }}
-              />
-              {text}
-            </label>
-          ))}
-        </fieldset>
-        <Button variant="primary" className="self-start" disabled={!ready} onClick={() => setChecked(true)}>
-          <Check size={16} aria-hidden="true" />
-          Comprobar
-        </Button>
-        {checked && cmp && ready ? (
-          claim === null ? (
+          <>
             <Status>
-              <span>Elige una respuesta.</span>
-            </Status>
-          ) : (
-            <>
-              <Status>
-                <Verdict tone={right ? "ok" : "warn"}>
-                  {right
-                    ? cmp.equal
-                      ? "¡Correcto! Son iguales."
-                      : "¡Correcto! No son iguales."
-                    : cmp.equal
-                      ? "No es correcto: sí son iguales."
-                      : "No es correcto: no son iguales."}
-                </Verdict>
-                {cmp.equal ? (
-                  <span>Ocupan exactamente las mismas regiones del diagrama de Venn.</span>
-                ) : (
-                  <span>
-                    {`Contraejemplo: la región ${regionLabel(cmp.vars, cmp.differ[0]!)} está en ${
-                      cmp.left[cmp.differ[0]!] ? "la primera expresión y no en la segunda" : "la segunda expresión y no en la primera"
-                    }.`}
-                  </span>
-                )}
-              </Status>
+              <Verdict tone={correct ? "ok" : "warn"}>
+                {correct
+                  ? cmp.equal
+                    ? "¡Correcto! Son iguales."
+                    : "¡Correcto! No son iguales."
+                  : cmp.equal
+                    ? "No es correcto: sí son iguales."
+                    : "No es correcto: no son iguales."}
+              </Verdict>
               {cmp.equal ? (
-                <Button variant="secondary" className="self-start" onClick={() => onProve(pair)}>
+                <span>Ocupan exactamente las mismas regiones del diagrama de Venn.</span>
+              ) : (
+                <span>
+                  {`Contraejemplo: la región ${regionLabel(cmp.vars, cmp.differ[0]!)} está en ${
+                    cmp.left[cmp.differ[0]!] ? "la primera expresión y no en la segunda" : "la segunda expresión y no en la primera"
+                  }.`}
+                </span>
+              )}
+            </Status>
+            {cmp.equal ? (
+              onProve ? (
+                <Button variant="secondary" className="self-start" onClick={onProve}>
                   Demostrarlo paso a paso
                 </Button>
-              ) : (
-                <VennDiagram
-                  n={cmp.vars.length as 2 | 3}
-                  selected={cmp.left.map((_, r) => r === cmp.differ[0])}
-                  label={`Contraejemplo: región ${regionLabel(cmp.vars, cmp.differ[0]!)}`}
-                />
-              )}
-            </>
-          )
-        ) : null}
-      </section>
-    </div>
+              ) : null
+            ) : (
+              <VennDiagram
+                n={cmp.vars.length as 2 | 3}
+                selected={cmp.left.map((_, r) => r === cmp.differ[0])}
+                label={`Contraejemplo: región ${regionLabel(cmp.vars, cmp.differ[0]!)}`}
+              />
+            )}
+          </>
+        )
+      ) : null}
+    </section>
   );
 }

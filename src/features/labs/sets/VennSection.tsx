@@ -137,7 +137,8 @@ function RegionsPractice() {
   );
 }
 
-function ShadePractice({ expr }: { expr: SetExpr }) {
+/** Sombrear las regiones de una expresión. `onSolved` se llama al comprobar un diagrama correcto. */
+export function ShadePractice({ expr, onSolved }: { expr: SetExpr; onSolved?: () => void }) {
   const vars = useMemo(() => vennVars(expr), [expr]);
   const n = vars.length as 2 | 3;
   const truth = useMemo(() => setRegions(expr, vars), [expr, vars]);
@@ -192,7 +193,13 @@ function ShadePractice({ expr }: { expr: SetExpr }) {
           }.`}
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" onClick={() => setChecked(true)}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setChecked(true);
+              if (bad === 0) onSolved?.();
+            }}
+          >
             <Check size={16} aria-hidden="true" />
             Comprobar
           </Button>

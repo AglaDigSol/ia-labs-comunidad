@@ -81,7 +81,12 @@ export function CardinalSection() {
   );
 }
 
-function CardinalProblem({ problem }: { problem: SetsCardinalProblem }) {
+/**
+ * Un problema de recuento: el diagrama de dentro hacia fuera y las preguntas. Lo usan el laboratorio
+ * (problemas de content/conjuntos) y el banco de ejercicios (problemas generados). `onSolved` se llama
+ * al comprobar todas las respuestas bien.
+ */
+export function CardinalProblem({ problem, onSolved }: { problem: SetsCardinalProblem; onSolved?: () => void }) {
   const vars: SetName[] = useMemo(() => SET_NAMES.slice(0, problem.sets.C === undefined ? 2 : 3), [problem]);
   const n = vars.length as 2 | 3;
   const counts = useMemo(() => {
@@ -309,7 +314,14 @@ function CardinalProblem({ problem }: { problem: SetsCardinalProblem }) {
               </div>
             );
           })}
-          <Button variant="primary" className="self-start" onClick={() => setAnswersChecked(true)}>
+          <Button
+            variant="primary"
+            className="self-start"
+            onClick={() => {
+              setAnswersChecked(true);
+              if (questionRight.every(Boolean)) onSolved?.();
+            }}
+          >
             <Check size={16} aria-hidden="true" />
             Comprobar respuestas
           </Button>
