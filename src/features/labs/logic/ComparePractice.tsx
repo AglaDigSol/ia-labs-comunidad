@@ -5,7 +5,20 @@ import { Button } from "../../../components/ui/button.tsx";
 import { Chip } from "../../../components/ui/chip.tsx";
 import { Input } from "../../../components/ui/input.tsx";
 
-export function ComparePractice({ equivalent, differing, total, resetKey }: { equivalent: boolean; differing: number; total: number; resetKey: string }) {
+export function ComparePractice({
+  equivalent,
+  differing,
+  total,
+  resetKey,
+  onSolved,
+}: {
+  equivalent: boolean;
+  differing: number;
+  total: number;
+  resetKey: string;
+  /** Se llama al comprobar una respuesta correcta (equivalencia y número de filas). */
+  onSolved?: () => void;
+}) {
   const [answer, setAnswer] = useState<"si" | "no" | null>(null);
   const [rows, setRows] = useState("");
   const [checked, setChecked] = useState(false);
@@ -60,7 +73,13 @@ export function ComparePractice({ equivalent, differing, total, resetKey }: { eq
         />
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={() => setChecked(true)}>
+        <Button
+          variant="primary"
+          onClick={() => {
+            setChecked(true);
+            if (okEq && okRows) onSolved?.();
+          }}
+        >
           Comprobar
         </Button>
         <Button variant="ghost" disabled={hint} onClick={() => setHint(true)}>

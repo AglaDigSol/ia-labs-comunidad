@@ -26,13 +26,28 @@ const CLASSIFY_HINT =
 const fmt = (v: boolean, format: TruthFormat) => (format === "10" ? (v ? "1" : "0") : v ? "V" : "F");
 const next = (a: boolean | null) => (a === null ? true : a ? false : null);
 
-type Mode = "pasos" | "resultado";
+export type TruthPracticeMode = "pasos" | "resultado";
+type Mode = TruthPracticeMode;
 
-export function TruthPractice({ table, format, formula }: { table: Table; format: TruthFormat; formula: string }) {
+export function TruthPractice({
+  table,
+  format,
+  formula,
+  fixedMode,
+  onSolved,
+}: {
+  table: Table;
+  format: TruthFormat;
+  formula: string;
+  /** Modo fijo, sin el selector (el banco de ejercicios elige el modo de cada tipo). */
+  fixedMode?: Mode;
+  /** Se llama al comprobar la tabla y la clasificación completas y correctas. */
+  onSolved?: () => void;
+}) {
   // Sin subfórmulas intermedias (p, ¬p, p ∧ q) no hay pasos: solo la columna del resultado.
   const hasSteps = table.subformulas.length >= 2;
-  const [mode, setMode] = useState<Mode>("pasos");
-  const effective: Mode = hasSteps ? mode : "resultado";
+  const [mode, setMode] = useState<Mode>(fixedMode ?? "pasos");
+  const effective: Mode = hasSteps ? (fixedMode ?? mode) : "resultado";
 
   return (
     <section aria-labelledby="practice-title" className="flex flex-col gap-3 rounded-lg border border-border bg-raised p-3">
@@ -40,7 +55,7 @@ export function TruthPractice({ table, format, formula }: { table: Table; format
         <h2 id="practice-title" className="font-display text-[20px] font-semibold">
           Comprueba tu respuesta
         </h2>
-        {hasSteps ? (
+        {hasSteps && fixedMode === undefined ? (
           <ToggleGroup
             type="single"
             value={mode}
@@ -56,9 +71,9 @@ export function TruthPractice({ table, format, formula }: { table: Table; format
       </div>
       {effective === "pasos" ? (
         // La clave reinicia el ejercicio al cambiar de fórmula.
-        <StepPractice key={formula} table={table} format={format} formula={formula} />
+        <StepPractice key={formula} table={table} format={format} formula={formula} onSolved={onSolved} />
       ) : (
-        <ResultPractice table={table} format={format} formula={formula} />
+        <ResultPractice table={table} format={format} formula={formula} onSolved={onSolved} />
       )}
     </section>
   );
@@ -111,7 +126,9 @@ function stepHints(node: Node, ops: Source[]): string[] {
   return [first, `Recuerda: ${rule[node.kind]}`];
 }
 
-function StepPractice({ table, format, formula }: { table: Table; format: TruthFormat; formula: string }) {
+type PartProps = { table: Table; format: TruthFormat; formula: string; onSolved?: () => void };
+
+function StepPractice({ table, format, formula, onSolved }: PartProps) {
   const subs = table.subformulas;
   const n = subs.length;
   const keys = useMemo(() => subs.map((s) => toPlain(s)), [subs]);
@@ -285,7 +302,13 @@ function StepPractice({ table, format, formula }: { table: Table; format: TruthF
 
       <div className="flex flex-wrap gap-2">
         {allDone ? (
-          <Button variant="primary" onClick={() => setKindChecked(true)}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setKindChecked(true);
+              if (kind === verdict) onSolved?.();
+            }}
+          >
             Comprobar
           </Button>
         ) : stepDone ? (
@@ -351,7 +374,7 @@ function StepPractice({ table, format, formula }: { table: Table; format: TruthF
 
 // ---------------------------------------------------------------- Solo el resultado
 
-function ResultPractice({ table, format, formula }: { table: Table; format: TruthFormat; formula: string }) {
+function ResultPractice({ table, format, formula, onSolved }: PartProps) {
   const [answers, setAnswers] = useState<Array<boolean | null>>(() => table.rows.map(() => null));
   const [kind, setKind] = useState<Kind | null>(null);
   const [checked, setChecked] = useState(false);
@@ -464,7 +487,13 @@ function ResultPractice({ table, format, formula }: { table: Table; format: Trut
         ))}
       </fieldset>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={() => setChecked(true)}>
+        <Button
+          variant="primary"
+          onClick={() => {
+            setChecked(true);
+            if (correct === table.rows.length && kind === verdict) onSolved?.();
+          }}
+        >
           Comprobar
         </Button>
         <Button variant="ghost" disabled={hints >= hintList.length} onClick={() => setHints((h) => h + 1)}>
