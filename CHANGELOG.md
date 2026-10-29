@@ -4,16 +4,64 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.7)
+## [Próximamente] (0.8)
 
-- Modo «Comprueba tu respuesta» también para las formas normales (FND/FNC): hoy quedan dentro de «Ver la solución
-  completa», sin ejercicio propio.
 - i18n completo: mover a `src/i18n/` los textos internos de los laboratorios, las flashcards, la calculadora y el
   calendario (hoy están en sus componentes) y añadir inglés.
 - Registro de plugins completo para módulos de terceros (hoy `src/config.ts` es un registro sencillo con
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.7.0] - 2026-10-29
+
+### Añadido
+
+- **Predicados** (pestaña nueva, tras «Lógica»): lógica de predicados de primer orden.
+  - «Evaluar en un dominio»: dominio finito (hasta 5 elementos) con la extensión de cada predicado en casillas
+    (columnas para P(x), rejilla x × y para R(x, y)), variables libres y ligadas, y «Comprueba tu respuesta» paso a
+    paso por instancias, de dentro hacia fuera, con testigo o contraejemplo para ∀ falsa y ∃ verdadera.
+  - «Negar paso a paso»: ¬∀, ¬∃, De Morgan, ¬(p → q), ¬(p ↔ q) y doble negación, una ley por línea, comprobada por
+    equivalencia en el dominio y sobre el árbol; termina con ¬ solo delante de átomos. Las pistas nombran la ley.
+  - «Traducir»: frases con glosario comparadas con una traducción de referencia en dominios de 1 a 4 elementos.
+- **Conjuntos** (pestaña nueva, tras «Predicados»):
+  - Diagrama de Venn de 2 o 3 conjuntos: sombreas las regiones de una expresión (∪, ∩, ∖, Δ, Aᶜ, ∅, U) y
+    «Comprobar» señala las regiones mal sin revelar la respuesta; cada región es accesible con teclado y se nombra
+    como «A ∩ Bᶜ ∩ C». Modo «Con elementos» para calcular el conjunto resultado.
+  - Igualdades: demostración paso a paso con una ley por línea, comprobada por regiones y por reescritura, y «¿Son
+    iguales?», con la región contraejemplo después de responder.
+  - Cardinales e inclusión–exclusión con problemas de enunciado de elaboración propia (dos y tres conjuntos).
+  - Conjunto de partes y producto cartesiano, corregidos como conjuntos, sin importar el orden.
+- **Álgebra de Boole · «Karnaugh y formas canónicas»**: ejercicios propios de 2, 3 y 4 variables, o una expresión, un
+  vector de verdad (con X) o un mapa en blanco.
+  - «Σm y ΠM»: escribes las listas de mintérminos y maxtérminos y, si quieres, las formas canónicas; «Comprobar» dice
+    qué índices sobran y cuántos faltan, sin decir cuáles.
+  - «Mapa de Karnaugh»: ejes en código Gray; agrupas los 1 (suma de productos) o los 0 (producto de sumas) en
+    rectángulos de 1, 2, 4, 8 o 16 celdas que pueden dar la vuelta. «Comprobar» avisa si falta algo por cubrir o si
+    hay una agrupación más simple, sin enseñarla. Navegable con flechas, con etiquetas por celda y grupos
+    distinguidos por número y estilo de borde.
+- **Ejercicios** (pestaña nueva, la última del área): banco de ejercicios generados al momento por tema y nivel
+  (básico, medio, avanzado), con catorce tipos: tabla de verdad paso a paso, clasificar, ¿son equivalentes?, FND y
+  FNC; evaluar en un dominio y negar paso a paso; sombrear en el diagrama de Venn, ¿son iguales?, demostrar una
+  igualdad, inclusión–exclusión y partes y producto; Σm y ΠM, mapa de Karnaugh y simplificar con leyes.
+  - Cada ejercicio usa la práctica de su laboratorio (corrige sin dar la respuesta; la solución, tras «Ver la
+    solución completa»), va en la URL (`?t=&n=&s=`) para compartirlo o repetirlo, y hay «Siguiente ejercicio»,
+    «Mezclar» por tema y contador de la sesión.
+  - Progreso por tipo y nivel en la clave `exercises` de `DEFAULT_LABS_KEYS` (`ia-labs.exercises.v1`), también en
+    «Exportar mis datos».
+- API pública: `PredicatesLabPage`, `SetsLabPage`, `ExercisesPage`, los motores de `shared/predicates`,
+  `shared/sets`, `shared/boole/canonical.ts`, `shared/boole/karnaugh.ts` y `shared/exercises`, y los contenidos
+  `PREDICADOS_PACK`, `SETS_PACK` y `KARNAUGH_PACK` (CC BY 4.0).
+
+### Cambiado
+
+- Orden de las pestañas, como en clase: Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole, Markov y
+  Ejercicios. Las pestañas extra de una app anfitriona van después; `predicados`, `conjuntos` y `ejercicios` quedan
+  reservados como identificadores.
+- `minimalSOP` y `minimalPOS` aceptan indiferencias (X); `implicantProduct` e `implicantSum` pasan a ser públicas.
+- El borrador del laboratorio de Boole pasa a la versión 3; los de las versiones 1 y 2 se siguen leyendo.
+- Las prácticas de los laboratorios aceptan un enunciado dado y avisan al resolverse (`onSolved`); los laboratorios
+  no cambian.
 
 ## [0.6.0] - 2026-10-29
 
@@ -194,7 +242,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.6.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.7.0
 [0.6.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.6.0
 [0.5.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.5.0
 [0.4.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.4.0
