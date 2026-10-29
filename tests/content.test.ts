@@ -6,6 +6,7 @@ import { NOTATION } from "../content/notation/index.ts";
 import { SYMBOL_PACKS } from "../content/symbols/index.ts";
 import { BOOLE_PACK } from "../content/boole/practica.ts";
 import { CIRCUIT_PACK } from "../content/boole/circuitos.ts";
+import { PREDICADOS_PACK } from "../content/predicados/practica.ts";
 import { BoolePackSchema, CircuitPackSchema } from "../shared/boole/schema.ts";
 import { circuitTruthTable, circuitToExpression, evaluateCircuit } from "../shared/boole/circuit.ts";
 import { evalBoole } from "../shared/boole/expr.ts";
@@ -14,6 +15,7 @@ import { minimizeBoole } from "../shared/boole/minimize.ts";
 import { CourseSchema } from "../shared/courses/types.ts";
 import { NotationSchema } from "../shared/logic/notation.ts";
 import { SymbolPackSchema } from "../shared/symbols/schema.ts";
+import { PredicatesPackSchema } from "../shared/predicates/schema.ts";
 
 const issues = (r: { success: boolean; error?: { issues: Array<{ path: PropertyKey[]; message: string }> } }) =>
   r.success ? [] : r.error!.issues.map((i) => `${i.path.map(String).join(".")}: ${i.message}`);
@@ -135,5 +137,33 @@ describe("content/boole/circuitos", () => {
     expect(CircuitPackSchema.safeParse({ ...CIRCUIT_PACK, circuits: [undef, ...CIRCUIT_PACK.circuits.slice(1)] }).success).toBe(false);
     const short = { ...base, table: "01" };
     expect(CircuitPackSchema.safeParse({ ...CIRCUIT_PACK, circuits: [short, ...CIRCUIT_PACK.circuits.slice(1)] }).success).toBe(false);
+  });
+});
+
+describe("content/predicados", () => {
+  it("practica.ts cumple PredicatesPackSchema (fórmulas cerradas, predicados definidos, tuplas del dominio)", () => {
+    expect(issues(PredicatesPackSchema.safeParse(PREDICADOS_PACK))).toEqual([]);
+  });
+
+  it("es de elaboración propia y con licencia CC BY 4.0", () => {
+    expect(PREDICADOS_PACK.meta.source).toBe("Elaboración propia");
+    expect(PREDICADOS_PACK.meta.license).toBe("CC-BY-4.0");
+  });
+
+  it("el esquema rechaza una fórmula con variables libres o un predicado sin definir", () => {
+    const d = PREDICADOS_PACK.domains[0]!;
+    const free = { ...d, formulas: [...d.formulas, "P(x)"] };
+    expect(PredicatesPackSchema.safeParse({ ...PREDICADOS_PACK, domains: [free, ...PREDICADOS_PACK.domains.slice(1)] }).success).toBe(false);
+    const undef = { ...d, formulas: [...d.formulas, "∀x Z(x)"] };
+    expect(PredicatesPackSchema.safeParse({ ...PREDICADOS_PACK, domains: [undef, ...PREDICADOS_PACK.domains.slice(1)] }).success).toBe(false);
+    const t = PREDICADOS_PACK.translation[0]!;
+    const badAnswer = { ...t, answer: "∀x (P(x) → M(x, x))" };
+    expect(PredicatesPackSchema.safeParse({ ...PREDICADOS_PACK, translation: [badAnswer, ...PREDICADOS_PACK.translation.slice(1)] }).success).toBe(false);
+  });
+
+  it("el esquema rechaza una tupla con elementos fuera del dominio", () => {
+    const d = PREDICADOS_PACK.domains[0]!;
+    const bad = { ...d, predicates: d.predicates.map((p, i) => (i === 0 ? { ...p, extension: [["9"]] } : p)) };
+    expect(PredicatesPackSchema.safeParse({ ...PREDICADOS_PACK, domains: [bad, ...PREDICADOS_PACK.domains.slice(1)] }).success).toBe(false);
   });
 });
