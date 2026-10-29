@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { booleToPlain, parseBoole, type BExpr } from "./expr.ts";
-import { minimalSOP, minimizeBoole, primeImplicants } from "./minimize.ts";
+import { implicantProduct, implicantSum, minimalPOS, minimalSOP, minimizeBoole, primeImplicants } from "./minimize.ts";
 import { compareFormulas } from "../logic/compare.ts";
 import { toLogicNode } from "./expr.ts";
 
@@ -70,5 +70,48 @@ describe("Quine–McCluskey", () => {
     expect(m.sop.literals).toBe(6); // wx + xy + xz
     expect(m.pos.literals).toBe(4); // x(w + y + z)
     expect(m.minLiterals).toBe(4);
+  });
+});
+
+describe("indiferencias (X)", () => {
+  const V = ["w", "x", "y", "z"];
+
+  it("las X agrandan los grupos sin tener que cubrirlas", () => {
+    // Sin X: Σm(1,3,7,11,15) = w′x′z + yz (5 literales). Con d(0,2,5): w′z + yz (4).
+    expect(minimalSOP(V, [1, 3, 7, 11, 15]).literals).toBe(5);
+    const sop = minimalSOP(V, [1, 3, 7, 11, 15], [0, 2, 5]);
+    expect(booleToPlain(sop.expr)).toBe("w′ ⊙ z ⊕ y ⊙ z");
+    expect(sop.literals).toBe(4);
+    expect(sop.terms).toBe(2);
+  });
+
+  it("una X que no ayuda se queda fuera", () => {
+    const sop = minimalSOP(["x", "y", "z"], [7], [0]);
+    expect(booleToPlain(sop.expr)).toBe("x ⊙ y ⊙ z");
+  });
+
+  it("si los 1 y las X llenan el mapa, la función puede ser 1; sin ningún 1, es 0", () => {
+    expect(booleToPlain(minimalSOP(["x", "y"], [0, 1, 2], [3]).expr)).toBe("1");
+    expect(booleToPlain(minimalSOP(["x", "y"], [], [3]).expr)).toBe("0");
+    expect(booleToPlain(minimalPOS(["x", "y"], [], [3]).expr)).toBe("0");
+    expect(booleToPlain(minimalPOS(["x", "y"], [3], [0, 1, 2]).expr)).toBe("1");
+  });
+
+  it("producto de sumas con indiferencias", () => {
+    // Ceros en 0 y 4, X en 2 y 6: el factor es z (los cuatro tienen z = 0).
+    const pos = minimalPOS(["x", "y", "z"], [1, 3, 5, 7], [2, 6]);
+    expect(booleToPlain(pos.expr)).toBe("z");
+    expect(pos.literals).toBe(1);
+  });
+
+  it("un mintérmino que también aparece como X cuenta como 1", () => {
+    expect(minimalSOP(["x", "y"], [3], [3]).literals).toBe(2);
+  });
+
+  it("producto y suma de un implicante", () => {
+    expect(booleToPlain(implicantProduct(["x", "y", "z"], { care: 0b101, value: 0b100 }))).toBe("x ⊙ z′");
+    expect(booleToPlain(implicantSum(["x", "y", "z"], { care: 0b101, value: 0b100 }))).toBe("x′ ⊕ z");
+    expect(booleToPlain(implicantProduct(["x", "y"], { care: 0, value: 0 }))).toBe("1");
+    expect(booleToPlain(implicantSum(["x", "y"], { care: 0, value: 0 }))).toBe("0");
   });
 });

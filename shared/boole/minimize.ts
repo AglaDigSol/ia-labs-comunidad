@@ -1,5 +1,7 @@
 // Forma mínima de una función booleana con Quine–McCluskey (implicantes primos) y una cobertura
 // exacta de coste mínimo (literales y, a igualdad, términos). Pensado para pocas variables (≤ 6).
+// Admite indiferencias (las X de un mapa de Karnaugh): entran en los implicantes primos para
+// agrandarlos, pero no hace falta cubrirlas.
 import { buildTable, MAX_VARIABLES } from "../logic/truth-table.ts";
 import { band, bconst, bnot, bor, booleVars, bvar, toLogicNode, type BExpr } from "./expr.ts";
 
@@ -76,7 +78,8 @@ export function minimumCover(minterms: number[], primes: Implicant[]): Implicant
   return best ?? [];
 }
 
-function termExpr(vars: string[], imp: Implicant): BExpr {
+/** Producto de un implicante: care = 101, value = 100 en x, y, z da x ⊙ z′. */
+export function implicantProduct(vars: string[], imp: Implicant): BExpr {
   const n = vars.length;
   const lits: BExpr[] = [];
   vars.forEach((v, i) => {
@@ -88,11 +91,11 @@ function termExpr(vars: string[], imp: Implicant): BExpr {
 
 function sumExpr(vars: string[], imps: Implicant[]): BExpr {
   if (imps.length === 0) return bconst(0);
-  return bor(...imps.map((i) => termExpr(vars, i)));
+  return bor(...imps.map((i) => implicantProduct(vars, i)));
 }
 
-/** Suma de complementos de un término: (x ⊙ y′)′ = x′ ⊕ y. */
-function clauseExpr(vars: string[], imp: Implicant): BExpr {
+/** Suma de complementos de un término: (x ⊙ y′)′ = x′ ⊕ y (el factor de un grupo de ceros). */
+export function implicantSum(vars: string[], imp: Implicant): BExpr {
   const n = vars.length;
   const lits: BExpr[] = [];
   vars.forEach((v, i) => {
@@ -108,12 +111,17 @@ export type Minimized =
   | { ok: true; vars: string[]; sop: MinimalForm; pos: MinimalForm; minLiterals: number }
   | { ok: false; code: "too-many-variables"; count: number };
 
-/** Suma de productos mínima a partir de los mintérminos. */
-export function minimalSOP(vars: string[], minterms: number[]): MinimalForm {
+/**
+ * Suma de productos mínima a partir de los mintérminos y, si las hay, de las indiferencias
+ * (`dontCares`), que se pueden usar o no.
+ */
+export function minimalSOP(vars: string[], minterms: number[], dontCares: number[] = []): MinimalForm {
   const n = vars.length;
-  if (minterms.length === 0) return { expr: bconst(0), literals: 0, terms: 0 };
-  if (minterms.length === 1 << n) return { expr: bconst(1), literals: 0, terms: 0 };
-  const cover = minimumCover(minterms, primeImplicants(n, minterms));
+  const ones = [...new Set(minterms)];
+  const dc = [...new Set(dontCares)].filter((m) => !ones.includes(m));
+  if (ones.length === 0) return { expr: bconst(0), literals: 0, terms: 0 };
+  if (ones.length + dc.length === 1 << n) return { expr: bconst(1), literals: 0, terms: 0 };
+  const cover = minimumCover(ones, primeImplicants(n, [...ones, ...dc]));
   return {
     expr: sumExpr(vars, cover),
     literals: cover.reduce((s, i) => s + popcount(i.care), 0),
@@ -121,16 +129,17 @@ export function minimalSOP(vars: string[], minterms: number[]): MinimalForm {
   };
 }
 
-/** Producto de sumas mínimo: el dual de la suma mínima del complemento. */
-export function minimalPOS(vars: string[], minterms: number[]): MinimalForm {
+/** Producto de sumas mínimo: el dual de la suma mínima del complemento (con las mismas indiferencias). */
+export function minimalPOS(vars: string[], minterms: number[], dontCares: number[] = []): MinimalForm {
   const n = vars.length;
   const set = new Set(minterms);
-  const zeros = Array.from({ length: 1 << n }, (_, i) => i).filter((i) => !set.has(i));
+  const dc = [...new Set(dontCares)].filter((m) => !set.has(m));
+  const zeros = Array.from({ length: 1 << n }, (_, i) => i).filter((i) => !set.has(i) && !dc.includes(i));
   if (zeros.length === 0) return { expr: bconst(1), literals: 0, terms: 0 };
-  if (zeros.length === 1 << n) return { expr: bconst(0), literals: 0, terms: 0 };
-  const cover = minimumCover(zeros, primeImplicants(n, zeros));
+  if (zeros.length + dc.length === 1 << n) return { expr: bconst(0), literals: 0, terms: 0 };
+  const cover = minimumCover(zeros, primeImplicants(n, [...zeros, ...dc]));
   return {
-    expr: band(...cover.map((i) => clauseExpr(vars, i))),
+    expr: band(...cover.map((i) => implicantSum(vars, i))),
     literals: cover.reduce((s, i) => s + popcount(i.care), 0),
     terms: cover.length,
   };
