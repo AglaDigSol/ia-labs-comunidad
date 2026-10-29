@@ -2,10 +2,11 @@ import { lazy, Suspense, type ReactNode } from "react";
 import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router";
 import { cn } from "../../lib/cn.ts";
 
+/** Pestañas del área, en orden. «Ejercicios» (el banco de ejercicios de todos los temas) va la última. */
 export const LABS: Array<{
-  id: "simbolos" | "logica" | "predicados" | "conjuntos" | "markov" | "boole";
+  id: "simbolos" | "logica" | "predicados" | "conjuntos" | "markov" | "boole" | "ejercicios";
   path: string;
-  label: "Simbología" | "Lógica" | "Predicados" | "Conjuntos" | "Markov" | "Álgebra de Boole";
+  label: "Simbología" | "Lógica" | "Predicados" | "Conjuntos" | "Markov" | "Álgebra de Boole" | "Ejercicios";
 }> = [
   { id: "simbolos", path: "simbolos", label: "Simbología" },
   { id: "logica", path: "logica", label: "Lógica" },
@@ -13,11 +14,12 @@ export const LABS: Array<{
   { id: "conjuntos", path: "conjuntos", label: "Conjuntos" },
   { id: "boole", path: "boole", label: "Álgebra de Boole" },
   { id: "markov", path: "markov", label: "Markov" },
+  { id: "ejercicios", path: "ejercicios", label: "Ejercicios" },
 ];
 
 /** Pestaña adicional que una app anfitriona añade después de los laboratorios. */
 export interface LabsExtraTab {
-  /** Identificador único (no puede coincidir con simbolos, logica, predicados, conjuntos, boole ni markov). */
+  /** Identificador único (no puede coincidir con simbolos, logica, predicados, conjuntos, boole, markov ni ejercicios). */
   id: string;
   /** Texto de la pestaña. */
   label: string;
@@ -31,7 +33,7 @@ export interface LabsExtraTab {
 export type LabsActiveTab = { id: string; label: string };
 
 export interface LabsRoutesProps {
-  /** Pestañas propias de la app anfitriona, en este orden, tras Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole y Markov. */
+  /** Pestañas propias de la app anfitriona, en este orden, tras Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole, Markov y Ejercicios. */
   extraTabs?: LabsExtraTab[];
   /** Acción opcional a la derecha del título «Laboratorios» (recibe la pestaña activa o null). */
   renderHeaderAction?: (active: LabsActiveTab | null) => ReactNode;
@@ -50,6 +52,7 @@ const PredicatesLabPage = lazy(() =>
 const MarkovLabPage = lazy(() => import("./markov/MarkovLabPage.tsx").then((m) => ({ default: m.MarkovLabPage })));
 const SetsLabPage = lazy(() => import("./sets/SetsLabPage.tsx").then((m) => ({ default: m.SetsLabPage })));
 const BooleLabPage = lazy(() => import("./boole/BooleLabPage.tsx").then((m) => ({ default: m.BooleLabPage })));
+const ExercisesPage = lazy(() => import("./exercises/ExercisesPage.tsx").then((m) => ({ default: m.ExercisesPage })));
 
 function LabFallback() {
   return <div aria-busy="true" className="min-h-[240px] animate-pulse rounded-md bg-sunken motion-reduce:animate-none" />;
@@ -127,6 +130,7 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath }: Lab
           <Route path="conjuntos" element={<SetsLabPage />} />
           <Route path="markov" element={<MarkovLabPage />} />
           <Route path="boole" element={<BooleLabPage />} />
+          <Route path="ejercicios" element={<ExercisesPage />} />
           {extras.map((t) => (
             <Route key={t.id} path={`${t.path}/*`} element={t.element} />
           ))}
