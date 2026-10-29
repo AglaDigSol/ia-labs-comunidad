@@ -96,6 +96,15 @@ describe("LogicLabPage single formula", () => {
     expect(sol().getByText("Verdadera en 7 de 8 filas")).toBeTruthy();
   });
 
+  it("the practice starts paso a paso when there are intermediate columns", async () => {
+    renderAt("/laboratorios/logica?f=(p%20%E2%86%92%20q)%20%E2%86%94%20(q%20%E2%86%92%20p)");
+    expect(await screen.findByRole("heading", { name: "Comprueba tu respuesta" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Paso a paso" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByText("Paso 1 de 3:")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Comprobar paso" })).toBeTruthy();
+    expect(screen.getByLabelText("Fórmula normalizada")).toBeTruthy();
+  });
+
   it("accepts the ASCII form", async () => {
     renderAt("/laboratorios/logica");
     await typeFormula("(p & q) -> r");
@@ -284,9 +293,10 @@ describe("Normal forms and intermediate columns", () => {
     expect(screen.getByText(/Formas canónicas sin simplificar/)).toBeTruthy();
     const sw = screen.getByRole("switch", { name: "Mostrar pasos intermedios" });
     expect(sw.getAttribute("aria-checked")).toBe("true");
-    expect(screen.getByRole("columnheader", { name: "p ∧ q" })).toBeTruthy();
+    // The practice above also has a «p ∧ q» column (paso a paso): look only in the solution.
+    expect(sol().getByRole("columnheader", { name: "p ∧ q" })).toBeTruthy();
     fireEvent.click(sw);
-    await waitFor(() => expect(screen.queryByRole("columnheader", { name: "p ∧ q" })).toBeNull());
+    await waitFor(() => expect(sol().queryByRole("columnheader", { name: "p ∧ q" })).toBeNull());
   });
 
   it("tautology and contradiction empty-list copy", async () => {
