@@ -67,7 +67,7 @@ describe("buildTable", () => {
   });
   it("sub aligns with subformulas", () => {
     const t = table("(p ∧ q) → r");
-    expect(t.subformulas.map(toPlain)).toEqual(["p ∧ q", "p ∧ q → r"]);
+    expect(t.subformulas.map(toPlain)).toEqual(["p ∧ q", "(p ∧ q) → r"]);
     expect(subformulas(ast("(p ∧ q) → r"))).toHaveLength(2);
     expect(t.rows[0]!.sub).toEqual([true, true]);
     expect(t.rows[1]!.sub).toEqual([true, false]);

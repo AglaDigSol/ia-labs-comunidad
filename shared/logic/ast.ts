@@ -66,9 +66,15 @@ function varTex(name: string): string {
   return `\\mathit{${name.replace(/_/g, "\\_")}}`;
 }
 
+const isBinary = (n: Node) => n.kind !== "var" && n.kind !== "const" && n.kind !== "not";
+
+// Paréntesis «de libro»: un operador binario dentro de otro binario distinto siempre va entre
+// paréntesis, aunque la precedencia los haga innecesarios ((p → q) ↔ (q → p), (p ∧ q) ∨ r).
+// Con el mismo operador se sigue la asociatividad y ¬ solo los pone cuando hacen falta.
 function render(node: Node, tex: boolean): string {
   const wrap = (child: Node, parent: Node, side: "left" | "right" | "arg"): string => {
     const s = render(child, tex);
+    if (isBinary(child) && isBinary(parent) && child.kind !== parent.kind) return `(${s})`;
     const pc = PREC[child.kind];
     const pp = PREC[parent.kind];
     let need = pc < pp;
