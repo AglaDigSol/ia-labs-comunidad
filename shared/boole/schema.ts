@@ -82,3 +82,50 @@ export const CircuitPackSchema = z
 
 export type CircuitPack = z.infer<typeof CircuitPackSchema>;
 export type CircuitContent = z.infer<typeof CircuitSchema>;
+
+// ---------------------------------------------------------------- Karnaugh (content/boole/karnaugh.ts)
+
+const KarnaughIndexSchema = z.number().int().min(0).max(15);
+const KarnaughId = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+const KarnaughLevel = z.enum(["básico", "medio", "avanzado"]);
+
+/** Ejercicio dado por una expresión (de 2 a 4 variables) o por sus listas Σm(…) y d(…). */
+export const KarnaughExerciseSchema = z.union([
+  z.strictObject({
+    id: KarnaughId,
+    level: KarnaughLevel,
+    /** Expresión con la notación de clase (⊕, ⊙, ′, 0, 1). */
+    expr: z.string().trim().min(1).max(120),
+  }),
+  z
+    .strictObject({
+      id: KarnaughId,
+      level: KarnaughLevel,
+      /** Variables, de una letra minúscula; la primera es el bit alto de los índices. */
+      vars: z.array(z.string().regex(/^[a-z]$/)).min(2).max(4),
+      /** Índices de los 1 (Σm) y de las indiferencias (d). */
+      ones: z.array(KarnaughIndexSchema).min(1).max(15),
+      dontCares: z.array(KarnaughIndexSchema).max(8),
+    })
+    .superRefine((e, ctx) => {
+      const size = 1 << e.vars.length;
+      if (new Set(e.vars).size !== e.vars.length) ctx.addIssue({ code: "custom", path: ["vars"], message: "Variables repetidas." });
+      const all = [...e.ones, ...e.dontCares];
+      if (all.some((m) => m >= size)) ctx.addIssue({ code: "custom", message: `Los índices van de 0 a ${size - 1}.` });
+      if (new Set(all).size !== all.length) ctx.addIssue({ code: "custom", message: "Un índice aparece dos veces (o en Σm y en d a la vez)." });
+      if (all.length === size) ctx.addIssue({ code: "custom", message: "La función no tiene ningún 0." });
+    }),
+]);
+
+export const KarnaughPackSchema = z
+  .strictObject({
+    meta: ContentMetaSchema,
+    exercises: z.array(KarnaughExerciseSchema).min(8).max(40),
+  })
+  .superRefine((p, ctx) => {
+    const ids = new Set(p.exercises.map((e) => e.id));
+    if (ids.size !== p.exercises.length) ctx.addIssue({ code: "custom", message: "Los ids de los ejercicios deben ser únicos." });
+  });
+
+export type KarnaughPack = z.infer<typeof KarnaughPackSchema>;
+export type KarnaughExercise = z.infer<typeof KarnaughExerciseSchema>;

@@ -6,7 +6,9 @@ import { NOTATION } from "../content/notation/index.ts";
 import { SYMBOL_PACKS } from "../content/symbols/index.ts";
 import { BOOLE_PACK } from "../content/boole/practica.ts";
 import { CIRCUIT_PACK } from "../content/boole/circuitos.ts";
-import { BoolePackSchema, CircuitPackSchema } from "../shared/boole/schema.ts";
+import { KARNAUGH_PACK } from "../content/boole/karnaugh.ts";
+import { BoolePackSchema, CircuitPackSchema, KarnaughPackSchema } from "../shared/boole/schema.ts";
+import { booleVector, vectorFromLists } from "../shared/boole/canonical.ts";
 import { circuitTruthTable, circuitToExpression, evaluateCircuit } from "../shared/boole/circuit.ts";
 import { evalBoole } from "../shared/boole/expr.ts";
 import { booleVars, literalCount, parseBoole } from "../shared/boole/expr.ts";
@@ -135,5 +137,49 @@ describe("content/boole/circuitos", () => {
     expect(CircuitPackSchema.safeParse({ ...CIRCUIT_PACK, circuits: [undef, ...CIRCUIT_PACK.circuits.slice(1)] }).success).toBe(false);
     const short = { ...base, table: "01" };
     expect(CircuitPackSchema.safeParse({ ...CIRCUIT_PACK, circuits: [short, ...CIRCUIT_PACK.circuits.slice(1)] }).success).toBe(false);
+  });
+});
+
+describe("content/boole/karnaugh", () => {
+  it("karnaugh.ts cumple KarnaughPackSchema", () => {
+    expect(issues(KarnaughPackSchema.safeParse(KARNAUGH_PACK))).toEqual([]);
+  });
+
+  it("es de elaboración propia y con licencia CC BY 4.0", () => {
+    expect(KARNAUGH_PACK.meta.source).toBe("Elaboración propia");
+    expect(KARNAUGH_PACK.meta.license).toBe("CC-BY-4.0");
+  });
+
+  it("cada ejercicio tiene de 2 a 4 variables y no es constante; hay de 2, 3 y 4 variables y alguno con X", () => {
+    const sizes = new Set<number>();
+    for (const e of KARNAUGH_PACK.exercises) {
+      let vector: string;
+      if ("expr" in e) {
+        const r = parseBoole(e.expr);
+        expect(r.ok, e.id).toBe(true);
+        if (!r.ok) continue;
+        const vars = booleVars(r.expr);
+        expect(vars.length, e.id).toBeGreaterThanOrEqual(2);
+        expect(vars.length, e.id).toBeLessThanOrEqual(4);
+        vector = booleVector(r.expr, vars);
+        sizes.add(vars.length);
+      } else {
+        vector = vectorFromLists(e.vars.length, e.ones, e.dontCares);
+        sizes.add(e.vars.length);
+      }
+      expect(vector, e.id).toContain("1");
+      expect(vector, e.id).toContain("0");
+    }
+    expect([...sizes].sort()).toEqual([2, 3, 4]);
+    expect(KARNAUGH_PACK.exercises.some((e) => "dontCares" in e && e.dontCares.length > 0)).toBe(true);
+  });
+
+  it("el esquema rechaza índices fuera de rango o repetidos entre Σm y d", () => {
+    const base = { id: "malo", level: "básico" as const, vars: ["x", "y"], ones: [1], dontCares: [] as number[] };
+    const bad = (e: object) => KarnaughPackSchema.safeParse({ ...KARNAUGH_PACK, exercises: [e, ...KARNAUGH_PACK.exercises] }).success;
+    expect(bad(base)).toBe(true);
+    expect(bad({ ...base, ones: [4] })).toBe(false);
+    expect(bad({ ...base, dontCares: [1] })).toBe(false);
+    expect(bad({ ...base, ones: [0, 1, 2, 3] })).toBe(false);
   });
 });
