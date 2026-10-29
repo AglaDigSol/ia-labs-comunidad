@@ -159,7 +159,8 @@ export function EvaluateSection({ domain, onDomain }: { domain: DomainState; onD
   );
 }
 
-function EvalSolution({ formula: f, interp }: { formula: PredFormula; interp: PredInterpretation }) {
+/** Solución completa: valor, pasos con sus instancias y testigos o contraejemplos (va detrás de SolutionGate). */
+export function EvalSolution({ formula: f, interp }: { formula: PredFormula; interp: PredInterpretation }) {
   const formulaText = predToPlain(f);
   const value = predEvaluator(interp)(f);
   const steps = evaluationSteps(f, interp, 200);

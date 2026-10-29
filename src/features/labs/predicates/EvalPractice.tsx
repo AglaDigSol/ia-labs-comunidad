@@ -44,11 +44,14 @@ export function EvalPractice({
   interp,
   mode,
   onMode,
+  onSolved,
 }: {
   formula: PredFormula;
   interp: PredInterpretation;
   mode: EvalMode;
   onMode: (m: EvalMode) => void;
+  /** Se llama al comprobar el valor de la fórmula completa, correcto (el testigo o contraejemplo es opcional). */
+  onSolved?: () => void;
 }) {
   const plain = predToPlain(formula);
   const steps = useMemo(() => evaluationSteps(formula, interp, MAX_EVAL_STEPS), [formula, interp]);
@@ -81,9 +84,9 @@ export function EvalPractice({
         </p>
       ) : null}
       {effective === "pasos" && steps.ok ? (
-        <StepPractice formula={formula} plain={plain} steps={steps.steps} value={steps.value} interp={interp} />
+        <StepPractice formula={formula} plain={plain} steps={steps.steps} value={steps.value} interp={interp} onSolved={onSolved} />
       ) : (
-        <ResultPractice formula={formula} plain={plain} interp={interp} />
+        <ResultPractice formula={formula} plain={plain} interp={interp} onSolved={onSolved} />
       )}
     </section>
   );
@@ -146,12 +149,14 @@ function StepPractice({
   steps,
   value,
   interp,
+  onSolved,
 }: {
   formula: PredFormula;
   plain: string;
   steps: EvalStep[];
   value: boolean;
   interp: PredInterpretation;
+  onSolved?: () => void;
 }) {
   // Si la fórmula completa es el último paso, no hace falta preguntar su valor otra vez.
   const finalIsStep = steps[steps.length - 1]!.plain === plain;
@@ -187,7 +192,10 @@ function StepPractice({
 
   const check = () => {
     setChecked(true);
-    if (instOk && quant === target) setSolved(index + 1);
+    if (instOk && quant === target) {
+      setSolved(index + 1);
+      if (index + 1 === total) onSolved?.();
+    }
   };
   const advance = () => {
     moved.current = true;
@@ -370,7 +378,17 @@ function StepPractice({
 
 // ---------------------------------------------------------------- Solo el resultado
 
-function ResultPractice({ formula, plain, interp }: { formula: PredFormula; plain: string; interp: PredInterpretation }) {
+function ResultPractice({
+  formula,
+  plain,
+  interp,
+  onSolved,
+}: {
+  formula: PredFormula;
+  plain: string;
+  interp: PredInterpretation;
+  onSolved?: () => void;
+}) {
   const value = useMemo(() => predEvaluator(interp)(formula), [formula, interp]);
   const [answer, setAnswer] = useState<boolean | null>(null);
   const [checked, setChecked] = useState(false);
@@ -401,7 +419,13 @@ function ResultPractice({ formula, plain, interp }: { formula: PredFormula; plai
         ))}
       </fieldset>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={() => setChecked(true)}>
+        <Button
+          variant="primary"
+          onClick={() => {
+            setChecked(true);
+            if (answer === value) onSolved?.();
+          }}
+        >
           Comprobar
         </Button>
         <Hints list={hintList} shown={hints} onMore={() => setHints((h) => h + 1)} />
