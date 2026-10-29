@@ -8,6 +8,10 @@ import {
   ALL_SYMBOLS,
   BOOLE_PACK,
   buildTable,
+  checkSetStep,
+  compareSetExprs,
+  parseSetExpr,
+  SETS_PACK,
   configureLabs,
   createLocalStorageLabsAdapter,
   DEFAULT_LABS_KEYS,
@@ -75,9 +79,9 @@ function renderAt(url: string, mount = "/laboratorios", onHeader?: (a: LabsActiv
 const tabNames = () => screen.getAllByRole("tab").map((t) => t.textContent);
 
 describe("LabsRoutes como dependencia", () => {
-  it("muestra los cinco laboratorios y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
+  it("muestra los seis laboratorios y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
     renderAt("/laboratorios/python");
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Markov", "Álgebra de Boole", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Python"]);
     expect(await screen.findByText("Zona de Python del anfitrión")).toBeTruthy();
     const tab = screen.getByRole("tab", { name: "Python" });
     expect(tab.getAttribute("aria-selected")).toBe("true");
@@ -105,7 +109,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Markov", "Álgebra de Boole"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Boole", () => {
@@ -119,7 +123,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Markov", "Álgebra de Boole", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Python"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Predicados", () => {
@@ -133,7 +137,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Markov", "Álgebra de Boole", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Python"]);
   });
 
   it("abre el laboratorio de predicados sin guardar nada en localStorage", async () => {
@@ -179,6 +183,18 @@ describe("LabsRoutes como dependencia", () => {
     expect(checkKMapGroups(v, kmapSolution(v, "sop"), "sop").status).toBe("minimal");
     expect(readIndexList("Σm(1, 3)", 3)).toEqual({ ok: true, indices: [1, 3] });
     expect(KARNAUGH_PACK.exercises.length).toBeGreaterThanOrEqual(8);
+    const l = parseSetExpr("(A ∪ B)ᶜ");
+    const r = parseSetExpr("Aᶜ ∩ Bᶜ");
+    expect(l.ok && r.ok && compareSetExprs(l.expr, r.expr).equal).toBe(true);
+    expect(l.ok && r.ok && checkSetStep(l.expr, r.expr, "demorgan")).toEqual({ ok: true, lawMatches: true, suggestions: [] });
+    expect(SETS_PACK.cardinal.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("abre el laboratorio de conjuntos en su pestaña", async () => {
+    renderAt("/laboratorios/conjuntos");
+    expect(await screen.findByRole("heading", { level: 1, name: "Conjuntos" }, { timeout: 5000 })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Conjuntos" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByTestId("header-action").textContent).toBe("Conjuntos");
   });
 
   it("createLocalStorageLabsAdapter: la clave de Boole tiene un valor por defecto y se puede cambiar", () => {

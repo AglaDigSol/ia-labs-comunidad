@@ -180,7 +180,7 @@ subdominio (gratis hasta 50 usuarios):
 
 ## Usar como dependencia
 
-Los laboratorios (Simbología, Lógica, Predicados, Markov y Álgebra de Boole) y sus motores se pueden integrar en otra app de React. No hay paquete
+Los laboratorios (Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole y Markov) y sus motores se pueden integrar en otra app de React. No hay paquete
 en npm: se instala el tarball de una etiqueta publicada y el paquete trae el código TypeScript, que compilan el Vite y
 el `tsc` de la app anfitriona.
 
@@ -229,7 +229,7 @@ const PythonPage = lazy(() => import("./python/PythonPage.tsx"));
 </Routes>;
 ```
 
-- `extraTabs`: pestañas propias, en ese orden, después de los cinco laboratorios. `element` puede ser perezoso: hay un
+- `extraTabs`: pestañas propias, en ese orden, después de los seis laboratorios. `element` puede ser perezoso: hay un
   `Suspense` alrededor. Una pestaña con el id o la ruta de un laboratorio se ignora.
 - `renderHeaderAction(tab)`: acción opcional junto al título «Laboratorios»; recibe la pestaña activa
   (`{ id, label }`) o `null`.

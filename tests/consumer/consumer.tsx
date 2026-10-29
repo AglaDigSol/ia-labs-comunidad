@@ -6,6 +6,13 @@ import {
   ALL_SYMBOLS,
   BOOLE_PACK,
   BooleLabPage,
+  SetsLabPage,
+  SETS_PACK,
+  checkSetStep,
+  parseSetExpr,
+  solveRegions,
+  type SetExpr,
+  type SetLawId,
   CIRCUIT_PACK,
   checkAllAxioms,
   circuitFromExpression,
@@ -71,6 +78,7 @@ export function HostApp() {
         <Route path="/predicados" element={<PredicatesLabPage />} />
         <Route path="/markov" element={<MarkovLabPage />} />
         <Route path="/boole" element={<BooleLabPage />} />
+        <Route path="/conjuntos" element={<SetsLabPage />} />
       </Routes>
     </MemoryRouter>
   );
@@ -100,3 +108,8 @@ export const predFormula: PredFormula | null = pred.ok ? pred.formula : null;
 const numbers: PredInterpretation = { domain: ["1", "2"], predicates: { P: [["2"]] } };
 export const someEven: boolean = predFormula ? evaluatePred({ kind: "exists", variable: "x", body: { kind: "pred", name: "P", args: [{ name: "x" }] } }, numbers) : false;
 export const negSteps: number = predFormula ? pushNegation({ kind: "not", arg: predFormula }).length : 0;
+const setParsed = parseSetExpr(SETS_PACK.venn[0]?.expr ?? "A");
+export const setExpr: SetExpr | null = setParsed.ok ? setParsed.expr : null;
+const setLaw: SetLawId = "demorgan";
+export const setStep = setExpr ? checkSetStep(setExpr, setExpr, setLaw) : null;
+export const noRegions = solveRegions(["A", "B"], []).ok;

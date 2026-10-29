@@ -59,12 +59,12 @@ describe("labs routing", () => {
     ).toBeTruthy();
   });
 
-  it("sub-nav has five tabs and marks the active one", async () => {
+  it("sub-nav has six tabs and marks the active one", async () => {
     renderAt("/laboratorios/markov");
     await screen.findByRole("heading", { level: 1 });
     const tabs = screen.getAllByRole("tab");
-    expect(tabs.map((t) => t.textContent)).toEqual(["Simbología", "Lógica", "Predicados", "Markov", "Álgebra de Boole"]);
-    expect(tabs.map((t) => t.getAttribute("aria-selected"))).toEqual(["false", "false", "false", "true", "false"]);
+    expect(tabs.map((t) => t.textContent)).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov"]);
+    expect(tabs.map((t) => t.getAttribute("aria-selected"))).toEqual(["false", "false", "false", "false", "false", "true"]);
   });
 });
 

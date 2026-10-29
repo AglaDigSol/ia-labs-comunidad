@@ -15,6 +15,9 @@ import { evalBoole } from "../shared/boole/expr.ts";
 import { booleVars, literalCount, parseBoole } from "../shared/boole/expr.ts";
 import { minimizeBoole } from "../shared/boole/minimize.ts";
 import { CourseSchema } from "../shared/courses/types.ts";
+import { SETS_PACK } from "../content/conjuntos/practica.ts";
+import { compareSetExprs, parseSetExpr } from "../shared/sets/expr.ts";
+import { SetsPackSchema } from "../shared/sets/schema.ts";
 import { NotationSchema } from "../shared/logic/notation.ts";
 import { SymbolPackSchema } from "../shared/symbols/schema.ts";
 import { PredicatesPackSchema } from "../shared/predicates/schema.ts";
@@ -211,5 +214,34 @@ describe("content/predicados", () => {
     const d = PREDICADOS_PACK.domains[0]!;
     const bad = { ...d, predicates: d.predicates.map((p, i) => (i === 0 ? { ...p, extension: [["9"]] } : p)) };
     expect(PredicatesPackSchema.safeParse({ ...PREDICADOS_PACK, domains: [bad, ...PREDICADOS_PACK.domains.slice(1)] }).success).toBe(false);
+  });
+});
+
+describe("content/conjuntos", () => {
+  it("practica.ts cumple SetsPackSchema (expresiones legibles, datos coherentes y problemas con solución única)", () => {
+    expect(issues(SetsPackSchema.safeParse(SETS_PACK))).toEqual([]);
+  });
+
+  it("es de elaboración propia y con licencia CC BY 4.0", () => {
+    expect(SETS_PACK.meta.source).toBe("Elaboración propia");
+    expect(SETS_PACK.meta.license).toBe("CC-BY-4.0");
+  });
+
+  it("hay igualdades que se cumplen y otras que no, para «¿Son iguales?»", () => {
+    const verdicts = SETS_PACK.identities.map((i) => {
+      const l = parseSetExpr(i.left);
+      const r = parseSetExpr(i.right);
+      return l.ok && r.ok && compareSetExprs(l.expr, r.expr).equal;
+    });
+    expect(verdicts.filter(Boolean).length).toBeGreaterThanOrEqual(5);
+    expect(verdicts.filter((v) => !v).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("el esquema rechaza un problema sin datos suficientes y una expresión que no se lee", () => {
+    const base = SETS_PACK.cardinal[0]!;
+    const short = { ...base, data: base.data.slice(0, 3) };
+    expect(SetsPackSchema.safeParse({ ...SETS_PACK, cardinal: [short, ...SETS_PACK.cardinal.slice(1)] }).success).toBe(false);
+    const bad = { ...SETS_PACK.venn[0]!, expr: "A ∪ B ∩ C" };
+    expect(SetsPackSchema.safeParse({ ...SETS_PACK, venn: [bad, ...SETS_PACK.venn.slice(1)] }).success).toBe(false);
   });
 });
