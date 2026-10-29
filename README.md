@@ -15,7 +15,7 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Módulo | Qué hace | Interruptor |
 | --- | --- | --- |
 | Simbología | Diccionario de símbolos con búsqueda, fichas KaTeX, «lectura en clase» con voz (Web Speech) y el equivalente en Python/NumPy como texto. | siempre activo |
-| Lógica | Tablas de verdad, comparar dos fórmulas, FND/FNC y el espacio F₁. | siempre activo |
+| Lógica | Tablas de verdad (también paso a paso, una subfórmula cada vez), comparar dos fórmulas, FND/FNC y el espacio F₁. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
 | Álgebra de Boole | ¿Es un álgebra de Boole? (axiomas B1–B5 sobre estructuras finitas, tablas y diagrama de Hasse), simplificación paso a paso con leyes, comprobada en cada línea, puertas y circuitos (circuito → función, función → circuito con solo NAND o solo NOR, y las siete puertas) y los espacios F₁ y F₂. ⊕ es la suma, no el XOR (que se escribe ⊻). | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
@@ -38,8 +38,9 @@ Los laboratorios están pensados para **comprobar y entrenar, no para resolver**
 (tabla de verdad, clasificación, equivalencia, evolución de Markov, π, u₀, axiomas B1–B5, simplificaciones, la función de
 un circuito, las tablas de F₁ o una expresión para una función de F₂), la vista por defecto te pide tu resultado,
 lo corrige y te da pistas paso a paso. La solución completa queda detrás de «Ver la solución completa», con un aviso
-de integridad. El explorador de F₁ ya funcionaba así (rellenas la tabla y pulsas «Comprobar»). Los visualizadores, como
-«Función → circuito», enseñan el resultado directamente porque no hay nada que adivinar.
+de integridad. El explorador de F₁ ya funcionaba así (rellenas la tabla y pulsas «Comprobar»). La tabla de verdad
+se puede hacer paso a paso: cada columna intermedia se comprueba y se bloquea antes de añadir la siguiente. Los
+visualizadores, como «Función → circuito», enseñan el resultado directamente porque no hay nada que adivinar.
 
 ## Ejecutar en local
 
@@ -184,7 +185,7 @@ el `tsc` de la app anfitriona.
 
 ```json
 "dependencies": {
-  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.5.0"
+  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.6.0"
 }
 ```
 

@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.6)
+## [Próximamente] (0.7)
 
 - Modo «Comprueba tu respuesta» también para las formas normales (FND/FNC): hoy quedan dentro de «Ver la solución
   completa», sin ejercicio propio.
@@ -14,6 +14,33 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.6.0] - 2026-10-29
+
+### Añadido
+
+- **Lógica · «Comprueba tu respuesta» paso a paso**: la tabla de verdad se resuelve una columna cada vez, de dentro
+  hacia fuera, con las subfórmulas en el mismo orden que la tabla de la solución.
+  - Es el modo por defecto cuando la fórmula tiene subfórmulas intermedias. El selector «Paso a paso» / «Solo el
+    resultado» conserva el ejercicio de antes (columna final y clasificación), que sigue siendo el único para las
+    fórmulas sin pasos intermedios (p, ¬p, p ∧ q).
+  - «Comprobar paso» marca en rojo, con una X y una etiqueta accesible, las casillas que están mal, sin mostrar nunca
+    el valor correcto. Cuando toda la columna está bien, se bloquea, se anuncia «Paso k correcto» y «Siguiente paso:
+    …» añade la columna siguiente y le pasa el foco. Encima de la tabla se lee «Paso k de n».
+  - Las cabeceras de las columnas que combina el paso actual (variables o pasos anteriores) se resaltan, y las pistas
+    de cada paso nombran primero el operador y sus operandos («Esta columna aplica → a p y q: mira esas dos
+    columnas») y después la regla del operador, nunca los valores.
+  - Al completar la última columna se elige la clasificación. «Empezar de nuevo» reinicia el ejercicio, y cambiar de
+    fórmula también.
+
+### Cambiado
+
+- `toPlain` y `toTex` ponen paréntesis «de libro»: un operador binario dentro de otro binario distinto va siempre
+  entre paréntesis, aunque la precedencia no los exija. Ahora se lee (p → q) ↔ (q → p) en lugar de p → q ↔ q → p,
+  (p ∧ q) ∨ r en lugar de p ∧ q ∨ r y p ∨ (q ∧ r) en lugar de p ∨ q ∧ r. Con el mismo operador se mantiene la
+  asociatividad (p ∧ q ∧ r, p → q → r) y ¬ no cambia. Afecta a la fórmula normalizada, a las cabeceras de la tabla, a
+  las pistas y a cualquier texto de la biblioteca que use esas funciones; el analizador sigue leyendo igual todo lo
+  que se imprime.
 
 ## [0.5.0] - 2026-10-27
 
@@ -167,7 +194,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.5.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.6.0
 [0.5.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.5.0
 [0.4.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.4.0
 [0.3.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.3.0
