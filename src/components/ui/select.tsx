@@ -31,7 +31,8 @@ export function SelectContent({ className, children, ...props }: ComponentProps<
         position="popper"
         sideOffset={4}
         className={cn(
-          "z-50 min-w-[10rem] overflow-hidden rounded-md border border-border bg-raised text-fg shadow-md",
+          // Como mucho la altura disponible: una lista larga se desplaza dentro en lugar de salirse de la pantalla.
+          "z-50 max-h-[var(--radix-select-content-available-height)] min-w-[10rem] overflow-hidden rounded-md border border-border bg-raised text-fg shadow-md",
           className,
         )}
         {...props}
