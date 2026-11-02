@@ -1,11 +1,13 @@
 // Configuración del sitio y registro de módulos (tipo plugin).
 //
 // 1) Interruptores: pon a false un módulo opcional para publicar el sitio sin él. Desaparece de la
-//    navegación y de las rutas, y su código (un chunk perezoso) no se descarga nunca.
+//    navegación y de las rutas, y su código (un chunk perezoso) no se descarga nunca. Python es la
+//    excepción: viene apagado y es una pestaña de Laboratorios, no un módulo de la navegación.
 // 2) Registro: cada módulo declara su id, su ruta, su entrada de navegación, su componente perezoso y
 //    el contenido de content/ que usa. Para añadir un módulo nuevo, añade una entrada a MODULES.
 import { CalendarDays, Calculator, FlaskConical, Layers, Settings } from "lucide-react";
-import { lazy, type ComponentType, type LazyExoticComponent } from "react";
+import { createElement, lazy, type ComponentType, type LazyExoticComponent } from "react";
+import type { LabsRoutesProps } from "./features/labs/labs.tsx";
 import { t } from "./i18n/index.ts";
 
 export const config = {
@@ -16,10 +18,24 @@ export const config = {
     flashcards: true,
     /** Calculadora de notas (mínimo 5,0 por bloque y menciones). */
     calculadora: true,
+    /**
+     * Pestaña «Python» de Laboratorios: Python 3.12 en el navegador con Pyodide. Apagada por defecto
+     * porque publica unos 120 MB de paquetes en dist/pyodide/. Se enciende aquí (true) o, sin tocar el
+     * código, construyendo con LABS_PYTHON=1 (y LABS_PYTHON=0 la apaga). Ver «Python (opcional)» en
+     * el README.
+     */
+    python: false,
   },
 } as const;
 
-export type OptionalModuleId = keyof typeof config.modules;
+/** Módulos opcionales de la navegación (Python no lo es: es una pestaña de Laboratorios). */
+export type OptionalModuleId = Exclude<keyof typeof config.modules, "python">;
+
+// vite.config.ts lo define al construir: config.modules.python, salvo que LABS_PYTHON diga otra cosa.
+declare const __LABS_PYTHON__: boolean | undefined;
+
+/** ¿Lleva el sitio la pestaña Python? En las pruebas (sin build), lo que diga config.modules.python. */
+export const PYTHON_TAB: boolean = typeof __LABS_PYTHON__ === "boolean" ? __LABS_PYTHON__ : config.modules.python;
 
 type Icon = ComponentType<{ size?: number; strokeWidth?: number; "aria-hidden"?: boolean | "true"; className?: string }>;
 
@@ -43,7 +59,12 @@ export const MODULES: AppModule[] = [
     id: "laboratorios",
     path: "/laboratorios/*",
     nav: { label: t.nav.labs, short: t.nav.labsShort, icon: FlaskConical, end: false },
-    component: lazyNamed(() => import("./features/labs/labs.tsx"), "LabsRoutes"),
+    component: lazy(() =>
+      import("./features/labs/labs.tsx").then((m) => {
+        const Labs = m.LabsRoutes as ComponentType<LabsRoutesProps>;
+        return { default: () => createElement(Labs, { python: PYTHON_TAB }) };
+      }),
+    ),
     content: ["content/symbols", "content/notation"],
     optional: false,
   },

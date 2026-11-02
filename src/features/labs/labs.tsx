@@ -17,6 +17,14 @@ export const LABS: Array<{
   { id: "ejercicios", path: "ejercicios", label: "Ejercicios" },
 ];
 
+/**
+ * Pestaña opcional «Python» (Python en el navegador con Pyodide). Va después de «Ejercicios» y antes
+ * de las pestañas del anfitrión. Está apagada por defecto: se enciende con <LabsRoutes python />.
+ * Su id y su ruta («python») quedan reservados: con la pestaña encendida, una pestaña extra con ese
+ * id o esa ruta se descarta.
+ */
+export const PYTHON_LAB = { id: "python", path: "python", label: "Python" } as const;
+
 /** Pestaña adicional que una app anfitriona añade después de los laboratorios. */
 export interface LabsExtraTab {
   /** Identificador único (no puede coincidir con simbolos, logica, predicados, conjuntos, boole, markov ni ejercicios). */
@@ -33,8 +41,13 @@ export interface LabsExtraTab {
 export type LabsActiveTab = { id: string; label: string };
 
 export interface LabsRoutesProps {
-  /** Pestañas propias de la app anfitriona, en este orden, tras Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole, Markov y Ejercicios. */
+  /** Pestañas propias de la app anfitriona, en este orden, tras Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole, Markov y Ejercicios (y Python, si está encendida). */
   extraTabs?: LabsExtraTab[];
+  /**
+   * Enciende la pestaña «Python» (por defecto, apagada). Apagada no hay pestaña ni ruta, y su código
+   * no se descarga. La carpeta de Pyodide y los borradores se configuran con configureLabs({ python }).
+   */
+  python?: boolean;
   /** Acción opcional a la derecha del título «Laboratorios» (recibe la pestaña activa o null). */
   renderHeaderAction?: (active: LabsActiveTab | null) => ReactNode;
   /**
@@ -53,6 +66,14 @@ const MarkovLabPage = lazy(() => import("./markov/MarkovLabPage.tsx").then((m) =
 const SetsLabPage = lazy(() => import("./sets/SetsLabPage.tsx").then((m) => ({ default: m.SetsLabPage })));
 const BooleLabPage = lazy(() => import("./boole/BooleLabPage.tsx").then((m) => ({ default: m.BooleLabPage })));
 const ExercisesPage = lazy(() => import("./exercises/ExercisesPage.tsx").then((m) => ({ default: m.ExercisesPage })));
+
+// __LABS_PYTHON__ lo define vite.config.ts en la app independiente (LABS_PYTHON=1 o
+// config.modules.python). Si vale false, este import desaparece del build: ni chunk ni worker. En una
+// app anfitriona no está definido y el chunk existe, pero solo se descarga con la pestaña encendida.
+declare const __LABS_PYTHON__: boolean | undefined;
+const PythonLabPage = (typeof __LABS_PYTHON__ === "boolean" ? __LABS_PYTHON__ : true)
+  ? lazy(() => import("./python/PythonLabPage.tsx").then((m) => ({ default: m.PythonLabPage })))
+  : null;
 
 function LabFallback() {
   return <div aria-busy="true" className="min-h-[240px] animate-pulse rounded-md bg-sunken motion-reduce:animate-none" />;
@@ -94,14 +115,21 @@ function LabTab({ tab, to, active }: { tab: Tab; to: string; active: boolean }) 
 }
 
 const RESERVED = new Set<string>(LABS.flatMap((l) => [l.id, l.path]));
+const RESERVED_WITH_PYTHON = new Set<string>([...RESERVED, PYTHON_LAB.id, PYTHON_LAB.path]);
 
-export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath }: LabsRoutesProps = {}) {
+export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, python = false }: LabsRoutesProps = {}) {
   const { pathname } = useLocation();
   const base = useLabsBase(basePath);
+  const withPython = python && PythonLabPage !== null;
+  const reserved = withPython ? RESERVED_WITH_PYTHON : RESERVED;
   const extras = extraTabs
     .map((t) => ({ ...t, path: trimSlashes(t.path) }))
-    .filter((t) => t.path !== "" && !RESERVED.has(t.id) && !RESERVED.has(t.path));
-  const tabs: Tab[] = [...LABS, ...extras.map(({ id, label, path }) => ({ id, label, path }))];
+    .filter((t) => t.path !== "" && !reserved.has(t.id) && !reserved.has(t.path));
+  const tabs: Tab[] = [
+    ...LABS,
+    ...(withPython ? [PYTHON_LAB] : []),
+    ...extras.map(({ id, label, path }) => ({ id, label, path })),
+  ];
   const hrefOf = (tab: Tab) => `${base}/${tab.path}`;
   const activeTab = tabs.find((tab) => isActive(pathname, hrefOf(tab))) ?? null;
   return (
@@ -131,6 +159,7 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath }: Lab
           <Route path="markov" element={<MarkovLabPage />} />
           <Route path="boole" element={<BooleLabPage />} />
           <Route path="ejercicios" element={<ExercisesPage />} />
+          {withPython && PythonLabPage && <Route path={PYTHON_LAB.path} element={<PythonLabPage />} />}
           {extras.map((t) => (
             <Route key={t.id} path={`${t.path}/*`} element={t.element} />
           ))}

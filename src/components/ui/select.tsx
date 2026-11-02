@@ -65,3 +65,13 @@ export function SelectItem({
     </SelectPrimitive.Item>
   );
 }
+
+export const SelectGroup = SelectPrimitive.Group;
+
+export function SelectLabel({ className, ...props }: ComponentProps<typeof SelectPrimitive.Label>) {
+  return <SelectPrimitive.Label className={cn("px-3 pb-1 pt-2 text-[14px] font-semibold text-muted", className)} {...props} />;
+}
+
+export function SelectSeparator({ className, ...props }: ComponentProps<typeof SelectPrimitive.Separator>) {
+  return <SelectPrimitive.Separator className={cn("my-1 h-px bg-border", className)} {...props} />;
+}
