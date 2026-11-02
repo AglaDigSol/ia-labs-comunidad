@@ -331,7 +331,8 @@ export function PythonLabPage() {
       const bytes = packageBytes(e.name);
       if (e.phase === "start") {
         setPkg(e.name);
-        append({ k: "info", text: bytes > 0 ? `Cargando ${e.name} (${fmtMB(bytes)})…` : `Cargando ${e.name}…` });
+        // Por debajo de 0,1 MB el tamaño no dice nada («0,0 MB»): solo el nombre.
+        append({ k: "info", text: bytes >= 50_000 ? `Cargando ${e.name} (${fmtMB(bytes)})…` : `Cargando ${e.name}…` });
       } else {
         setPkg(null);
         append({ k: "info", text: `${e.name} listo` });

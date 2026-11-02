@@ -113,7 +113,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       steps.push({ name, ok: false, detail: e instanceof Error ? e.message.split("\n")[0]! : String(e), ms: Date.now() - t0 });
     }
   }
+  /** La barra de pestañas es sticky: con la página desplazada taparía los botones de arriba. */
+  const toTop = () => page.evaluate("window.scrollTo(0, 0)");
   async function runCode(code: string, expect: string | RegExp, timeout = 120_000): Promise<string> {
+    await toTop();
     await editor.fill(code);
     await page.getByRole("button", { name: "Ejecutar código" }).click();
     await log.getByText(expect).first().waitFor({ timeout });
@@ -161,12 +164,39 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   await step("sin internet: aviso", () =>
     runCode("import urllib.request\nurllib.request.urlopen('https://example.com')", "Este entorno no accede a internet"),
   );
+  await step("sin internet con requests", () =>
+    runCode("import requests\nrequests.get('https://example.com', timeout=5)", "Este entorno no accede a internet", 180_000),
+  );
+  await step("sin internet con pyodide.http", () =>
+    runCode("from pyodide.http import pyfetch\nawait pyfetch('https://example.com')", "Este entorno no accede a internet"),
+  );
+  await step("sin internet con nltk.download", () =>
+    runCode("import nltk\nprint('descargado:', nltk.download('punkt'))", "Este entorno no accede a internet", 180_000),
+  );
   await step("TensorFlow: aviso", () => runCode("import tensorflow as tf", "TensorFlow no funciona en el navegador"));
+  await step("import cv2 (solo OpenCV)", () => runCode("import cv2\nprint('cv2', cv2.__version__)", /cv2 4\.10/, 240_000));
+  await step("folium e ipytest (wheels extra)", () =>
+    runCode(
+      "import folium, ipytest\nfrom importlib.metadata import version\nm = folium.Map(location=[40.4, -3.7], tiles=None)\nprint('folium', folium.__version__, 'ipytest', version('ipytest'))",
+      /folium 0\.20\.0 ipytest 0\.14\.2/,
+      240_000,
+    ),
+  );
+  await step("plantilla «Gráficos con seaborn»", async () => {
+    await toTop();
+    await page.getByRole("combobox", { name: "Plantilla" }).click();
+    await page.getByRole("option", { name: "Gráficos con seaborn" }).click();
+    await page.getByRole("button", { name: "Ejecutar código" }).click();
+    await log.getByRole("img", { name: "Gráfico 1 de la ejecución" }).waitFor({ timeout: 120_000 });
+    return "1 gráfico";
+  });
   await step("Detener un bucle infinito", async () => {
+    await toTop();
     await editor.fill("while True:\n    pass");
     await page.getByRole("button", { name: "Ejecutar código" }).click();
     await page.getByText(/Ejecutando…/).waitFor({ timeout: 10_000 });
     await page.waitForTimeout(500);
+    await toTop();
     await page.getByRole("button", { name: "Detener" }).click();
     await log.getByText("Ejecución detenida por ti.").waitFor({ timeout: 20_000 });
     const restarted = await log.getByText(/Python se ha reiniciado/).count();
