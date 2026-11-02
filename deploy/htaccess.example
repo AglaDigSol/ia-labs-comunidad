@@ -3,6 +3,9 @@ Options -Indexes
 
 <IfModule mod_mime.c>
   AddType "text/calendar; charset=utf-8" .ics
+  # Pestaña Python (LABS_PYTHON=1): WebAssembly con su tipo, para compilarlo mientras se descarga.
+  AddType application/wasm .wasm
+  AddType application/zip .whl
 </IfModule>
 
 <IfModule mod_headers.c>
@@ -13,7 +16,12 @@ Options -Indexes
   Header always set Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()"
   Header always set X-Frame-Options "DENY"
   Header always set X-Robots-Tag "noindex, nofollow"
-  <FilesMatch "\.(js|css|woff2?|ttf)$">
+  # Worker de la pestaña Python: su propia CSP añade 'wasm-unsafe-eval' (Pyodide compila WebAssembly
+  # dentro del worker). La del documento no cambia.
+  <FilesMatch "^py\.worker-[A-Za-z0-9_-]+\.js$">
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+  </FilesMatch>
+  <FilesMatch "\.(js|css|woff2?|ttf|wasm|whl|zip)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
   <FilesMatch "\.(ics|json)$">

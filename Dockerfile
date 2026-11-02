@@ -10,12 +10,17 @@ COPY . .
 ARG VITE_BASE=/
 ARG CALENDAR_ICS_URL=
 ARG CALENDAR_ICS_KEY=
-RUN VITE_BASE="$VITE_BASE" CALENDAR_ICS_URL="$CALENDAR_ICS_URL" CALENDAR_ICS_KEY="$CALENDAR_ICS_KEY" npm run build
+# Pestaña Python opcional: --build-arg LABS_PYTHON=1 publica Pyodide en dist/pyodide/ (unos 110 MB;
+# el build descarga los paquetes verificados de jsDelivr, PyPI o la release de GitHub). Vacío: lo que
+# diga config.modules.python (apagada).
+ARG LABS_PYTHON=
+RUN VITE_BASE="$VITE_BASE" CALENDAR_ICS_URL="$CALENDAR_ICS_URL" CALENDAR_ICS_KEY="$CALENDAR_ICS_KEY" LABS_PYTHON="$LABS_PYTHON" npm run build
 
 # 2) nginx sin privilegios sirviendo dist/.
 FROM nginx:alpine
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY deploy/security-headers.conf /etc/nginx/snippets/security-headers.conf
+COPY deploy/security-headers-wasm.conf /etc/nginx/snippets/security-headers-wasm.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080
 HEALTHCHECK CMD wget -q -O /dev/null http://127.0.0.1:8080/ || exit 1
