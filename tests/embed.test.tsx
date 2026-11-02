@@ -34,6 +34,10 @@ import {
   SETS_VENN,
   type LabsActiveTab,
   type LabsExtraTab,
+  createDraft,
+  PYODIDE_CORE,
+  PYODIDE_VERSION,
+  PythonLabPage,
 } from "../src/embed/index.ts";
 
 let storage: MemoryAdapter;
@@ -225,5 +229,28 @@ describe("LabsRoutes como dependencia", () => {
     own.save({ boole: "[]" });
     expect(localStorage.getItem("host.boole")).toBe("[]");
     expect(own.load()?.boole).toBe("[]");
+  });
+});
+
+describe("pestaña Python como dependencia", () => {
+  it("<LabsRoutes python /> la pone tras «Ejercicios», con la carpeta de Pyodide y los borradores del anfitrión", async () => {
+    configureLabs({ storage, python: { assetBaseUrl: `/pyodide/${PYODIDE_VERSION}/`, draftsKey: "host.py.drafts", crossOriginIsolated: false } });
+    const id = createDraft({ origin: { kind: "file", fileName: "utils.py" }, code: "def f():\n    return 1" });
+    expect(JSON.parse(localStorage.getItem("host.py.drafts")!)[0].id).toBe(id);
+    render(
+      <MemoryRouter initialEntries={[`/estudio/python?borrador=${id}`]}>
+        <Routes>
+          <Route path="/estudio/*" element={<LabsRoutes python extraTabs={[{ id: "notas", label: "Notas", path: "notas", element: <p /> }]} />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole("heading", { level: 1, name: "Python" }, { timeout: 5000 })).toBeTruthy();
+    expect(tabNames().slice(-3)).toEqual(["Ejercicios", "Python", "Notas"]);
+    expect((screen.getByLabelText("Código Python") as HTMLTextAreaElement).value).toBe("def f():\n    return 1");
+    expect(screen.getByText("Archivo abierto como borrador nuevo")).toBeTruthy();
+    // El editor guarda en el almacén del anfitrión; los borradores, en su clave.
+    expect(Object.keys(localStorage)).toEqual(["host.py.drafts"]);
+    expect(PYODIDE_CORE.map((f) => f.file)).toContain("pyodide.asm.wasm");
+    expect(typeof PythonLabPage).toBe("function");
   });
 });
