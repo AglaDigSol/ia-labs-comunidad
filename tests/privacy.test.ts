@@ -7,7 +7,7 @@ import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = new URL("..", import.meta.url).pathname;
-const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "coverage"]);
+const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "coverage", ".cache"]);
 const SELF = "tests/privacy.test.ts";
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -63,7 +63,8 @@ describe("privacidad", () => {
       if (t === null) continue;
       for (const [name, re] of PATTERNS) if (re.test(t)) hits.push(`${f}: ${name}`);
       if (!f.endsWith("package-lock.json")) {
-        for (const ip of t.match(IP) ?? []) if (!IP_OK.has(ip)) hits.push(`${f}: ip ${ip}`);
+        // Una versión de cuatro números dentro de un nombre de wheel (opencv_python-4.10.0.84) no es una IP.
+        for (const m of t.matchAll(IP)) if (!IP_OK.has(m[0]) && t[m.index - 1] !== "-") hits.push(`${f}: ip ${m[0]}`);
       }
     }
     expect(hits).toEqual([]);
