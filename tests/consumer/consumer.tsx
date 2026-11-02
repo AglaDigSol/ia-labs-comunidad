@@ -64,12 +64,28 @@ import {
   type LabsExtraTab,
   type StorageAdapter,
   type SymbolEntry,
+  createDraft,
+  DEFAULT_DRAFTS_KEY,
+  PYODIDE_CORE,
+  PYODIDE_PACKAGES,
+  PYODIDE_VERSION,
+  PYTHON_LAB,
+  PythonLabPage,
+  type DraftOrigin,
+  type PythonLabConfig,
 } from "ia-labs-comunidad";
 
 const storage: StorageAdapter = new MemoryAdapter();
 configureLabs({ storage });
 configureLabs({ storage: createLocalStorageLabsAdapter({ markov: "mi-app.markov" }) });
 configureLabs({ storage: createLocalStorageLabsAdapter({ markov: "mi-app.markov", boole: "mi-app.boole" }) });
+// Pestaña Python servida por el anfitrión: su carpeta de Pyodide, su clave de borradores y su aislamiento.
+const python: PythonLabConfig = { assetBaseUrl: `/pyodide/${PYODIDE_VERSION}/`, draftsKey: "mi-app.py.drafts", crossOriginIsolated: false };
+configureLabs({ storage, python });
+const origin: DraftOrigin = { kind: "cell", notebookTitle: "Cuaderno", cell: 3 };
+export const draftUrl = `/laboratorios/${PYTHON_LAB.path}?borrador=${createDraft({ origin, code: "print(1)" })}`;
+export const defaultDraftsKey: string = DEFAULT_DRAFTS_KEY;
+export const pyodideFiles: string[] = [...PYODIDE_CORE, ...PYODIDE_PACKAGES].map((f) => f.file);
 
 const Playground = lazy(async () => ({ default: () => <p>Python</p> }));
 const extra: LabsExtraTab[] = [{ id: "python", label: "Python", path: "python", element: <Playground /> }];
@@ -82,6 +98,8 @@ export function HostApp() {
           path="/laboratorios/*"
           element={<LabsRoutes extraTabs={extra} renderHeaderAction={(tab) => (tab ? <span>{tab.label}</span> : null)} />}
         />
+        <Route path="/estudio/*" element={<LabsRoutes python />} />
+        <Route path="/python" element={<PythonLabPage />} />
         <Route path="/simbolos" element={<SymbolsPage />} />
         <Route path="/logica" element={<LogicLabPage />} />
         <Route path="/predicados" element={<PredicatesLabPage />} />

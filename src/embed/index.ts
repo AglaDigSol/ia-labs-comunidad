@@ -6,6 +6,7 @@
 export {
   LABS,
   LabsRoutes,
+  PYTHON_LAB,
   type LabsActiveTab,
   type LabsExtraTab,
   type LabsRoutesProps,
@@ -17,6 +18,29 @@ export { SetsLabPage } from "../features/labs/sets/SetsLabPage.tsx";
 export { ExercisesPage } from "../features/labs/exercises/ExercisesPage.tsx";
 export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
 export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
+// Pestaña Python (opcional): mejor con <LabsRoutes python />; PythonLabPage sirve para montarla
+// en otra ruta. Pyodide (worker y runtime) solo se descarga al abrirla y pulsar «Cargar Python».
+export { PythonLabPage } from "../features/labs/python/PythonLabPage.tsx";
+export {
+  createDraft,
+  draftLabel,
+  getDraft,
+  listDrafts,
+  MAX_DRAFT_CODE,
+  MAX_DRAFTS,
+  type Draft,
+  type DraftOrigin,
+} from "../features/labs/python/drafts.ts";
+export { DEFAULT_DRAFTS_KEY, type PythonLabConfig } from "../features/labs/python/python-config.ts";
+export {
+  EXTRA_WHEELS,
+  PYODIDE_PYTHON,
+  PYODIDE_VERSION,
+  type CoreAsset,
+  type ExtraWheel,
+  type LockAsset,
+} from "../features/labs/python/packages.ts";
+export { PYODIDE_CORE, PYODIDE_LOCK_SHA256, PYODIDE_PACKAGES } from "../features/labs/python/pyodide-manifest.ts";
 
 // ---------------------------------------------------------------- Configuración y almacenamiento
 export {
