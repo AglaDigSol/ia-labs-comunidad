@@ -25,7 +25,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/build-ics.ts dist",
+    "build": "vite build && node scripts/build-ics.ts dist && node scripts/vendor-pyodide.ts dist && node scripts/check-python.ts dist",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
