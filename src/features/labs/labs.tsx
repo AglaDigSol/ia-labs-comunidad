@@ -163,7 +163,8 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
           {extras.map((t) => (
             <Route key={t.id} path={`${t.path}/*`} element={t.element} />
           ))}
-          <Route path="*" element={<Navigate to="simbolos" replace />} />
+          {/* Absoluta: una ruta relativa desde «*» se añadiría a la URL desconocida una y otra vez. */}
+          <Route path="*" element={<Navigate to={`${base}/simbolos`} replace />} />
         </Routes>
       </Suspense>
     </div>
