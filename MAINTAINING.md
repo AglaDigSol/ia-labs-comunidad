@@ -17,6 +17,18 @@ Dependabot ([`.github/dependabot.yml`](.github/dependabot.yml)) propone cada mes
 GitHub Actions. Las versiones están fijadas con exactitud; ESLint vive aparte en `tools/lint/` porque typescript-eslint
 necesita la API de TypeScript ≤ 6.0 y la app usa TypeScript 7.
 
+### Pyodide (pestaña Python)
+
+`pyodide` va fijado a 0.27.7, la última versión con Python 3.12 (la de los cuadernos del curso); Dependabot no lo
+sube (está en su `ignore`). Para cambiar de versión o de paquetes (`LOCK_ROOTS` y `EXTRA_WHEELS` en
+[`packages.ts`](src/features/labs/python/packages.ts), con versión, tamaño y SHA-256 de PyPI para los extra):
+
+1. Sube `pyodide` en `package.json` y `PYODIDE_VERSION`/`PYODIDE_PYTHON` en `packages.ts`.
+2. Descarga la release oficial `pyodide-<versión>.tar.bz2` de GitHub, descomprímela y regenera el manifiesto con su
+   carpeta `pyodide/`: `node scripts/pyodide-manifest.ts <carpeta>`. El script comprueba cada SHA-256 contra el lock
+   antes de medir el tamaño.
+3. `npm test`, `LABS_PYTHON=1 npm run build` y `node scripts/e2e-python.ts --no-build`.
+
 ## CI
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) ejecuta en cada push y PR: typecheck, tests y build; lint;
