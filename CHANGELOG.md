@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.8)
+## [Próximamente] (0.9)
 
 - i18n completo: mover a `src/i18n/` los textos internos de los laboratorios, las flashcards, la calculadora y el
   calendario (hoy están en sus componentes) y añadir inglés.
@@ -12,6 +12,52 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.8.0] - 2026-11-02
+
+### Añadido
+
+- **Python** (pestaña opcional, tras «Ejercicios», apagada por defecto): Python 3.12.7 en el navegador con Pyodide
+  0.27.7, en un worker. Se enciende con `LABS_PYTHON=1 npm run build`, `--build-arg LABS_PYTHON=1` en Docker o
+  `python: true` en `config.modules`; apagada no hay pestaña, ni ruta, ni chunk, ni archivos de Pyodide en `dist/`.
+  - Editor con plantillas genéricas de 01MIAR (tipos de datos, control de flujo, funciones, generadores, ficheros,
+    NumPy básico, vectorización, Min-Max, limpieza con pandas, pandas con tu CSV, gráficos con seaborn y
+    PerceptronSimple), límite de ejecución y «Detener» (interrumpe con aislamiento entre orígenes; si no, reinicia).
+  - Gráficos de matplotlib debajo de la salida, con «Descargar PNG».
+  - Paquetes bajo demanda: los de Pyodide (numpy, pandas, matplotlib, scipy, scikit-learn, statsmodels, OpenCV,
+    nltk, Pillow, BeautifulSoup, lxml, wordcloud, pytest…) al importarlos, y seaborn, folium, branca e ipytest con
+    micropip desde el propio sitio. `import cv2` es lo único que descarga OpenCV.
+  - Archivos: «Subir archivo» (CSV, TSV, TXT, JSON, MD e imágenes; 20 MB cada uno y 50 MB en total) a la carpeta de
+    trabajo, para `open("datos.txt")` o `pd.read_csv("datos.csv")`; descarga de lo que escribe el código y «Vaciar
+    archivos». Nada sale del navegador.
+  - Órdenes mágicas `%time`, `%timeit`, `%%time`, `%%timeit` y `%matplotlib inline`; las demás dan un error que las
+    nombra. «Entrada para input()».
+  - Avisos en español: sin internet («Este entorno no accede a internet: descarga el archivo y súbelo con «Subir
+    archivo»»), TensorFlow, Keras, PyTorch, JAX o PyTomography («… no funciona en el navegador. Usa Google Colab o un
+    entorno local con Python 3.12») y paquetes no incluidos.
+  - Borradores de «Abrir en Python» (`?borrador=`) para apps anfitrionas: se abren en el editor y nunca se ejecutan
+    solos.
+- Build: `scripts/vendor-pyodide.ts` publica Pyodide en `dist/pyodide/0.27.7/` (unos 110 MB) con tamaño y SHA-256
+  comprobados contra el manifiesto, `pyodide-lock.json` y los wheels fijados de PyPI; si algo no cuadra o no hay red,
+  el build falla. `scripts/check-python.ts` comprueba que Pyodide no entra en el chunk de entrada.
+  `scripts/e2e-python.ts` (fuera de la CI) lo prueba en Chromium con las cabeceras de despliegue.
+- Despliegue: el worker de Python recibe su propia CSP con `'wasm-unsafe-eval'` (`deploy/security-headers-wasm.conf`
+  y `FilesMatch` en Apache); la del documento no cambia. `/pyodide/` con `application/wasm` y caché inmutable.
+- API pública: `LabsRoutes` acepta `python`; `configureLabs({ python: { assetBaseUrl, draftsKey,
+  crossOriginIsolated } })`; `PythonLabPage`, `PYTHON_LAB`, `createDraft`, `getDraft`, `listDrafts`, `draftLabel`,
+  `PYODIDE_VERSION`, `PYODIDE_CORE`, `PYODIDE_PACKAGES` y `EXTRA_WHEELS`. Nueva clave `python` en
+  `DEFAULT_LABS_KEYS` (`ia-labs.python.v1`).
+
+### Cambiado
+
+- Con la pestaña Python encendida, `python` queda reservado como id y como ruta: una pestaña extra de una app
+  anfitriona con ese id o esa ruta se descarta. Apagada, sigue funcionando como en 0.7.
+- Dependencia nueva: `pyodide` 0.27.7 (la última con Python 3.12; Dependabot no la sube).
+
+### Corregido
+
+- Una ruta desconocida dentro de Laboratorios (`/laboratorios/zzz`) redirige a Simbología una sola vez, en lugar de
+  alargar la URL sin fin.
 
 ## [0.7.0] - 2026-10-29
 
@@ -242,7 +288,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.7.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.8.0
 [0.7.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.7.0
 [0.6.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.6.0
 [0.5.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.5.0
