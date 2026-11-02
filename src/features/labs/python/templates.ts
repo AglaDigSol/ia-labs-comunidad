@@ -271,6 +271,7 @@ nada = None
 
 for valor in [entero, real, texto, booleano, nada]:
     print(repr(valor), "->", type(valor).__name__)
+print("¿42 es un int?", isinstance(entero, int), "| ¿True también?", isinstance(booleano, int))
 
 # Conversiones explícitas
 print(int("17") + 1, float("2,5".replace(",", ".")), str(3) + "3")
