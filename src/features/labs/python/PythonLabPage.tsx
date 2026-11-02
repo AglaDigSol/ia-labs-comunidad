@@ -38,7 +38,7 @@ import { consumeFreshDraft, getDraft, listDrafts, updateDraftCode, type Draft, t
 import { checkUpload, fmtBytes, mimeFor, UPLOAD_ACCEPT, type FileInfo } from "./files.ts";
 import { transformMagics } from "./magics.ts";
 import { hintsFor } from "./messages.ts";
-import { closureBytes } from "./packages.ts";
+import { closureBytes, EXTRA_WHEELS } from "./packages.ts";
 import { PYODIDE_CORE, PYODIDE_PACKAGES } from "./pyodide-manifest.ts";
 import { createPyWorker, PyClient, type PyEvent, type RunOutcome } from "./py-client.ts";
 import { isolationAvailable, pyodideBaseUrl } from "./python-config.ts";
@@ -67,7 +67,9 @@ const FIRST_FILES = [...PYODIDE_CORE.map((f) => f.file), ...PYODIDE_PACKAGES.fil
 const FIRST_BYTES =
   PYODIDE_CORE.reduce((s, f) => s + f.size, 0) + PYODIDE_PACKAGES.filter((p) => p.name === "numpy").reduce((s, p) => s + p.size, 0);
 const AFTER_NUMPY = new Set(["numpy"]);
-const packageBytes = (name: string) => closureBytes(PYODIDE_PACKAGES, [name], AFTER_NUMPY);
+/** Bytes que baja el primer import de un paquete (sin numpy, que ya está); 0 si no se sabe. */
+const packageBytes = (name: string) =>
+  closureBytes(PYODIDE_PACKAGES, [name], AFTER_NUMPY) || (EXTRA_WHEELS.find((w) => w.name === name)?.size ?? 0);
 
 export const fmtMB = (bytes: number) => `${(bytes / 1_000_000).toFixed(1).replace(".", ",")} MB`;
 

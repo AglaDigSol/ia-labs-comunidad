@@ -33,6 +33,12 @@ export type RunOutcome =
   | { kind: "timeout"; seconds: number };
 
 export const STOP_ESCALATE_MS = 1500;
+/**
+ * Si Python no está listo en este tiempo, la carga falla (y el worker se termina). Pasa, por ejemplo,
+ * si el servidor no manda 'wasm-unsafe-eval' en la CSP del worker: WebAssembly no compila y Pyodide
+ * se queda esperando.
+ */
+export const LOAD_TIMEOUT_MS = 90_000;
 /** Id con el que el worker informa de un fallo al iniciar (las ejecuciones empiezan en 1). */
 export const INIT_ID = 0;
 
@@ -78,6 +84,7 @@ export class PyClient {
   private ready: Promise<void> | null = null;
   private readyRes: (() => void) | null = null;
   private readyRej: ((e: Error) => void) | null = null;
+  private loadTimer: unknown = null;
   private loadEvent: (e: PyEvent) => void = () => {};
   private pending: Pending | null = null;
   private nextId = 1;
@@ -178,6 +185,7 @@ export class PyClient {
   }
 
   dispose(): void {
+    this.timers.clearTimeout(this.loadTimer);
     if (this.pending) this.finish(this.pending, { kind: "stopped", restarted: false });
     this.settleReads();
     this.worker?.terminate();
@@ -193,13 +201,26 @@ export class PyClient {
       this.readyRej = rej;
     });
     this.ready.catch(() => {}); // un reinicio fallido se informa en el siguiente load/run, nunca sin capturar
+    this.ready.then(
+      () => this.timers.clearTimeout(this.loadTimer),
+      () => this.timers.clearTimeout(this.loadTimer),
+    );
+    this.timers.clearTimeout(this.loadTimer);
+    this.loadTimer = this.timers.setTimeout(() => {
+      if (worker !== this.worker) return;
+      this.readyRej?.(new Error("load_timeout"));
+      worker.terminate();
+      this.worker = null;
+      this.ready = null;
+    }, LOAD_TIMEOUT_MS);
     worker.onmessage = (e: MessageEvent<WorkerOut>) => this.onMessage(worker, e.data);
     worker.onerror = (e: ErrorEvent) => {
       if (worker !== this.worker) return;
       e.preventDefault?.();
       const message = e.message || "worker_error";
       this.readyRej?.(new Error(message));
-      if (this.pending) this.finish(this.pending, { kind: "error", message, line: null, ms: 0, files: null });
+      const p = this.pending;
+      if (p) this.finish(p, p.stopping ? { kind: "stopped", restarted: false } : { kind: "error", message, line: null, ms: 0, files: null });
     };
     if (this.isolated) {
       const sab = new SharedArrayBuffer(4);

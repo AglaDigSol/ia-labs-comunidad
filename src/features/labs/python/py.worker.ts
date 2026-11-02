@@ -132,15 +132,16 @@ function missingLockPackages(p: PyodideInterface, modules: string[]): string[] {
 async function installExtras(p: PyodideInterface, wanted: ExtraWheel[]): Promise<void> {
   const todo = wanted.flatMap(extraClosure).filter((w, i, all) => all.indexOf(w) === i && !installedExtras.has(w.name));
   if (todo.length === 0) return;
-  for (const w of todo) post({ type: "package", name: w.name, phase: "start" });
   const deps = [...new Set(["micropip", ...todo.flatMap((w) => w.lockDeps)])];
+  // Avisa de los paquetes del lock que bajan con él (seaborn trae pandas y matplotlib), no de micropip.
+  const shown = [...todo.flatMap((w) => w.lockDeps).filter((d) => !(d in p.loadedPackages)), ...todo.map((w) => w.name)];
+  const unique = [...new Set(shown)];
+  for (const name of unique) post({ type: "package", name, phase: "start" });
   await p.loadPackage(deps, quiet);
   const urls = todo.map((w) => new URL(w.file, indexURL).href);
   await p.runPythonAsync(`import micropip\nawait micropip.install(${JSON.stringify(urls)}, deps=False)`);
-  for (const w of todo) {
-    installedExtras.add(w.name);
-    post({ type: "package", name: w.name, phase: "done" });
-  }
+  for (const w of todo) installedExtras.add(w.name);
+  for (const name of unique) post({ type: "package", name, phase: "done" });
 }
 
 function listFiles(p: PyodideInterface | null): FileInfo[] {
@@ -235,6 +236,16 @@ function clearFiles(): void {
     }
   }
 }
+
+// Al interrumpir con «Detener», el bucle de eventos de Pyodide vuelve a lanzar el KeyboardInterrupt
+// fuera de la ejecución (que ya lo ha informado como error). No es un fallo del worker: se descarta.
+const isInterrupt = (v: unknown) => /KeyboardInterrupt/.test(v instanceof Error ? v.message : String(v));
+self.addEventListener("error", (e) => {
+  if (isInterrupt(e.message) || isInterrupt(e.error)) e.preventDefault();
+});
+self.addEventListener("unhandledrejection", (e) => {
+  if (isInterrupt(e.reason)) e.preventDefault();
+});
 
 ctx.onmessage = (e: MessageEvent<WorkerIn>) => {
   const msg = e.data;
