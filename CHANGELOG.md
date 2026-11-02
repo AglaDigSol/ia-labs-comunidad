@@ -58,6 +58,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 
 - Una ruta desconocida dentro de Laboratorios (`/laboratorios/zzz`) redirige a Simbología una sola vez, en lugar de
   alargar la URL sin fin.
+- Los selectores con muchas opciones se desplazan dentro de la lista en lugar de salirse de la pantalla.
 
 ## [0.7.0] - 2026-10-29
 
