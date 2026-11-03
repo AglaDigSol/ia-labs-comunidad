@@ -20,11 +20,11 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Conjuntos | Diagramas de Venn de 2 y 3 conjuntos (sombrear la expresión o calcularla con elementos), igualdades demostradas paso a paso con una ley por línea y «¿Son iguales?» con contraejemplo, problemas de inclusión–exclusión y conjunto de partes y producto cartesiano. | siempre activo |
 | Álgebra de Boole | ¿Es un álgebra de Boole? (axiomas B1–B5 sobre estructuras finitas, tablas y diagrama de Hasse), simplificación paso a paso con leyes, comprobada en cada línea, puertas y circuitos (circuito → función, función → circuito con solo NAND o solo NOR, y las siete puertas) los espacios F₁ y F₂, y mapas de Karnaugh de 2 a 4 variables con las formas Σm y ΠM. ⊕ es la suma, no el XOR (que se escribe ⊻). | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
-| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias y FND/FNC; evaluar y negar con cuantificadores; Venn, igualdades, inclusión–exclusión, partes y producto; Σm y ΠM, Karnaugh y simplificar con leyes. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. | siempre activo |
+| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias y FND/FNC; evaluar y negar con cuantificadores; Venn, igualdades, inclusión–exclusión, partes y producto; Σm y ΠM, Karnaugh y simplificar con leyes. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 5) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)). | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
 | Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
 | Calculadora de notas | Nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
-| Python (opcional) | Pestaña de Laboratorios, tras «Ejercicios»: Python 3.12 en el navegador con Pyodide (numpy, pandas, matplotlib, seaborn, scikit-learn…), plantillas de 01MIAR, archivos propios, `%timeit` y borradores. Ver [Python (opcional)](#python-opcional). | `python` (apagado) |
+| Python (opcional) | Pestaña de Laboratorios, tras «Ejercicios»: Python 3.12 en el navegador con Pyodide (numpy, pandas, matplotlib, seaborn, scikit-learn…), plantillas de 01MIAR, archivos propios, `%timeit`, borradores y «Ejecutar paso a paso». Ver [Python (opcional)](#python-opcional). | `python` (apagado) |
 
 Los módulos opcionales se activan o desactivan en [`src/config.ts`](src/config.ts):
 
@@ -88,7 +88,8 @@ docker build --build-arg LABS_PYTHON=1 -t ia-labs-comunidad .       # Docker
 ```
 
 `LABS_PYTHON=0` la apaga aunque `src/config.ts` diga `true`. Apagada no hay pestaña, ni ruta (un enlace viejo lleva a
-Simbología), ni chunk, ni worker, ni `dist/pyodide/`.
+Simbología), ni chunk, ni worker, ni `dist/pyodide/`, ni el tema «Python (01MIAR)» de «Ejercicios» (sus enunciados
+tampoco van en el build).
 
 Encendida, el build escribe `dist/pyodide/0.27.7/`: el núcleo, copiado de `node_modules/pyodide` (fijado por
 `package-lock.json`); los paquetes de la distribución oficial (numpy, pandas, matplotlib, scipy, scikit-learn, Pillow,
@@ -133,6 +134,44 @@ dependencias que aún no tenga; el navegador los guarda en caché):
 - `input()` lee las líneas de «Entrada para input()», escritas antes de ejecutar.
 - «Detener» interrumpe Python si el sitio está aislado entre orígenes (ver cabeceras); si no, lo reinicia (se pierden
   las variables, no los archivos subidos ni los que escribió la app anfitriona).
+- «Ejecutar paso a paso» sigue el código del editor línea a línea, como Python Tutor: la línea que se va a ejecutar,
+  la pila de llamadas con las variables de cada función (si dos nombres son el mismo objeto, lo dice: «misma lista que
+  x»), lo que devuelve cada función y lo impreso hasta ese paso. Se recorre con «Principio», «Anterior», «Siguiente»,
+  «Final» o el deslizador, y el paso se anuncia al lector de pantalla. Solo traza tu código (no el de las bibliotecas),
+  hasta 2000 pasos, 10 000 caracteres de salida y 5 s; al llegar a un límite se para y lo dice. No admite órdenes
+  mágicas.
+
+### Ejercicios de Python
+
+Con la pestaña encendida, «Ejercicios» tiene un tema más, **Python (01MIAR)**, con nueve tipos y tres niveles cada
+uno. Cada ejercicio se genera con semilla (los datos de las pruebas cambian con «Siguiente ejercicio») y se corrige en
+el navegador, con el mismo Python de la pestaña (que se descarga al pulsar «Comprobar» o «Cargar Python» si aún no está
+en el dispositivo):
+
+| Tipo | Tema | Qué se practica |
+| --- | --- | --- |
+| Variables, operadores y tipos | 1–2 | `//` y `%`, conversiones de unidades, IVA y descuentos, `int`/`float`/`str`, `bool` y años bisiestos |
+| Cadenas: rebanadas y métodos | 2 | invertir y capicúas, contar vocales, iniciales, rebanadas, palabras y acrónimos |
+| Listas, tuplas, diccionarios y conjuntos | 2 | contar apariciones, el más frecuente, agrupar, operaciones de conjuntos, tuplas y copias (mutabilidad) |
+| if, for y while | 3 | `if`/`elif`/`else`, sumas con `range`, cifras con `while`, Collatz, `break` y `continue`, imprimir tablas |
+| enumerate, zip y comprensiones | 3 | posiciones, numerar, emparejar, diferencias, comprensiones de listas y de diccionarios |
+| Parámetros y valores devueltos | 4 | valores por defecto (y el mutable), `*args`, `**kwargs` y varios valores devueltos |
+| Recursión, lambdas y sorted | 4 | funciones recursivas, `sorted` con `key`, funciones como valores y fábricas de funciones |
+| Ficheros de texto y CSV | 5 | `with open`, contar líneas y palabras, escribir archivos y el módulo `csv` |
+| ¿Qué imprime? | 1–4 | leer un fragmento corto y escribir exactamente su salida |
+
+- **Ejercicio de código.** Escribes la función en el editor y pulsas «Comprobar». Cada caso se ejecuta en un espacio
+  de nombres nuevo, con 2 s como mucho, y se compara con una solución de referencia: «Caso 2: incorrecto» enseña la
+  llamada (por ejemplo, `es_bisiesto(1900)`) y lo que hizo tu código (`Tu resultado: True`, tu salida, tu archivo o el
+  error con su línea), **nunca el valor esperado**. Algunos piden un requisito («usa una comprensión», «sin `if`»,
+  «recursiva»), que se comprueba leyendo el código. En el tema 5, los archivos de cada caso se escriben en la carpeta
+  de trabajo con la misma API de archivos de la pestaña y se borran al terminar.
+- **«Dame una pista»** da pistas graduadas, de la idea al detalle, sin código. La solución de referencia solo se ve
+  detrás de «Ver la solución completa».
+- **«¿Qué imprime?»** no enseña la salida: al comprobar dice si coincide (sin contar los espacios del final) y, si
+  no, la primera línea distinta y el botón «Ver paso a paso».
+- Los enunciados son originales (no proceden de los cuadernos de la asignatura) y entrenan los temas, no resuelven la
+  práctica ni el examen.
 
 ### Límites
 
@@ -393,6 +432,9 @@ navigate(`/laboratorios/python?borrador=${id}`);
   respuesta necesita la CSP con `'wasm-unsafe-eval'` si la app usa una CSP estricta, y `worker: { format: "es" }` en
   `vite.config.ts`. En `npm run dev`, añade `optimizeDeps: { exclude: ["ia-labs-comunidad", "pyodide"] }`.
 - Con la pestaña encendida, una `extraTabs` con id o ruta `python` se descarta: hay que quitarla.
+- `<LabsRoutes python />` enciende también el tema «Python (01MIAR)» de «Ejercicios» (o `<ExercisesPage python />`
+  si se monta aparte). Sin esa prop, sus tipos no aparecen, ni en la lista ni por su id en la URL. Usan el mismo
+  `assetBaseUrl`. Los generadores se exportan como `PYTHON_EXERCISES` (y `exerciseType(id, { python: true })`).
 
 **Archivos de la app anfitriona.** La app puede escribir sus propios archivos en la carpeta de trabajo de Python (por
 ejemplo, los datos que usa un cuaderno), desde una ranura de la pestaña. Las ranuras son funciones en
