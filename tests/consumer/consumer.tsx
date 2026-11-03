@@ -71,8 +71,17 @@ import {
   PYODIDE_VERSION,
   PYTHON_LAB,
   PythonLabPage,
+  fileLimits,
+  MAX_FILE_BYTES,
+  MAX_FILES,
+  MAX_TOTAL_BYTES,
+  safeFilePath,
+  type DraftActionsContext,
   type DraftOrigin,
+  type FileInfo,
+  type FileLimits,
   type PythonLabConfig,
+  type WriteFilesResult,
 } from "ia-labs-comunidad";
 
 const storage: StorageAdapter = new MemoryAdapter();
@@ -82,7 +91,30 @@ configureLabs({ storage: createLocalStorageLabsAdapter({ markov: "mi-app.markov"
 // Pestaña Python servida por el anfitrión: su carpeta de Pyodide, su clave de borradores y su aislamiento.
 const python: PythonLabConfig = { assetBaseUrl: `/pyodide/${PYODIDE_VERSION}/`, draftsKey: "mi-app.py.drafts", crossOriginIsolated: false };
 configureLabs({ storage, python });
-const origin: DraftOrigin = { kind: "cell", notebookTitle: "Cuaderno", cell: 3 };
+const origin: DraftOrigin = { kind: "cell", notebookTitle: "Cuaderno", cell: 3, source: { kind: "repo", path: "notebooks/cuaderno.ipynb" } };
+// Ranura en la banda del borrador: escribe los datos del cuaderno en la carpeta de trabajo de Python.
+async function writeData(ctx: DraftActionsContext): Promise<WriteFilesResult> {
+  const data = new TextEncoder().encode("x,y\n1,2\n").buffer;
+  const from: string | undefined = ctx.draft.origin.source?.path;
+  const path = safeFilePath("res/data.csv");
+  return ctx.files.writeFiles(path && from ? [{ path, data }] : []);
+}
+configureLabs({
+  storage,
+  python: {
+    ...python,
+    maxTotalBytes: 120 * 1024 * 1024,
+    renderDraftActions: (ctx) => (
+      <button type="button" onClick={() => void writeData(ctx)}>
+        Cargar datos ({ctx.files.list().length} de {ctx.files.limits.maxFiles})
+      </button>
+    ),
+    renderFilesActions: ({ draft }) => (draft ? null : <span>Sin borrador</span>),
+  },
+});
+export const limits: FileLimits = fileLimits();
+export const defaults: number[] = [MAX_FILE_BYTES, MAX_TOTAL_BYTES, MAX_FILES];
+export const listed = (files: FileInfo[]) => files.map((f) => f.name);
 export const draftUrl = `/laboratorios/${PYTHON_LAB.path}?borrador=${createDraft({ origin, code: "print(1)" })}`;
 export const defaultDraftsKey: string = DEFAULT_DRAFTS_KEY;
 export const pyodideFiles: string[] = [...PYODIDE_CORE, ...PYODIDE_PACKAGES].map((f) => f.file);
@@ -100,6 +132,7 @@ export function HostApp() {
         />
         <Route path="/estudio/*" element={<LabsRoutes python />} />
         <Route path="/python" element={<PythonLabPage />} />
+        <Route path="/python-propio" element={<PythonLabPage renderDraftActions={({ draft }) => <span>{draft.label}</span>} />} />
         <Route path="/simbolos" element={<SymbolsPage />} />
         <Route path="/logica" element={<LogicLabPage />} />
         <Route path="/predicados" element={<PredicatesLabPage />} />

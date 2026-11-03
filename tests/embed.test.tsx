@@ -38,6 +38,10 @@ import {
   PYODIDE_CORE,
   PYODIDE_VERSION,
   PythonLabPage,
+  fileLimits,
+  MAX_TOTAL_BYTES,
+  safeFilePath,
+  type DraftActionsContext,
 } from "../src/embed/index.ts";
 
 let storage: MemoryAdapter;
@@ -252,5 +256,38 @@ describe("pestaña Python como dependencia", () => {
     expect(Object.keys(localStorage)).toEqual(["host.py.drafts"]);
     expect(PYODIDE_CORE.map((f) => f.file)).toContain("pyodide.asm.wasm");
     expect(typeof PythonLabPage).toBe("function");
+  });
+
+  it("la ranura del borrador escribe archivos con carpetas en la carpeta de trabajo; límites del anfitrión", async () => {
+    const seen: DraftActionsContext[] = [];
+    configureLabs({
+      storage,
+      python: {
+        crossOriginIsolated: false,
+        maxTotalBytes: 2 * MAX_TOTAL_BYTES,
+        renderDraftActions: (ctx) => {
+          seen.push(ctx);
+          return (
+            <button type="button" onClick={() => void ctx.files.writeFiles([{ path: "res/data.csv", data: new TextEncoder().encode("a\n1\n").buffer }])}>
+              Cargar los archivos del repositorio (res/, img/)
+            </button>
+          );
+        },
+      },
+    });
+    expect(fileLimits().maxTotalBytes).toBe(100 * 1024 * 1024);
+    expect(safeFilePath("res/../x")).toBeNull();
+    const id = createDraft({ origin: { kind: "cell", notebookTitle: "Tema 1", cell: 2, source: { kind: "repo", path: "notebooks/tema1.ipynb" } }, code: "x = 1" });
+    render(
+      <MemoryRouter initialEntries={[`/estudio/python?borrador=${id}`]}>
+        <Routes>
+          <Route path="/estudio/*" element={<LabsRoutes python />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Cargar los archivos del repositorio (res/, img/)" }, { timeout: 5000 }));
+    await waitFor(() => expect(screen.getByText("res/data.csv")).toBeTruthy());
+    expect(seen.at(-1)!.draft.origin.source).toEqual({ kind: "repo", path: "notebooks/tema1.ipynb" });
+    expect(seen.at(-1)!.files.list()).toEqual([{ name: "res/data.csv", size: 4 }]);
   });
 });

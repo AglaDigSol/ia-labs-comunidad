@@ -20,7 +20,9 @@ export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
 export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
 // Pestaña Python (opcional): mejor con <LabsRoutes python />; PythonLabPage sirve para montarla
 // en otra ruta. Pyodide (worker y runtime) solo se descarga al abrirla y pulsar «Cargar Python».
-export { PythonLabPage } from "../features/labs/python/PythonLabPage.tsx";
+// Las ranuras (renderDraftActions, renderFilesActions) dan al anfitrión writeFiles para escribir
+// archivos en la carpeta de trabajo de Python (en memoria; nunca se ejecutan solos).
+export { PythonLabPage, type PythonLabPageProps } from "../features/labs/python/PythonLabPage.tsx";
 export {
   createDraft,
   draftLabel,
@@ -34,7 +36,24 @@ export {
   type DraftOrigin,
   type DraftSource,
 } from "../features/labs/python/drafts.ts";
-export { DEFAULT_DRAFTS_KEY, type PythonLabConfig } from "../features/labs/python/python-config.ts";
+export {
+  CAP_FILE_BYTES,
+  CAP_FILES,
+  CAP_TOTAL_BYTES,
+  DEFAULT_DRAFTS_KEY,
+  fileLimits,
+  MAX_FILE_BYTES,
+  MAX_FILES,
+  MAX_TOTAL_BYTES,
+  type DraftActionsContext,
+  type FileLimits,
+  type FilesActionsContext,
+  type PythonFilesApi,
+  type PythonLabConfig,
+  type SkippedFile,
+  type WriteFilesResult,
+} from "../features/labs/python/python-config.ts";
+export { safeFilePath, type FileInfo } from "../features/labs/python/files.ts";
 export { EXTRA_WHEELS, type CoreAsset, type ExtraWheel, type LockAsset } from "../features/labs/python/packages.ts";
 export { PYODIDE_PYTHON, PYODIDE_VERSION } from "../features/labs/python/version.ts";
 export { PYODIDE_CORE, PYODIDE_LOCK_SHA256, PYODIDE_PACKAGES } from "../features/labs/python/pyodide-manifest.ts";
