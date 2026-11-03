@@ -10,7 +10,9 @@ import {
   listDrafts,
   MAX_DRAFT_CODE,
   MAX_DRAFTS,
+  MAX_SOURCE_PATH,
   updateDraftCode,
+  validSource,
 } from "./drafts.ts";
 import { DEFAULT_DRAFTS_KEY } from "./python-config.ts";
 
@@ -77,6 +79,32 @@ describe("drafts", () => {
     );
     expect(listDrafts().map((d) => d.id)).toEqual(["d_0123456789"]);
     expect(getDraft("__proto__")).toBeNull();
+  });
+
+  it("origin.source: se guarda y se devuelve; uno no válido se descarta", () => {
+    const source = { kind: "repo", path: "notebooks/tema1.ipynb" };
+    const a = createDraft({ origin: { ...cell(4), source }, code: "a" });
+    const b = createDraft({ origin: { kind: "file", fileName: "utils.py", source: { kind: "repo", path: "src/utils.py" } }, code: "b" });
+    expect(getDraft(a)!.origin).toEqual({ ...cell(4), source });
+    expect(getDraft(b)!.origin).toEqual({ kind: "file", fileName: "utils.py", source: { kind: "repo", path: "src/utils.py" } });
+    expect(getDraft(a)!.label).toBe("Celda 4 · Tensores");
+    expect(consumeFreshDraft(a)).toEqual({ ...cell(4), source });
+    for (const bad of [{ kind: "", path: "x" }, { kind: "repo", path: "a\u0000b" }, { kind: "x".repeat(33), path: "a" }, { kind: "repo", path: "x".repeat(MAX_SOURCE_PATH + 1) }, { kind: "repo" }]) {
+      expect(validSource(bad), JSON.stringify(bad)).toBe(false);
+      const id = createDraft({ origin: { ...cell(1), source: bad as { kind: string; path: string } }, code: "c" });
+      expect(getDraft(id)!.origin).toEqual(cell(1));
+    }
+    // Los campos que sobran no se copian.
+    const c = createDraft({ origin: { ...cell(2), source: { kind: "repo", path: "a.ipynb", token: "x" } as never }, code: "d" });
+    expect(getDraft(c)!.origin.source).toEqual({ kind: "repo", path: "a.ipynb" });
+  });
+
+  it("los borradores anteriores (sin source) siguen siendo válidos; un source corrupto invalida el borrador", () => {
+    const old = { id: "d_0123456789", label: "Celda 1 · T", origin: { kind: "cell", notebookTitle: "T", cell: 1 }, code: "1", createdAt: "2026-10-28T00:00:00.000Z", fresh: false };
+    const bad = { ...old, id: "d_abcdefghij", origin: { ...old.origin, source: { kind: 1, path: "x" } } };
+    localStorage.setItem(DRAFTS_KEY, JSON.stringify([old, bad]));
+    expect(listDrafts().map((d) => d.id)).toEqual(["d_0123456789"]);
+    expect(getDraft("d_0123456789")!.origin.source).toBeUndefined();
   });
 
   it("la clave por defecto es ia-labs.py.drafts y una app anfitriona puede usar la suya", () => {

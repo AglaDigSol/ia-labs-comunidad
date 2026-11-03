@@ -28,8 +28,11 @@ export {
   listDrafts,
   MAX_DRAFT_CODE,
   MAX_DRAFTS,
+  MAX_SOURCE_KIND,
+  MAX_SOURCE_PATH,
   type Draft,
   type DraftOrigin,
+  type DraftSource,
 } from "../features/labs/python/drafts.ts";
 export { DEFAULT_DRAFTS_KEY, type PythonLabConfig } from "../features/labs/python/python-config.ts";
 export { EXTRA_WHEELS, type CoreAsset, type ExtraWheel, type LockAsset } from "../features/labs/python/packages.ts";

@@ -4,12 +4,22 @@
 // lo ejecuta sola. Como mucho MAX_DRAFTS por dispositivo (el más antiguo se sustituye) y el código se
 // recorta a MAX_DRAFT_CODE caracteres. Nada sale del dispositivo.
 // La clave de localStorage es configurable: configureLabs({ python: { draftsKey } }).
+// El origen puede llevar `source` (de qué archivo del anfitrión viene, por ejemplo { kind: "repo",
+// path: "notebooks/tema1.ipynb" }); la pestaña no lo usa, solo lo devuelve en las ranuras del anfitrión.
 import { draftsKey } from "./python-config.ts";
 export const MAX_DRAFTS = 10;
 export const MAX_DRAFT_CODE = 100_000;
 const MAX_NAME = 200;
+/** Longitud máxima de source.kind y de source.path. */
+export const MAX_SOURCE_KIND = 32;
+export const MAX_SOURCE_PATH = 500;
 
-export type DraftOrigin = { kind: "cell"; notebookTitle: string; cell: number } | { kind: "file"; fileName: string };
+/** De dónde viene el borrador en la app anfitriona (opcional; los borradores anteriores a 0.8.1 no lo tienen). */
+export type DraftSource = { kind: string; path: string };
+
+export type DraftOrigin =
+  | { kind: "cell"; notebookTitle: string; cell: number; source?: DraftSource }
+  | { kind: "file"; fileName: string; source?: DraftSource };
 
 export type Draft = {
   id: string;
@@ -36,9 +46,21 @@ function newId(): string {
   return id;
 }
 
+const hasControl = (s: string) => [...s].some((ch) => ch.charCodeAt(0) < 32 || ch.charCodeAt(0) === 127);
+const validText = (v: unknown, max: number): v is string =>
+  typeof v === "string" && v.trim() !== "" && v.length <= max && !hasControl(v);
+
+/** ¿Es un source válido? Cadenas cortas, no vacías y sin caracteres de control. */
+export function validSource(s: unknown): s is DraftSource {
+  if (!s || typeof s !== "object") return false;
+  const r = s as Record<string, unknown>;
+  return validText(r.kind, MAX_SOURCE_KIND) && validText(r.path, MAX_SOURCE_PATH);
+}
+
 function validOrigin(o: unknown): o is DraftOrigin {
   if (!o || typeof o !== "object") return false;
   const r = o as Record<string, unknown>;
+  if (r.source !== undefined && !validSource(r.source)) return false;
   if (r.kind === "cell") {
     return typeof r.notebookTitle === "string" && typeof r.cell === "number" && Number.isInteger(r.cell) && r.cell >= 0;
   }
@@ -94,11 +116,14 @@ export function getDraft(id: string): Draft | null {
   return read().find((d) => d.id === id) ?? null;
 }
 
+/** Crea un borrador nuevo y devuelve su id. Un source que no es válido se descarta (el borrador se crea igual). */
 export function createDraft(input: { origin: DraftOrigin; code: string }): string {
+  const src = input.origin.source;
+  const source = validSource(src) ? { source: { kind: src.kind, path: src.path } } : {};
   const origin: DraftOrigin =
     input.origin.kind === "cell"
-      ? { kind: "cell", notebookTitle: input.origin.notebookTitle.slice(0, MAX_NAME), cell: input.origin.cell }
-      : { kind: "file", fileName: input.origin.fileName.slice(0, MAX_NAME) };
+      ? { kind: "cell", notebookTitle: input.origin.notebookTitle.slice(0, MAX_NAME), cell: input.origin.cell, ...source }
+      : { kind: "file", fileName: input.origin.fileName.slice(0, MAX_NAME), ...source };
   const draft: Draft = {
     id: newId(),
     label: draftLabel(origin),
