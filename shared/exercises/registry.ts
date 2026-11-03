@@ -8,6 +8,7 @@ import { CALC_EXERCISES } from "./calculus.ts";
 import { DISCRETE_EXERCISES } from "./discrete.ts";
 import { LINALG_EXERCISES } from "./linalg.ts";
 import { LOGIC_EXERCISES } from "./logic.ts";
+import { LOGIC_EXTRA_EXERCISES, PRED_EXTRA_EXERCISES } from "./logic-extra.ts";
 import { PREDICATE_EXERCISES } from "./predicates.ts";
 import { PYTHON_EXERCISES } from "./python.ts";
 import { createRng, randomSeed } from "./random.ts";
@@ -24,7 +25,9 @@ const WITH_PYTHON = typeof __LABS_PYTHON__ === "boolean" ? __LABS_PYTHON__ : tru
 
 export const EXERCISE_TYPES: readonly AnyExerciseType[] = [
   ...LOGIC_EXERCISES,
+  ...LOGIC_EXTRA_EXERCISES,
   ...PREDICATE_EXERCISES,
+  ...PRED_EXTRA_EXERCISES,
   ...SET_EXERCISES,
   ...DISCRETE_EXERCISES,
   ...BOOLE_EXERCISES,
