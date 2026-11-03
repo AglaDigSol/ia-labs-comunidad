@@ -7,7 +7,7 @@
 // - Autovalores numéricos (n ≤ 3) para decidir si una matriz es diagonalizable en ℝ, definida positiva…
 // - Normas ‖·‖₁, ‖·‖₂, ‖·‖∞, producto escalar y cuántos α cumplen unas condiciones con normas.
 // - Vocabulario de tensores del curso: rango = número de índices (ndim), dimensión = tamaño de cada uno.
-import { add, cmp, div, equals, frac, isZero, mul, neg, ONE, sign, sub, toNumber, ZERO, type Frac } from "../rational.ts";
+import { add, cmp, div, equals, frac, isZero, mul, neg, ONE, sign, toNumber, ZERO, type Frac } from "../rational.ts";
 import { detElimination, matrixDeterminant } from "./det.ts";
 import { charPolynomial, eigenspace, rationalRoots } from "./eigen.ts";
 import { dot, identityMatrix, isSquareMatrix, matrixProduct, matrixScale, matrixTranspose, type Matrix, type Vector } from "./matrix.ts";
@@ -233,52 +233,65 @@ export function alphaQty(q: AlphaQty, a: Frac): Frac {
   }
 }
 
-const holdsAt = (c: AlphaCondition, a: Frac) => {
-  const s = cmp(alphaQty(c.lhs, a), alphaQty(c.rhs, a));
-  return c.op === "=" ? s === 0 : c.op === ">" ? s > 0 : s < 0;
-};
-const gapAt = (c: AlphaCondition, a: number) => {
-  const x = frac(BigInt(Math.round(a * 2 ** 30)), 2n ** 30n);
-  return toNumber(sub(alphaQty(c.lhs, x), alphaQty(c.rhs, x)));
+/** Lo mismo con números: con α diádico (k/32) y enteros pequeños, la cuenta en coma flotante es exacta. */
+function qtyNum(q: AlphaQty, a: number): number {
+  const at = (v: readonly AlphaEntry[]) => v.map(([c, k]) => c + k * a);
+  switch (q.k) {
+    case "dot": {
+      const u = at(q.u);
+      const v = at(q.v);
+      return u.reduce((s, x, i) => s + x * v[i]!, 0);
+    }
+    case "norm1":
+      return at(q.v).reduce((s, x) => s + Math.abs(x), 0);
+    case "norm2sq":
+      return at(q.v).reduce((s, x) => s + x * x, 0);
+    case "normInf":
+      return Math.max(0, ...at(q.v).map(Math.abs));
+    case "num":
+      return q.value;
+  }
+}
+
+const gap = (c: AlphaCondition, a: number) => qtyNum(c.lhs, a) - qtyNum(c.rhs, a);
+const holds = (c: AlphaCondition, a: number) => {
+  const g = gap(c, a);
+  return c.op === "=" ? g === 0 : c.op === ">" ? g > 0 : g < 0;
 };
 
 export type AlphaCount = { kind: "finito"; count: number; values: number[] } | { kind: "infinitos" };
 
 /**
  * ¿Cuántos α (≥ 0 o en todo ℝ) cumplen todas las condiciones? Las igualdades se buscan en una malla
- * exacta de paso 1/24 en [−R, R] (ceros exactos y cambios de signo, que se afinan por bisección); si
- * se cumplen en un tramo entero, son infinitos. Las desigualdades filtran.
+ * de paso 1/32 en [−R, R] (exacta: enteros, medios, cuartos…), y entre sus puntos por cambio de signo
+ * (raíces irracionales, afinadas por bisección); si se cumplen en un tramo entero, son infinitos. Las
+ * desigualdades filtran.
  */
-export function countAlpha(conds: readonly AlphaCondition[], domain: "nonneg" | "real", R = 40): AlphaCount {
-  const eqs = conds.filter((c) => c.op === "=");
-  const all = (a: Frac) => conds.every((c) => holdsAt(c, a));
-  const step = frac(1n, 24n);
-  const lo = domain === "nonneg" ? 0 : -R * 24;
-  const grid: Frac[] = [];
-  for (let i = lo; i <= R * 24; i++) grid.push(mul(frac(BigInt(i)), step));
+export function countAlpha(conds: readonly AlphaCondition[], domain: "nonneg" | "real", R = 20): AlphaCount {
+  const all = (a: number) => conds.every((c) => holds(c, a));
+  const lo = domain === "nonneg" ? 0 : -R * 32;
+  const grid: number[] = [];
+  for (let i = lo; i <= R * 32; i++) grid.push(i / 32);
   const ok = grid.map(all);
   // Tramo entero: dos puntos seguidos de la malla y su punto medio.
-  for (let i = 0; i + 1 < grid.length; i++) {
-    if (ok[i] && ok[i + 1] && all(div(add(grid[i]!, grid[i + 1]!), frac(2n)))) return { kind: "infinitos" };
-  }
-  const values: number[] = grid.filter((_, i) => ok[i]).map(toNumber);
+  for (let i = 0; i + 1 < grid.length; i++) if (ok[i] && ok[i + 1] && all((grid[i]! + grid[i + 1]!) / 2)) return { kind: "infinitos" };
+  const values: number[] = grid.filter((_, i) => ok[i]);
   // Ceros de la primera igualdad entre puntos de la malla (irracionales), si cumplen el resto.
-  const main = eqs[0];
+  const main = conds.find((c) => c.op === "=");
   if (main) {
     for (let i = 0; i + 1 < grid.length; i++) {
-      let a = toNumber(grid[i]!);
-      let b = toNumber(grid[i + 1]!);
-      const ga = gapAt(main, a);
-      const gb = gapAt(main, b);
+      let a = grid[i]!;
+      let b = grid[i + 1]!;
+      const ga = gap(main, a);
+      const gb = gap(main, b);
       if (ga === 0 || gb === 0 || Math.sign(ga) === Math.sign(gb)) continue;
       for (let k = 0; k < 60; k++) {
         const m = (a + b) / 2;
-        if (Math.sign(gapAt(main, m)) === Math.sign(ga)) a = m;
+        if (Math.sign(gap(main, m)) === Math.sign(ga)) a = m;
         else b = m;
       }
       const r = (a + b) / 2;
-      const rest = conds.filter((c) => c !== main);
-      const restOk = rest.every((c) => (c.op === "=" ? Math.abs(gapAt(c, r)) < 1e-6 : c.op === ">" ? gapAt(c, r) > 0 : gapAt(c, r) < 0));
+      const restOk = conds.every((c) => c === main || (c.op === "=" ? Math.abs(gap(c, r)) < 1e-6 : c.op === ">" ? gap(c, r) > 0 : gap(c, r) < 0));
       if (restOk && !values.some((v) => Math.abs(v - r) < 1e-9)) values.push(r);
     }
   }
