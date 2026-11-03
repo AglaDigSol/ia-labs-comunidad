@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.10)
+## [Próximamente] (0.11)
 
 - i18n completo: mover a `src/i18n/` los textos internos de los laboratorios, las flashcards, la calculadora y el
   calendario (hoy están en sus componentes) y añadir inglés.
@@ -12,6 +12,39 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.10.0] - 2026-11-03
+
+### Añadido
+
+- **Cálculo** (pestaña nueva, entre «Álgebra lineal» y «Markov»):
+  - Derivadas paso a paso: escribes cada línea, con (u)′ para lo que aún no has derivado, y eliges la regla (suma,
+    factor constante, producto, cociente, potencia, cadena o derivadas elementales, u «Operar y simplificar»). Cada
+    línea se comprueba en muchos puntos y se avisa si la regla no encaja o si aplicas varias a la vez; las pistas
+    dicen qué regla toca a cada derivada pendiente, nunca el resultado. También «Solo el resultado».
+  - Recta tangente y gráfica: f y f′ dibujadas, el punto (x₀, f(x₀)) y tu recta encima; se piden f(x₀), la pendiente
+    y la ecuación.
+  - Integrales: primitivas comprobadas derivándolas (vale cualquier forma, con + C o sin ella), integrales
+    definidas (exactas o con tres decimales) y rectángulos de Riemann (izquierda, derecha y punto medio).
+  - Varias variables: derivadas parciales y gradiente en un punto sobre las curvas de nivel con flechas del
+    gradiente, y puntos críticos clasificados con la hessiana (mínimo, máximo, silla), dibujados con su forma.
+  - Descenso de gradiente: simulador en una y dos variables (α, punto de partida, iteraciones; simple, con momento
+    o Adam) con la cuadrática, el valle alargado, Rosenbrock, varios mínimos y el punto de silla, la tabla de las
+    primeras iteraciones y qué ha pasado (converge, oscila, diverge); y los primeros pasos a mano, con las ideas
+    clave al acertar.
+  - Las funciones se escriben como en clase: 2x, 3(x + 1), x y, sen x, e^x, ln x, sqrt(x), |x|, x² o x**2; debajo se
+    ve cómo se han leído, y los errores dicen dónde.
+- **Ejercicios · «Cálculo»**: siete tipos y tres niveles (derivada por reglas, recta tangente, primitiva, integral
+  definida, parciales y gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente), con números
+  cómodos.
+- API: `CalculusLabPage`, el motor `shared/calculus` (`parseCalcExpr`, `derivative`, `gradient`, `hessian`,
+  `checkDerivStep`, `derivationSteps`, `calcEquivalent`, `checkAntiderivative`, `definiteIntegral`, `riemannSum`,
+  `criticalPoints`, `runDescent`, `exactDescentSteps`…), `CALC_EXERCISES` y `CALC_PACK` (CC BY 4.0).
+
+### Cambiado
+
+- Orden de las pestañas: Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole, Álgebra lineal, Cálculo,
+  Markov, Ejercicios y, si está encendida, Python. `calculo` queda reservado como identificador.
 
 ## [0.9.0] - 2026-11-03
 
@@ -358,7 +391,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.9.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.10.0
 [0.9.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.9.0
 [0.8.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.8.1
 [0.8.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.8.0
