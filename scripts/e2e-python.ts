@@ -11,7 +11,9 @@
 //    (para comprobar que entonces falla) y --coep añade COEP require-corp (aislamiento).
 // 3. Abre /laboratorios/python, carga Python y ejecuta código real: print, numpy, seaborn, un
 //    gráfico, %timeit, un archivo subido, input(), sin internet, TensorFlow y «Detener».
-// 4. Abre /host/ (la app anfitriona), escribe res/data.csv y res/programa.py desde la ranura del
+// 4. Paso a paso de un bucle de 5 líneas en la pestaña y, en «Ejercicios», un ejercicio de Python
+//    resuelto (de ficheros CSV), otro fallado y un «¿Qué imprime?» fallado con su paso a paso.
+// 5. Abre /host/ (la app anfitriona), escribe res/data.csv y res/programa.py desde la ranura del
 //    borrador, los lee con pandas y exec(open(…)), y comprueba que siguen tras reiniciar Python.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -20,6 +22,8 @@ import { createRequire } from "node:module";
 import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
+import { PY_CODE_TYPES } from "../shared/exercises/python.ts";
+import { seedToText } from "../shared/exercises/random.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const dist = join(root, "dist");
@@ -215,6 +219,59 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const restarted = await log.getByText(/Python se ha reiniciado/).count();
     await page.getByText("Python listo").waitFor({ timeout: 120_000 });
     return restarted > 0 ? "reiniciado (sin aislamiento)" : "interrumpido (KeyboardInterrupt)";
+  });
+
+  await step("paso a paso: un bucle de 5 líneas", async () => {
+    await toTop();
+    await editor.fill('total = 0\nfor i in range(3):\n    total += i\n    print(i, total)\nprint("fin", total)');
+    await page.getByRole("button", { name: "Ejecutar paso a paso" }).click();
+    const status = page.getByTestId("trace-step");
+    await status.waitFor({ timeout: 60_000 });
+    const first = await status.innerText();
+    if (first !== "Paso 1 de 13: se va a ejecutar la línea 1.") throw new Error(`primer paso: ${first}`);
+    for (let k = 0; k < 3; k++) await page.getByRole("button", { name: "Siguiente" }).click();
+    const fourth = await status.innerText();
+    await page.getByRole("button", { name: "Final" }).click();
+    await page.getByText("Paso 13 de 13: fin del programa.").waitFor({ timeout: 5_000 });
+    const out = await page.locator("pre", { hasText: "fin 3" }).count();
+    if (out === 0) throw new Error("la salida del último paso no tiene «fin 3»");
+    return `${fourth} … fin con «fin 3»`;
+  });
+
+  /** Un ejercicio de Python de «Ejercicios» con la semilla dada. */
+  const exerciseUrl = (id: string, level: "basico" | "medio" | "avanzado", seed: number) => `${url}/laboratorios/ejercicios?t=${id}&n=${level}&s=${seedToText(seed)}`;
+  const tipo = (id: string) => PY_CODE_TYPES.find((t) => t.id === id)!;
+
+  await step("ejercicio de Python resuelto (CSV del tema 5)", async () => {
+    const seed = [...Array(200).keys()].find((k) => tipo("py-ficheros").generate(k, "medio").template === "csv")!;
+    const inst = tipo("py-ficheros").generate(seed, "medio");
+    await page.goto(exerciseUrl("py-ficheros", "medio", seed));
+    await page.getByLabel("Tu código").fill(inst.solution);
+    await page.getByRole("button", { name: "Comprobar" }).click();
+    await page.getByText("¡Correcto! Tu código pasa todas las pruebas.").waitFor({ timeout: 180_000 });
+    await page.getByText("¡Resuelto! Cuenta en tu progreso.").waitFor({ timeout: 5_000 });
+    return `${inst.title}: ${inst.cases.length} casos correctos`;
+  });
+  await step("ejercicio de Python fallado", async () => {
+    const inst = tipo("py-tipos").generate(7, "medio");
+    await page.goto(exerciseUrl("py-tipos", "medio", 7));
+    await page.getByLabel("Tu código").fill(`def ${inst.fn}(*args):\n    return 'no'\n`);
+    await page.getByRole("button", { name: "Comprobar" }).click();
+    const list = page.getByRole("list", { name: "Resultados de las pruebas" });
+    await list.getByText("Caso 1: incorrecto").waitFor({ timeout: 180_000 });
+    const mine = await list.getByText(/^Tu resultado: 'no'/).count();
+    if (mine === 0) throw new Error("no muestra «Tu resultado»");
+    if (await page.getByText("¡Correcto!").count()) throw new Error("lo da por bueno");
+    return `${inst.title}: ${await list.getByText(/: incorrecto$/).count()} casos incorrectos`;
+  });
+  await step("«¿Qué imprime?» fallado y su paso a paso", async () => {
+    await page.goto(exerciseUrl("py-que-imprime", "medio", 21));
+    await page.getByLabel("Lo que imprime (una línea por cada línea de la salida)").fill("nada");
+    await page.getByRole("button", { name: "Comprobar" }).click();
+    await page.getByText(/No coincide: la primera diferencia está en la línea 1/).waitFor({ timeout: 180_000 });
+    await page.getByRole("button", { name: "Ver paso a paso" }).click();
+    await page.getByTestId("trace-step").waitFor({ timeout: 60_000 });
+    return await page.getByTestId("trace-step").innerText();
   });
 
   await step("anfitrión: writeFiles desde la ranura del borrador", async () => {
