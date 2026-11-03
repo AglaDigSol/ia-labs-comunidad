@@ -15,7 +15,7 @@ export { SymbolsPage } from "../features/labs/symbols/SymbolsPage.tsx";
 export { LogicLabPage } from "../features/labs/logic/LogicLabPage.tsx";
 export { PredicatesLabPage } from "../features/labs/predicates/PredicatesLabPage.tsx";
 export { SetsLabPage } from "../features/labs/sets/SetsLabPage.tsx";
-export { ExercisesPage } from "../features/labs/exercises/ExercisesPage.tsx";
+export { ExercisesPage, type ExercisesPageProps } from "../features/labs/exercises/ExercisesPage.tsx";
 export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
 export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
 // Pestaña Python (opcional): mejor con <LabsRoutes python />; PythonLabPage sirve para montarla
@@ -95,6 +95,19 @@ export * from "../../shared/exercises/predicates.ts";
 export * from "../../shared/exercises/sets.ts";
 export * from "../../shared/exercises/boole.ts";
 export * from "../../shared/exercises/registry.ts";
+// Ejercicios de Python (solo se muestran con <LabsRoutes python /> o <ExercisesPage python />).
+export {
+  PYTHON_EXERCISES,
+  PY_CODE_TYPES,
+  PY_OUTPUT,
+  PY_TEMAS,
+  type PyCase,
+  type PyCodeInstance,
+  type PyInstance,
+  type PyOutputInstance,
+  type PyRule,
+  type PyTema,
+} from "../../shared/exercises/python.ts";
 
 export * from "../../shared/markov/matrix.ts";
 export * from "../../shared/markov/evolution.ts";

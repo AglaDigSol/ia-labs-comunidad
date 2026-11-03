@@ -10,6 +10,7 @@ import {
   SETS_PACK,
   ExercisesPage,
   EXERCISE_TYPES,
+  PYTHON_EXERCISES,
   LOGIC_TRUTH_TABLE,
   exerciseType,
   seedFromText,
@@ -140,6 +141,7 @@ export function HostApp() {
         <Route path="/boole" element={<BooleLabPage />} />
         <Route path="/conjuntos" element={<SetsLabPage />} />
         <Route path="/ejercicios" element={<ExercisesPage />} />
+        <Route path="/ejercicios-python" element={<ExercisesPage python />} />
       </Routes>
     </MemoryRouter>
   );
@@ -179,3 +181,5 @@ const tableType: ExerciseType<FormulaInstance> = LOGIC_TRUTH_TABLE;
 export const generated: string = tableType.generate(seedFromText(seedToText(42)) ?? 0, level).formula;
 export const exerciseIds: string[] = EXERCISE_TYPES.map((t) => t.id);
 export const knownType: boolean = exerciseType("conjuntos-venn") !== null;
+export const pythonType: boolean = exerciseType("py-que-imprime", { python: true }) !== null;
+export const pythonIds: string[] = PYTHON_EXERCISES.map((t) => t.id);
