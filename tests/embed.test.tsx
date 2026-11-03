@@ -11,6 +11,12 @@ import {
   LINALG_GAUSS,
   CALC_DERIVATIVE,
   CALC_PACK,
+  checkProbAnswer,
+  formatFrac,
+  PROB_PACK,
+  PROB_TOTAL,
+  ProbabilityLabPage,
+  solveTree,
   calcToPlain,
   derivativeTidy,
   parseCalcExpr,
@@ -99,9 +105,9 @@ function renderAt(url: string, mount = "/laboratorios", onHeader?: (a: LabsActiv
 const tabNames = () => screen.getAllByRole("tab").map((t) => t.textContent);
 
 describe("LabsRoutes como dependencia", () => {
-  it("muestra los ocho laboratorios, «Ejercicios» y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
+  it("muestra los nueve laboratorios, «Ejercicios» y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
     renderAt("/laboratorios/python");
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad", "Markov", "Ejercicios", "Python"]);
     expect(await screen.findByText("Zona de Python del anfitrión")).toBeTruthy();
     const tab = screen.getByRole("tab", { name: "Python" });
     expect(tab.getAttribute("aria-selected")).toBe("true");
@@ -129,7 +135,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad", "Markov", "Ejercicios"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Boole", () => {
@@ -143,7 +149,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad", "Markov", "Ejercicios", "Python"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Predicados", () => {
@@ -157,7 +163,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad", "Markov", "Ejercicios", "Python"]);
   });
 
   it("abre el laboratorio de predicados sin guardar nada en localStorage", async () => {
@@ -239,7 +245,7 @@ describe("LabsRoutes como dependencia", () => {
     expect(LINALG_PACK.systems.length).toBeGreaterThanOrEqual(4);
   });
 
-  it("abre el laboratorio de cálculo en su pestaña, entre Álgebra lineal y Markov", async () => {
+  it("abre el laboratorio de cálculo en su pestaña, entre Álgebra lineal y Probabilidad", async () => {
     renderAt("/laboratorios/calculo");
     expect(await screen.findByRole("heading", { level: 1, name: "Cálculo" }, { timeout: 5000 })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Cálculo" }).getAttribute("aria-selected")).toBe("true");
@@ -253,6 +259,25 @@ describe("LabsRoutes como dependencia", () => {
     expect(r.ok && calcToPlain(derivativeTidy(r.expr))).toBe("2x·sen(x) + x^2·cos(x)");
     expect(CALC_DERIVATIVE.generate(1, "básico").f.length).toBeGreaterThan(0);
     expect(CALC_PACK.descent2.map((d) => d.id)).toContain("rosenbrock");
+  });
+
+  it("abre el laboratorio de probabilidad en su pestaña, entre Cálculo y Markov", async () => {
+    renderAt("/laboratorios/probabilidad");
+    expect(await screen.findByRole("heading", { level: 1, name: "Probabilidad" }, { timeout: 5000 })).toBeTruthy();
+    const tab = screen.getByRole("tab", { name: "Probabilidad" });
+    expect(tab.getAttribute("aria-selected")).toBe("true");
+    expect(tab.getAttribute("href")).toBe("/laboratorios/probabilidad");
+    expect(screen.getByTestId("header-action").textContent).toBe("Probabilidad");
+    expect(localStorage.length).toBe(0);
+  });
+
+  it("exporta el motor, los ejercicios y el contenido de probabilidad", () => {
+    const t = solveTree({ priors: [frac(2n, 5n), frac(3n, 5n)], likelihoods: [frac(1n, 5n), frac(4n, 5n)] });
+    expect(formatFrac(t.total)).toBe("14/25");
+    expect(checkProbAnswer("0,56", t.total)).toBe(true);
+    expect(PROB_TOTAL.generate(1, "medio").priors).toHaveLength(2);
+    expect(PROB_PACK.trees.length).toBeGreaterThanOrEqual(2);
+    expect(typeof ProbabilityLabPage).toBe("function");
   });
 
   it("abre el laboratorio de conjuntos en su pestaña", async () => {

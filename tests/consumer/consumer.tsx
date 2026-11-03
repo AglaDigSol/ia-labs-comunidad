@@ -7,6 +7,16 @@ import {
   BOOLE_PACK,
   BooleLabPage,
   CalculusLabPage,
+  ProbabilityLabPage,
+  PROB_PACK,
+  PROB_BINOMIAL,
+  probAtLeast,
+  binomialSpec,
+  checkProbAnswer,
+  solveTree,
+  readProb,
+  type DistSpec,
+  type ProbTreeInstance,
   CALC_PACK,
   CALC_DESCENT,
   calcToPlain,
@@ -169,6 +179,7 @@ export function HostApp() {
         <Route path="/conjuntos" element={<SetsLabPage />} />
         <Route path="/algebra-lineal" element={<LinearAlgebraLabPage />} />
         <Route path="/calculo" element={<CalculusLabPage />} />
+        <Route path="/probabilidad" element={<ProbabilityLabPage />} />
         <Route path="/ejercicios" element={<ExercisesPage />} />
         <Route path="/ejercicios-python" element={<ExercisesPage python />} />
       </Routes>
@@ -234,3 +245,9 @@ const saddleAnalysis = saddle.ok ? criticalPoints(saddle.expr) : null;
 export const saddleKind: CriticalKind | null = saddleAnalysis?.ok ? (saddleAnalysis.points[0]?.kind ?? null) : null;
 export const descentEnd: number[] | undefined = calcF ? runDescent(descentObjective(calcF), { alpha: 0.01, start: [1], iterations: 10 }).points.at(-1) : undefined;
 export const descentInstance: CalcDescentInstance = CALC_DESCENT.generate(1, "básico");
+const probTree = PROB_PACK.trees[0]!;
+export const probTotal = solveTree({ priors: probTree.priors.map(readProb), likelihoods: probTree.likelihoods.map(readProb) }).total;
+export const probOk: boolean = checkProbAnswer("0,06", probTotal);
+const binomial: DistSpec = binomialSpec(PROB_BINOMIAL.generate(1, "medio"));
+export const atLeast = probAtLeast(binomial, 2);
+export const treeAsk = (i: ProbTreeInstance) => i.ask;
