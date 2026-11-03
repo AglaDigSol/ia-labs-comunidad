@@ -126,13 +126,13 @@ dependencias que aún no tenga; el navegador los guarda en caché):
   «Ejecutar código».
 - Archivos: «Subir archivo» (CSV, TSV, TXT, JSON, MD e imágenes; 20 MB cada uno y 50 MB en total) los deja en la
   carpeta de trabajo, así que `open("datos.txt")` o `pd.read_csv("datos.csv")` funcionan sin ruta. Lo que escribe el
-  código aparece en «Archivos» para descargarlo.
+  código aparece en «Archivos» (también lo que está en carpetas, como `res/datos.csv`) para descargarlo o borrarlo.
 - Órdenes mágicas: `%time`, `%timeit` (con `-n` y `-r`), `%%time` y `%%timeit` en la primera línea, y
   `%matplotlib inline` (sin efecto: los gráficos salen debajo). Las demás (`%pip`, `!ls`, `%%capture`…) dan un error que
   las nombra.
 - `input()` lee las líneas de «Entrada para input()», escritas antes de ejecutar.
 - «Detener» interrumpe Python si el sitio está aislado entre orígenes (ver cabeceras); si no, lo reinicia (se pierden
-  las variables, no los archivos subidos).
+  las variables, no los archivos subidos ni los que escribió la app anfitriona).
 
 ### Límites
 
@@ -283,7 +283,7 @@ el `tsc` de la app anfitriona.
 
 ```json
 "dependencies": {
-  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.8.0"
+  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.8.1"
 }
 ```
 
@@ -393,6 +393,49 @@ navigate(`/laboratorios/python?borrador=${id}`);
   respuesta necesita la CSP con `'wasm-unsafe-eval'` si la app usa una CSP estricta, y `worker: { format: "es" }` en
   `vite.config.ts`. En `npm run dev`, añade `optimizeDeps: { exclude: ["ia-labs-comunidad", "pyodide"] }`.
 - Con la pestaña encendida, una `extraTabs` con id o ruta `python` se descarta: hay que quitarla.
+
+**Archivos de la app anfitriona.** La app puede escribir sus propios archivos en la carpeta de trabajo de Python (por
+ejemplo, los datos que usa un cuaderno), desde una ranura de la pestaña. Las ranuras son funciones en
+`configureLabs({ python })` o props de `PythonLabPage` (las props mandan):
+
+```tsx
+import { configureLabs, createDraft, type DraftActionsContext } from "ia-labs-comunidad";
+
+async function cargarDatos({ draft, files }: DraftActionsContext) {
+  // draft.origin.source: lo que pasó la app en createDraft, p. ej. { kind: "repo", path: "notebooks/tema1.ipynb" }
+  const csv = await (await fetch("/datos/res/data.csv")).arrayBuffer();
+  const { written, skipped } = await files.writeFiles([{ path: "res/data.csv", data: csv }]);
+  // skipped: [{ path, reason: "name" | "size" | "total" | "count", message }]
+}
+
+configureLabs({
+  python: {
+    maxTotalBytes: 120 * 1024 * 1024, // por defecto 50 MB; como mucho 200 MB
+    maxFileBytes: 30 * 1024 * 1024, // por defecto 20 MB; como mucho 50 MB
+    maxFiles: 100, // por defecto 30; como mucho 500
+    renderDraftActions: (ctx) => <button onClick={() => void cargarDatos(ctx)}>Cargar los datos</button>,
+  },
+});
+
+createDraft({ origin: { kind: "cell", notebookTitle: "Tema 1", cell: 4, source: { kind: "repo", path: "notebooks/tema1.ipynb" } }, code });
+```
+
+- `renderDraftActions(ctx)` se muestra en la banda del borrador abierto (`?borrador=`), con `ctx.draft`;
+  `renderFilesActions(ctx)`, en la cabecera de «Archivos», con `ctx.draft` o `null`. Si una ranura lanza un error,
+  desaparece y la pestaña sigue.
+- `ctx.files.writeFiles(files: Array<{ path: string; data: ArrayBuffer | ArrayBufferView }>)` devuelve
+  `Promise<{ written: FileInfo[]; skipped: SkippedFile[] }>`. Las rutas son relativas, con carpetas, y de cualquier
+  extensión (`.py`, `.txt`, `.prototxt`, modelos binarios…); se rechazan sin arreglarlas si son absolutas, usan `..`
+  o `.`, tienen partes vacías, `\`, caracteres de control, `<>:"|?*`, punto inicial o espacios en los extremos de una
+  parte, más de 8 niveles, partes de más de 120 caracteres o más de 400 en total (`safeFilePath` hace la misma
+  comprobación). Una ruta que ya existe se sustituye; una no puede ser archivo y carpeta a la vez.
+- `ctx.files.limits` (y `fileLimits()`) dan los límites efectivos, que cuentan juntos los archivos subidos y los del
+  anfitrión; `ctx.files.list()`, lo que muestra ahora «Archivos» (`[{ name: "res/data.csv", size }]`).
+- Los bytes se copian y quedan solo en memoria (nunca en localStorage, IndexedDB ni la caché): si Python aún no está
+  cargado se escriben al cargarlo, tras un reinicio se vuelven a escribir, «Vaciar archivos» los borra y al salir de
+  la pestaña se pierden. Escribir un archivo nunca ejecuta nada.
+- `origin.source` (`{ kind, path }`, de 32 y 500 caracteres como mucho y sin caracteres de control) es opcional; uno
+  no válido se descarta y el borrador se crea igual.
 
 La prueba [`tests/embed.test.tsx`](tests/embed.test.tsx) y el consumidor de
 [`tests/consumer/`](tests/consumer/consumer.tsx) (que la CI compila importando solo de `"ia-labs-comunidad"`) muestran
