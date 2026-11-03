@@ -232,3 +232,16 @@ export function loadedDieText(odd: number, even: number): string {
   if (even % odd === 0) return `un dado trucado en el que cada cara par es ${times(even / odd)} probable que cada cara impar`;
   return `un dado trucado en el que cada cara impar y cada cara par tienen probabilidades en proporción ${odd} : ${even}`;
 }
+
+/** Datos en KaTeX que se reparten en líneas a 390 px (en vez de una fórmula larga con desplazamiento). */
+export function TexList({ items, label = "Datos" }: { items: ReadonlyArray<readonly [string, string]>; label?: string }) {
+  return (
+    <ul aria-label={label} className="flex flex-wrap gap-x-6 gap-y-1 text-[18px]">
+      {items.map(([tex, text]) => (
+        <li key={tex}>
+          <Tex tex={tex} label={text} />
+        </li>
+      ))}
+    </ul>
+  );
+}

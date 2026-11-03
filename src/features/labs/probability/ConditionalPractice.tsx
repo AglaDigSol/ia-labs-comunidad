@@ -43,6 +43,7 @@ import {
   SolutionBox,
   SolutionLine,
   Status,
+  TexList,
   useFields,
   Verdict,
 } from "./common.tsx";
@@ -271,11 +272,12 @@ export function PairPractice({
 
   return (
     <PracticeBox title="Condicionada e independencia">
-      <Tex
-        display
-        tex={`P(A) = ${dataTex(pA)},\\quad P(B) = ${dataTex(pB)},\\quad ${GIVEN_TEX[given]} = ${dataTex(value)}`}
-        label={`P de A igual a ${dataText(pA)}; P de B igual a ${dataText(pB)}; ${GIVEN_TEXT[given]} igual a ${dataText(value)}`}
-        className="text-[18px]"
+      <TexList
+        items={[
+          [`P(A) = ${dataTex(pA)}`, `P de A igual a ${dataText(pA)}`],
+          [`P(B) = ${dataTex(pB)}`, `P de B igual a ${dataText(pB)}`],
+          [`${GIVEN_TEX[given]} = ${dataTex(value)}`, `${GIVEN_TEXT[given]} igual a ${dataText(value)}`],
+        ]}
       />
       <div className="flex flex-wrap gap-3">
         {keys.map((k) => (

@@ -24,6 +24,7 @@ import {
   SolutionBox,
   SolutionLine,
   Status,
+  TexList,
   useFields,
 } from "./common.tsx";
 
@@ -223,11 +224,12 @@ export function ProductPractice({
   };
   return (
     <PracticeBox title="Esperanza con variables independientes">
-      <Tex
-        display
-        tex={`X \\sim B(${x.n},\\ ${dataTex(x.p)}),\\quad Y \\sim B(${y.n},\\ ${dataTex(y.p)}),\\quad X \\text{ e } Y \\text{ independientes}`}
-        label={`X binomial de n ${x.n} y p ${dataText(x.p)}; Y binomial de n ${y.n} y p ${dataText(y.p)}; independientes`}
-        className="text-[18px]"
+      <TexList
+        items={[
+          [`X \\sim B(${x.n},\\ ${dataTex(x.p)})`, `X binomial de n ${x.n} y p ${dataText(x.p)}`],
+          [`Y \\sim B(${y.n},\\ ${dataTex(y.p)})`, `Y binomial de n ${y.n} y p ${dataText(y.p)}`],
+          ["X \\text{ e } Y \\text{ independientes}", "X e Y independientes"],
+        ]}
       />
       <div className="flex flex-wrap gap-3">
         {keys.map((k) => (

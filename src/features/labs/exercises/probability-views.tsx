@@ -33,8 +33,7 @@ import {
 import type { ExerciseType } from "../../../../shared/exercises/types.ts";
 import { dieRuleText } from "../../../../shared/probability/variable.ts";
 import { formatDecimal, ONE, sub, type Frac } from "../../../../shared/rational.ts";
-import { Tex } from "../../../lib/tex.tsx";
-import { dataTex, dataText, loadedDieText, Statement } from "../probability/common.tsx";
+import { dataTex, dataText, loadedDieText, Statement, TexList } from "../probability/common.tsx";
 import { DieCondPractice, PairPractice } from "../probability/ConditionalPractice.tsx";
 import { DistributionPractice } from "../probability/DistributionPractice.tsx";
 import { GamePractice, PenaltyPractice, ProductPractice } from "../probability/ExpectationPractice.tsx";
@@ -72,7 +71,7 @@ function TotalExercise({ instance, onSolved }: ExerciseViewProps<ProbTreeInstanc
     <>
       <Statement>
         <p>{`${story.context} ${names.join(", ").replace(/, ([^,]*)$/, " y $1")} forman una partición: cada caso cae en uno solo. C es el suceso «${story.event}».`}</p>
-        <Tex display tex={data.map(([t]) => t).join(",\\quad ")} label={data.map(([, l]) => l).join("; ")} className="text-[18px]" />
+        <TexList items={data as Array<[string, string]>} />
         <p className="font-semibold">{instance.ask === null ? "Calcula P(C)." : `Calcula P(C) y P(${names[instance.ask]} | C).`}</p>
       </Statement>
       <TreePractice tree={tree} branches={names} hiddenPrior={instance.hiddenPrior} ask={instance.ask} onSolved={onSolved} />
