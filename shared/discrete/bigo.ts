@@ -446,8 +446,21 @@ export function costOf(text: string, vars?: readonly CostVar[]): Cost {
 
 // ---------------------------------------------------------------- Opciones de examen
 
-/** Una opción tipo examen: un orden O(·) o «Ninguna de las otras». */
-export type BigOOption = { growth: Growth } | { none: true };
+/**
+ * Una opción tipo examen: un orden O(·) (con una constante dentro si es la trampa «O(10n⁸)») o
+ * «Ninguna de las otras».
+ */
+export type BigOOption = { growth: Growth; coef?: number } | { none: true };
+
+/** «O(10n⁸)»: la constante delante del término dominante. */
+export const optionTex = (o: BigOOption): string =>
+  "none" in o
+    ? "\\text{Ninguna de las otras}"
+    : o.coef && o.coef !== 1
+      ? `O\\left(${o.coef}${/^\d/.test(growthTex(o.growth)) ? " \\cdot " : ""}${growthTex(o.growth)}\\right)`
+      : bigOTex(o.growth);
+export const optionText = (o: BigOOption): string =>
+  "none" in o ? "Ninguna de las otras" : o.coef && o.coef !== 1 ? `O(${o.coef}${/^\d/.test(growthText(o.growth)) ? "·" : ""}${growthText(o.growth)})` : bigOText(o.growth);
 
 /**
  * Órdenes equivocados verosímiles para un orden dado: grados uno arriba y uno abajo, el doble o la
@@ -508,10 +521,18 @@ export function distractors(correct: Growth): Growth[] {
   return out;
 }
 
-/** ¿La opción elegida es la correcta? «Ninguna» lo es si ninguna otra opción coincide. */
+/**
+ * ¿La opción elegida es la correcta? Se pide el orden simplificado: una opción con una constante
+ * dentro (O(10n⁸)) describe el mismo conjunto, pero no es la forma que se pide y cuenta como mal.
+ * «Ninguna» es correcta si ninguna otra opción coincide.
+ */
 export function optionIsCorrect(options: readonly BigOOption[], index: number, correct: Growth): boolean {
   const o = options[index];
   if (!o) return false;
-  if ("none" in o) return !options.some((x) => "growth" in x && sameGrowth(x.growth, correct));
-  return sameGrowth(o.growth, correct);
+  const exact = (x: BigOOption) => "growth" in x && (x.coef ?? 1) === 1 && sameGrowth(x.growth, correct);
+  if ("none" in o) return !options.some(exact);
+  return exact(o);
 }
+
+/** ¿Es la trampa de la constante (mismo orden, con un número dentro)? */
+export const isConstantTrap = (o: BigOOption, correct: Growth): boolean => "growth" in o && (o.coef ?? 1) !== 1 && sameGrowth(o.growth, correct);

@@ -11,9 +11,13 @@ import { factorial, variations, variationsRep } from "./count.ts";
 export const FN_PROPS = ["inyectiva", "sobreyectiva", "biyectiva", "inversa"] as const;
 export type FnProp = (typeof FN_PROPS)[number];
 
+/** «puede», «necesariamente», «no puede» y «no necesariamente». */
+export const FN_MODES = ["puede", "necesariamente", "no-puede", "no-necesariamente"] as const;
+export type FnMode = (typeof FN_MODES)[number];
+
 export type FnStatement =
   /** «f puede ser inyectiva», «f es necesariamente sobreyectiva», «f no puede ser biyectiva». */
-  | { k: "modal"; mode: "puede" | "necesariamente" | "no-puede"; prop: FnProp }
+  | { k: "modal"; mode: FnMode; prop: FnProp }
   /** Con |f(A)| conocido: «f es inyectiva». */
   | { k: "fixed"; prop: FnProp }
   /** Con |f(A)| conocido: «g: A → f(A) es sobreyectiva». */
@@ -26,6 +30,8 @@ export interface FnSetting {
   b: number;
   /** |f(A)|, si se conoce. */
   image?: number;
+  /** A ⊊ B (subconjunto propio): solo cambia cómo se dice; implica |A| < |B|. */
+  subset?: boolean;
 }
 
 export const MAX_FN_CARD = 12;
@@ -34,6 +40,7 @@ export const MAX_FN_CARD = 12;
 export function settingProblem(s: FnSetting): string | null {
   const ok = (x: number) => Number.isSafeInteger(x) && x >= 1 && x <= MAX_FN_CARD;
   if (!ok(s.a) || !ok(s.b)) return `|A| y |B| tienen que ser naturales entre 1 y ${MAX_FN_CARD}.`;
+  if (s.subset && s.a >= s.b) return "Si A ⊊ B, |A| tiene que ser menor que |B|.";
   if (s.image !== undefined && (!ok(s.image) || s.image > Math.min(s.a, s.b))) return "|f(A)| no puede ser mayor que |A| ni que |B|.";
   return null;
 }
@@ -73,7 +80,7 @@ export function statementTrue(st: FnStatement, s: FnSetting): boolean {
   switch (st.k) {
     case "modal": {
       const f = functionFacts(s.a, s.b)[st.prop];
-      return st.mode === "puede" ? f.possible : st.mode === "necesariamente" ? f.necessary : !f.possible;
+      return st.mode === "puede" ? f.possible : st.mode === "necesariamente" ? f.necessary : st.mode === "no-necesariamente" ? !f.necessary : !f.possible;
     }
     case "fixed":
     case "onto-image": {
@@ -99,17 +106,18 @@ export function statementText(st: FnStatement): string {
     case "modal":
       if (st.mode === "puede") return `f puede ${PROP_TEXT[st.prop].ser}.`;
       if (st.mode === "no-puede") return `f no puede ${PROP_TEXT[st.prop].ser}.`;
+      if (st.mode === "no-necesariamente") return st.prop === "inversa" ? "f no tiene inversa necesariamente." : `f no es necesariamente ${st.prop}.`;
       return st.prop === "inversa" ? "f tiene inversa necesariamente." : `f ${PROP_TEXT[st.prop].adj} necesariamente.`;
     case "fixed":
       return `f ${PROP_TEXT[st.prop].adj}.`;
     case "onto-image":
       return `g: A → f(A), g(x) = f(x), ${PROP_TEXT[st.prop].adj}.`;
-    case "count":
-      return st.what === "todas"
-        ? `Hay exactamente ${st.value} funciones de A en B.`
-        : st.what === "inyectivas"
-          ? `Hay exactamente ${st.value} funciones inyectivas de A en B.`
-          : `Hay exactamente ${st.value} funciones biyectivas de A en B.`;
+    case "count": {
+      const one = st.value === 1;
+      const noun = one ? "función" : "funciones";
+      const adj = st.what === "todas" ? "" : st.what === "inyectivas" ? (one ? " inyectiva" : " inyectivas") : one ? " biyectiva" : " biyectivas";
+      return `Hay exactamente ${st.value} ${noun}${adj} de A en B.`;
+    }
   }
 }
 
@@ -120,14 +128,14 @@ export function statementReason(st: FnStatement, s: FnSetting): string {
     case "modal": {
       const p = st.prop;
       if (p === "inyectiva") {
-        if (st.mode === "necesariamente") return a === 1 ? "Con un solo elemento en A no hay dos imágenes que puedan coincidir." : `Con |A| = ${a} ≥ 2 basta mandar dos elementos al mismo: no es necesariamente inyectiva.`;
+        if (st.mode === "necesariamente" || st.mode === "no-necesariamente") return a === 1 ? "Con un solo elemento en A no hay dos imágenes que puedan coincidir." : `Con |A| = ${a} ≥ 2 basta mandar dos elementos al mismo: no es necesariamente inyectiva.`;
         return a <= b ? `|A| = ${a} ≤ |B| = ${b}: hay sitio para mandar cada elemento a uno distinto.` : `|A| = ${a} > |B| = ${b}: por el principio del palomar, dos elementos de A comparten imagen.`;
       }
       if (p === "sobreyectiva") {
-        if (st.mode === "necesariamente") return b === 1 ? "B tiene un solo elemento y todo va a él: siempre es sobreyectiva." : `Con |B| = ${b} ≥ 2 puede que todo vaya a un mismo elemento: no es necesariamente sobreyectiva.`;
+        if (st.mode === "necesariamente" || st.mode === "no-necesariamente") return b === 1 ? "B tiene un solo elemento y todo va a él: siempre es sobreyectiva." : `Con |B| = ${b} ≥ 2 puede que todo vaya a un mismo elemento: no es necesariamente sobreyectiva.`;
         return a >= b ? `|A| = ${a} ≥ |B| = ${b}: hay elementos de sobra para cubrir todo B.` : `|A| = ${a} < |B| = ${b}: la imagen tiene como mucho ${a} elementos y no cubre B.`;
       }
-      if (st.mode === "necesariamente") return a === 1 && b === 1 ? "Con un solo elemento en A y en B, la única función es biyectiva." : "Hay funciones que no son biyectivas (por ejemplo, una constante, si hay más de un elemento).";
+      if (st.mode === "necesariamente" || st.mode === "no-necesariamente") return a === 1 && b === 1 ? "Con un solo elemento en A y en B, la única función es biyectiva." : "Hay funciones que no son biyectivas (por ejemplo, una constante, si hay más de un elemento).";
       return a === b ? `|A| = |B| = ${a}: una biyección existe (y solo entonces hay inversa).` : `|A| = ${a} ≠ |B| = ${b}: ninguna función es biyectiva, así que ninguna tiene inversa.`;
     }
     case "fixed": {
@@ -160,6 +168,7 @@ export function functionHints(s: FnSetting): string[] {
     "Biyectiva = inyectiva y sobreyectiva; solo entonces hay inversa. Hace falta |A| = |B|.",
     "«Puede» pide que exista al menos una función así; «necesariamente», que lo sean todas (piensa en una función constante como contraejemplo).",
   ];
+  if (s.subset) out.push("A ⊊ B quiere decir que A está dentro de B y le falta algún elemento: |A| < |B|.");
   if (s.image !== undefined) out.push("Con |f(A)| conocido: f es inyectiva si |f(A)| = |A| y sobreyectiva si |f(A)| = |B|. Y A → f(A) siempre es sobreyectiva.");
   out.push("Para contar funciones: cada elemento de A elige su imagen en B (variaciones con repetición); si son inyectivas, sin repetir imagen (variaciones).");
   return out;

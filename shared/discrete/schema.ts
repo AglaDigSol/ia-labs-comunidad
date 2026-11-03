@@ -8,7 +8,7 @@ import { ContentMetaSchema } from "../content/meta.ts";
 import type { AlgoStmt } from "./algorithms.ts";
 import { parseCost } from "./bigo.ts";
 import { MAX_COUNT_N, modelProblem } from "./count.ts";
-import { FN_PROPS, MAX_FN_CARD, settingProblem } from "./functions.ts";
+import { FN_MODES, FN_PROPS, MAX_FN_CARD, settingProblem } from "./functions.ts";
 
 const Id = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const Level = z.enum(["básico", "medio", "avanzado"]);
@@ -38,7 +38,7 @@ export const CombProblemSchema = z.strictObject({
 
 const FnProp = z.enum(FN_PROPS);
 export const FnStatementSchema = z.discriminatedUnion("k", [
-  z.strictObject({ k: z.literal("modal"), mode: z.enum(["puede", "necesariamente", "no-puede"]), prop: FnProp }),
+  z.strictObject({ k: z.literal("modal"), mode: z.enum(FN_MODES), prop: FnProp }),
   z.strictObject({ k: z.literal("fixed"), prop: FnProp }),
   z.strictObject({ k: z.literal("onto-image"), prop: FnProp }),
   z.strictObject({ k: z.literal("count"), what: z.enum(["todas", "inyectivas", "biyectivas"]), value: z.number().int().min(0).max(1e12) }),
@@ -51,6 +51,7 @@ export const FnPresetSchema = z
     a: Nat(MAX_FN_CARD),
     b: Nat(MAX_FN_CARD),
     image: Nat(MAX_FN_CARD).optional(),
+    subset: z.boolean().optional(),
     statements: z.array(FnStatementSchema).min(3).max(8),
   })
   .superRefine((p, ctx) => {
