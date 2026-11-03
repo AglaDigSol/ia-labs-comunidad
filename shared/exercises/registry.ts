@@ -5,6 +5,7 @@
 // aparecen en la lista, en «Mezclar» ni por su id en la URL.
 import { BOOLE_EXERCISES } from "./boole.ts";
 import { CALC_EXERCISES } from "./calculus.ts";
+import { DISCRETE_EXERCISES } from "./discrete.ts";
 import { LINALG_EXERCISES } from "./linalg.ts";
 import { LOGIC_EXERCISES } from "./logic.ts";
 import { PREDICATE_EXERCISES } from "./predicates.ts";
@@ -25,6 +26,7 @@ export const EXERCISE_TYPES: readonly AnyExerciseType[] = [
   ...LOGIC_EXERCISES,
   ...PREDICATE_EXERCISES,
   ...SET_EXERCISES,
+  ...DISCRETE_EXERCISES,
   ...BOOLE_EXERCISES,
   ...LINALG_EXERCISES,
   ...CALC_EXERCISES,

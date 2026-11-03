@@ -21,6 +21,7 @@ export const EXERCISE_TOPICS = [
   { id: "logica", label: "Lógica proposicional" },
   { id: "predicados", label: "Lógica de predicados" },
   { id: "conjuntos", label: "Conjuntos" },
+  { id: "combinatoria", label: "Combinatoria y complejidad" },
   { id: "boole", label: "Álgebra de Boole" },
   { id: "algebra-lineal", label: "Álgebra lineal" },
   { id: "calculo", label: "Cálculo" },
