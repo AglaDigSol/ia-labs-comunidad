@@ -74,6 +74,7 @@ export function AnswerField({
           autoComplete="off"
           spellCheck={false}
           inputMode="decimal"
+          aria-label={label}
           aria-invalid={invalid ? true : undefined}
           aria-describedby={describedBy}
           value={value}
