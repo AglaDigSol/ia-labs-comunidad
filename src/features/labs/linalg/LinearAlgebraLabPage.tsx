@@ -2,14 +2,16 @@
 // cada paso y clasificación del sistema con Rouché–Frobenius), «Operaciones con matrices» (producto,
 // determinante, rango e inversa), «Independencia y bases», «Autovalores y autovectores»,
 // «Transformaciones en 2D» (dibujo interactivo y matriz de una transformación descrita) y «Tensores»
-// (formas con las reglas de NumPy). Todo con racionales exactos. La app corrige y da pistas; las
+// (rango y dimensión de un tensor y formas con las reglas de NumPy) y «Propiedades y teoría»
+// (determinantes, verdadero o falso sobre matrices, normas y sistemas tipo test). Todo con racionales exactos. La app corrige y da pistas; las
 // soluciones quedan detrás de «Ver la solución completa». La sección elegida va en la URL (?s=).
 import { useSearchParams } from "react-router";
 import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group.tsx";
 import { EigenSection, GaussSection, IndependenceSection, OperationsSection, TensorSection } from "./sections.tsx";
+import { TheorySection } from "./TheorySection.tsx";
 import { TransformSection } from "./TransformSection.tsx";
 
-const SECTIONS = ["gauss", "operaciones", "independencia", "autovalores", "transformaciones", "tensores"] as const;
+const SECTIONS = ["gauss", "operaciones", "independencia", "autovalores", "transformaciones", "tensores", "teoria"] as const;
 type Section = (typeof SECTIONS)[number];
 const isSection = (x: unknown): x is Section => typeof x === "string" && (SECTIONS as readonly string[]).includes(x);
 
@@ -20,6 +22,7 @@ const LABELS: Record<Section, string> = {
   autovalores: "Autovalores y autovectores",
   transformaciones: "Transformaciones en 2D",
   tensores: "Tensores",
+  teoria: "Propiedades y teoría",
 };
 
 const INTRO: Record<Section, string> = {
@@ -28,7 +31,8 @@ const INTRO: Record<Section, string> = {
   independencia: "Decide si unos vectores son linealmente independientes, la dimensión del subespacio que generan y una base.",
   autovalores: "Encuentra el polinomio característico, los autovalores y un autovector de cada uno, y compruébalos con A·v = λ·v.",
   transformaciones: "Mira qué hace una matriz 2×2 con el plano y escribe la matriz de una transformación descrita en palabras.",
-  tensores: "Predice la forma (shape) de un resultado en NumPy: emisión, producto @, sum(axis), reshape y traspuesta.",
+  tensores: "Rango y dimensión de un tensor (con la terminología del curso) y la forma (shape) de un resultado en NumPy: emisión, producto @, sum(axis), reshape y traspuesta.",
+  teoria: "Propiedades del determinante, verdadero o falso sobre matrices (regulares, simétricas, definidas positivas, diagonalizables), normas y clasificación de sistemas, con preguntas como las del examen.",
 };
 
 export function LinearAlgebraLabPage() {
@@ -85,6 +89,8 @@ export function LinearAlgebraLabPage() {
         <TransformSection />
       ) : section === "tensores" ? (
         <TensorSection />
+      ) : section === "teoria" ? (
+        <TheorySection />
       ) : (
         <GaussSection />
       )}
