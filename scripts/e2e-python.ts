@@ -229,7 +229,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     await status.waitFor({ timeout: 60_000 });
     const first = await status.innerText();
     if (first !== "Paso 1 de 13: se va a ejecutar la línea 1.") throw new Error(`primer paso: ${first}`);
-    for (let k = 0; k < 3; k++) await page.getByRole("button", { name: "Siguiente" }).click();
+    for (let k = 0; k < 3; k++) await page.getByRole("button", { name: "Siguiente paso" }).click();
     const fourth = await status.innerText();
     await page.getByRole("button", { name: "Final" }).click();
     await page.getByText("Paso 13 de 13: fin del programa.").waitFor({ timeout: 5_000 });

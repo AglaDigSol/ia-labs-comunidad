@@ -730,7 +730,7 @@ describe("PythonLabPage: paso a paso", () => {
     await act(async () => run.resolve({ kind: "done", figures: [], ms: 5, files: [], value: JSON.stringify(trace) }));
     expect(await screen.findByRole("heading", { name: "Paso a paso" })).toBeTruthy();
     expect(screen.getByTestId("trace-step").textContent).toBe("Paso 1 de 2: se va a ejecutar la línea 1.");
-    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente paso" }));
     expect(screen.getByText("x")).toBeTruthy();
     fireEvent.change(editor(), { target: { value: "x = 2" } });
     expect(screen.queryByRole("heading", { name: "Paso a paso" })).toBeNull();

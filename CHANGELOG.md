@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.9)
+## [Próximamente] (0.10)
 
 - i18n completo: mover a `src/i18n/` los textos internos de los laboratorios, las flashcards, la calculadora y el
   calendario (hoy están en sus componentes) y añadir inglés.
@@ -12,6 +12,44 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.9.0] - 2026-11-03
+
+### Añadido
+
+- **Álgebra lineal** (pestaña nueva, entre «Álgebra de Boole» y «Markov»):
+  - Gauss-Jordan paso a paso: eliges cada operación elemental (Fᵢ ↔ Fⱼ, Fᵢ ← k·Fᵢ, Fᵢ ← Fᵢ + k·Fⱼ) o escribes la
+    matriz siguiente, y se comprueba antes de seguir; luego clasificas el sistema con Rouché–Frobenius y escribes su
+    solución, también paramétrica.
+  - Producto, determinante, rango e inversa celda a celda; independencia lineal y bases; autovalores y autovectores
+    (Av = λv, se acepta cualquier múltiplo).
+  - Transformaciones del plano dibujadas, con sus direcciones propias y el determinante como área, y «¿Qué matriz
+    es?».
+  - Formas de tensores con las reglas de NumPy (emisión, @, sum, reshape y .T), con la explicación por eje.
+  - Todo con fracciones exactas; las soluciones, tras «Ver la solución completa».
+- **Ejercicios · «Álgebra lineal»**: ocho tipos y tres niveles (Gauss-Jordan, determinante, producto, inversa,
+  sistemas, independencia, autovalores y formas de tensores), con números cómodos y autovalores enteros.
+- **Ejercicios · «Python (01MIAR)»** (solo con la pestaña Python encendida): nueve tipos y tres niveles con 33
+  plantillas (tipos y operadores, cadenas, colecciones, control, comprensiones, funciones, recursión y lambdas,
+  ficheros y CSV) y «¿Qué imprime?».
+  - Se corrigen en el navegador con Pyodide: «Caso k: correcto / incorrecto» con la llamada y lo que hizo tu código,
+    nunca el valor esperado; requisitos comprobados con `ast`; pistas graduadas sin código; la solución, tras «Ver la
+    solución completa».
+  - En el tema 5 los archivos de cada caso se escriben con la API de archivos.
+- **Pestaña Python · «Ejecutar paso a paso»** (como Python Tutor): la línea actual, la pila de llamadas con sus
+  variables y alias («misma lista que x»), lo que devuelve cada función y la salida hasta ese paso; límites de 2000
+  pasos, 10 000 caracteres y 5 s. También tras fallar un «¿Qué imprime?».
+- API: `LinearAlgebraLabPage`, el motor `shared/linalg` (`parseMatrix`, `rref`, `matrixInverse`, `analyzeSystem`,
+  `eigenvalues`, `broadcastShapes`, `tensorOpResult`…), `LINALG_EXERCISES`, `LINALG_PACK` (CC BY 4.0),
+  `PYTHON_EXERCISES`, `PY_CODE_TYPES`, `PY_OUTPUT` y `PY_TEMAS`. `ExercisesPage` admite `python`, y
+  `exerciseType`, `exercisesOfTopic`, `exerciseTopics` y `mixedType` reciben los módulos encendidos. `PyClient.run`
+  admite `{ capture, imports }`.
+
+### Cambiado
+
+- Orden de las pestañas: Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole, Álgebra lineal, Markov,
+  Ejercicios y, si está encendida, Python. `algebra-lineal` queda reservado como identificador.
+- Sin Python, los ejercicios de Python no van en el build (check-python lo comprueba).
 
 ## [0.8.1] - 2026-11-03
 
@@ -320,7 +358,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.8.1...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.9.0
 [0.8.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.8.1
 [0.8.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.8.0
 [0.7.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.7.0

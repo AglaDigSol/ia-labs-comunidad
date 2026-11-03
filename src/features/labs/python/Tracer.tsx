@@ -88,7 +88,7 @@ export function TraceView({ code, trace, onClose }: { code: string; trace: Trace
                 <ChevronLeft size={16} aria-hidden="true" />
                 Anterior
               </Button>
-              <Button variant="primary" onClick={() => go(i + 1)} disabled={i >= n - 1}>
+              <Button variant="primary" aria-label="Siguiente paso" onClick={() => go(i + 1)} disabled={i >= n - 1}>
                 Siguiente
                 <ChevronRight size={16} aria-hidden="true" />
               </Button>

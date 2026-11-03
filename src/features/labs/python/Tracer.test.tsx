@@ -45,15 +45,15 @@ describe("TraceView", () => {
     expect(screen.getByTestId("trace-step").getAttribute("aria-live")).toBe("polite");
     expect(current().textContent).toContain("a = [1]");
     expect(current().textContent).toContain("Línea actual");
-    fireEvent.click(btn("Siguiente"));
-    fireEvent.click(btn("Siguiente"));
+    fireEvent.click(btn("Siguiente paso"));
+    fireEvent.click(btn("Siguiente paso"));
     expect(current().textContent).toContain("b.append(2)");
     expect(screen.getByText("misma lista que a")).toBeTruthy();
     const slider = screen.getByLabelText("Paso") as HTMLInputElement;
     expect(slider.value).toBe("3");
     expect(slider.getAttribute("aria-valuetext")).toBe("Paso 3 de 5: se va a ejecutar la línea 3.");
     fireEvent.click(btn("Final"));
-    expect(btn("Siguiente").disabled).toBe(true);
+    expect(btn("Siguiente paso").disabled).toBe(true);
     expect(screen.getByTestId("trace-step").textContent).toBe("Paso 5 de 5: fin del programa.");
     const out = screen.getByRole("heading", { name: "Salida hasta este paso" }).parentElement!;
     expect(within(out).getByText("[1, 2]")).toBeTruthy();

@@ -222,7 +222,7 @@ describe.skipIf(!hasPython3)("«¿Qué imprime?» con python3", () => {
     fireEvent.click(screen.getByRole("button", { name: "Ver paso a paso" }));
     expect(await screen.findByRole("heading", { name: "Paso a paso" }, { timeout: 30_000 })).toBeTruthy();
     expect(screen.getByTestId("trace-step").textContent).toMatch(/^Paso 1 de \d+: se va a ejecutar la línea 1\.$/);
-    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente paso" }));
     expect(screen.getByTestId("trace-step").textContent).toMatch(/^Paso 2 de/);
     const [real] = runJobs<{ salida: string }>(HARNESS_PY, [{ fn: "__labs_output", payload: { codigo: inst.code, segundos: 2 } }]);
     fireEvent.change(answer, { target: { value: real!.salida } });
