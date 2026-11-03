@@ -62,6 +62,7 @@ import { PartsPractice } from "../sets/PartsSection.tsx";
 import { ShadePractice } from "../sets/VennSection.tsx";
 import { CALC_EXERCISE_VIEWS } from "./calculus-views.tsx";
 import { DISCRETE_EXERCISE_VIEWS } from "./discrete-views.tsx";
+import { LOGIC_EXTRA_EXERCISE_VIEWS } from "./logic-extra-views.tsx";
 import { LINALG_EXERCISE_VIEWS } from "./linalg-views.tsx";
 
 export type ExerciseViewProps<I> = { instance: I; onSolved: () => void };
@@ -385,6 +386,7 @@ export const EXERCISE_VIEWS: Readonly<Record<string, View>> = Object.fromEntries
   entry(SETS_CARDINAL, SetsCardinalExercise),
   entry(SETS_PARTS, SetsPartsExercise),
   ...DISCRETE_EXERCISE_VIEWS,
+  ...LOGIC_EXTRA_EXERCISE_VIEWS,
   entry(BOOLE_CANONICAL, BooleCanonicalExercise),
   entry(BOOLE_KARNAUGH, BooleKarnaughExercise),
   entry(BOOLE_SIMPLIFY, BooleSimplifyExercise),

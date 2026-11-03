@@ -66,7 +66,7 @@ describe("lista de ejercicios", () => {
     expect(screen.getByRole("heading", { level: 3, name: "Mapa de Karnaugh" })).toBeTruthy();
     expect(screen.getByRole("heading", { level: 3, name: "Inclusión–exclusión" })).toBeTruthy();
     expect(screen.getByTestId("progreso-logica-tabla").textContent).toBe("Aún sin resolver.");
-    expect(screen.getAllByRole("button", { name: /^Practicar/ }).length).toBe(34);
+    expect(screen.getAllByRole("button", { name: /^Practicar/ }).length).toBe(37);
   });
 
   it("«Practicar» abre el tipo con el nivel elegido y una semilla en la URL", async () => {
