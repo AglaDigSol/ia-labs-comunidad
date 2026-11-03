@@ -16,5 +16,5 @@
     "isolatedModules": true,
     "types": ["vite/client"]
   },
-  "files": ["consumer.tsx", "../embed.test.tsx"]
+  "files": ["consumer.tsx", "../embed.test.tsx", "../e2e-host/main.tsx"]
 }

@@ -3,13 +3,16 @@
 //
 //   node scripts/e2e-python.ts [--no-build] [--strict-worker] [--coep]
 //
-// 1. Construye con LABS_PYTHON=1 (salvo --no-build).
+// 1. Construye con LABS_PYTHON=1 (salvo --no-build) y, en dist/host/, la app anfitriona de prueba
+//    (tests/e2e-host/: <LabsRoutes python /> con una ranura que escribe archivos con writeFiles).
 // 2. Sirve dist/ con un servidor estático mínimo que imita deploy/nginx.conf: las mismas cabeceras
 //    (leídas de deploy/security-headers*.conf), la CSP con 'wasm-unsafe-eval' solo en el worker,
 //    los tipos de /pyodide/ y el fallback SPA. --strict-worker manda al worker la CSP del documento
 //    (para comprobar que entonces falla) y --coep añade COEP require-corp (aislamiento).
 // 3. Abre /laboratorios/python, carga Python y ejecuta código real: print, numpy, seaborn, un
 //    gráfico, %timeit, un archivo subido, input(), sin internet, TensorFlow y «Detener».
+// 4. Abre /host/ (la app anfitriona), escribe res/data.csv y res/programa.py desde la ranura del
+//    borrador, los lee con pandas y exec(open(…)), y comprueba que siguen tras reiniciar Python.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type ServerResponse } from "node:http";
@@ -60,7 +63,7 @@ function serve(): Promise<{ url: string; close: () => void }> {
     const pathname = decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname);
     const file = normalize(join(dist, pathname));
     const isFile = file.startsWith(dist) && existsSync(file) && statSync(file).isFile();
-    if (/^\/assets\/py\.worker-[A-Za-z0-9_-]+\.js$/.test(pathname) && isFile) return send(res, file, WORKER, "public, max-age=31536000, immutable");
+    if (/^(\/host)?\/assets\/py\.worker-[A-Za-z0-9_-]+\.js$/.test(pathname) && isFile) return send(res, file, WORKER, "public, max-age=31536000, immutable");
     if (pathname.startsWith("/pyodide/")) {
       if (!isFile) {
         res.statusCode = 404;
@@ -69,7 +72,8 @@ function serve(): Promise<{ url: string; close: () => void }> {
       }
       return send(res, file, PAGE, pathname.endsWith(".json") ? "public, max-age=3600" : "public, max-age=31536000, immutable");
     }
-    if (isFile) return send(res, file, PAGE, pathname.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "no-cache");
+    if (isFile) return send(res, file, PAGE, /^(\/host)?\/assets\//.test(pathname) ? "public, max-age=31536000, immutable" : "no-cache");
+    if (pathname === "/host" || pathname.startsWith("/host/")) return send(res, join(dist, "host", "index.html"), PAGE, "no-cache");
     return send(res, join(dist, "index.html"), PAGE, "no-cache");
   });
   return new Promise((ok) =>
@@ -87,6 +91,15 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (!args.has("--no-build")) {
     const b = spawnSync("npm", ["run", "build"], { cwd: root, stdio: "inherit", env: { ...process.env, LABS_PYTHON: "1" } });
     if (b.status !== 0) process.exit(b.status ?? 1);
+  }
+  if (!args.has("--no-build") || !existsSync(join(dist, "host", "index.html"))) {
+    // La app anfitriona de prueba, con la misma configuración de Vite y Python encendido.
+    const h = spawnSync("npx", ["vite", "build", "tests/e2e-host", "--config", "vite.config.ts", "--base", "/host/", "--outDir", join(dist, "host"), "--emptyOutDir"], {
+      cwd: root,
+      stdio: "inherit",
+      env: { ...process.env, LABS_PYTHON: "1" },
+    });
+    if (h.status !== 0) process.exit(h.status ?? 1);
   }
   const require = createRequire(import.meta.url);
   // Playwright no es dependencia del proyecto (se usa el instalado en la máquina): sin sus tipos.
@@ -202,6 +215,34 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const restarted = await log.getByText(/Python se ha reiniciado/).count();
     await page.getByText("Python listo").waitFor({ timeout: 120_000 });
     return restarted > 0 ? "reiniciado (sin aislamiento)" : "interrumpido (KeyboardInterrupt)";
+  });
+
+  await step("anfitrión: writeFiles desde la ranura del borrador", async () => {
+    await page.goto(`${url}/host/`);
+    await page.getByRole("heading", { level: 1, name: "Python" }).waitFor({ timeout: 20_000 });
+    await page.getByRole("button", { name: "Cargar los archivos de prueba (res/, img/)" }).click();
+    await page.getByText("3 escritos, 1 descartados").waitFor({ timeout: 5_000 });
+    const list = page.getByRole("list", { name: "Archivos de la carpeta de trabajo" });
+    await list.getByText("res/data.csv").waitFor({ timeout: 5_000 });
+    // Python ya se cargó en este origen (pasos anteriores): arranca solo.
+    await page.getByText("Python listo").waitFor({ timeout: 180_000 });
+    return runCode(
+      "import pandas as pd\nprint('anfitrión', int(pd.read_csv('res/data.csv').y.sum()))\nexec(open('res/programa.py').read())\nimport os\nprint(sorted(os.listdir('res')))",
+      /anfitrión 6[\s\S]*hola desde res\/programa\.py/,
+      180_000,
+    );
+  });
+  await step("anfitrión: los archivos siguen tras reiniciar Python", async () => {
+    await toTop();
+    await editor.fill("while True:\n    pass");
+    await page.getByRole("button", { name: "Ejecutar código" }).click();
+    await page.getByText(/Ejecutando…/).waitFor({ timeout: 10_000 });
+    await page.waitForTimeout(500);
+    await toTop();
+    await page.getByRole("button", { name: "Detener" }).click();
+    await log.getByText("Ejecución detenida por ti.").waitFor({ timeout: 20_000 });
+    await page.getByText("Python listo").waitFor({ timeout: 120_000 });
+    return runCode("import os\nprint('tras reiniciar', os.path.getsize('img/demo/vacio.bin'), open('res/data.csv').readline().strip())", "tras reiniciar 1024 x,y", 180_000);
   });
 
   await browser.close();
