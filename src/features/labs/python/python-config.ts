@@ -1,6 +1,6 @@
 // Configuración de la pestaña Python. La app independiente usa los valores por defecto; una app
 // anfitriona la cambia con configureLabs({ python: { … } }) antes de montar los laboratorios.
-import { PYODIDE_VERSION } from "./packages.ts";
+import { PYODIDE_VERSION } from "./version.ts";
 
 export interface PythonLabConfig {
   /**

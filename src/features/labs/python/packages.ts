@@ -9,9 +9,7 @@
 //    y SHA-256 de PyPI. Se descargan y verifican igual, se sirven desde el mismo origen y se instalan
 //    con micropip (deps=False, lista explícita) la primera vez que el código los importa.
 
-/** Versión de Pyodide (y de su npm). Python 3.12.7: los cuadernos del curso declaran 3.12. */
-export const PYODIDE_VERSION = "0.27.7";
-export const PYODIDE_PYTHON = "3.12.7";
+export { PYODIDE_PYTHON, PYODIDE_VERSION } from "./version.ts";
 
 /** Raíces del lock: se publican con todas sus dependencias. */
 export const LOCK_ROOTS = [

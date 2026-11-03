@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, truncateSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { build, type Rollup } from "vite";
 import { afterEach, describe, expect, it } from "vitest";
 import { checkDist, PYODIDE_MARKERS } from "../scripts/check-python.ts";
 import { CORE_FILES } from "../scripts/pyodide-manifest.ts";
@@ -169,12 +170,12 @@ describe("descargas verificadas (sin red)", () => {
 
 describe("check-python (tras el build)", () => {
   /** Un dist/ mínimo: entrada, un chunk perezoso y, si se pide, el worker y los archivos de Pyodide. */
-  function fakeDist(o: { worker: boolean; pyodide: boolean; pyodideInEntry?: boolean }) {
+  function fakeDist(o: { worker: boolean; pyodide: boolean; pyodideInEntry?: boolean; wheelsInShared?: boolean }) {
     const dist = tmp();
     mkdirSync(join(dist, ".vite"), { recursive: true });
     mkdirSync(join(dist, "assets"), { recursive: true });
     writeFileSync(join(dist, "assets", "index-a.js"), o.pyodideInEntry ? "import('./x');loadPyodide()" : "console.log('app')");
-    writeFileSync(join(dist, "assets", "shared-b.js"), "export const x = 1");
+    writeFileSync(join(dist, "assets", "shared-b.js"), o.wheelsInShared ? `export const w = [{ file: "${EXTRA_WHEELS[0]!.file}" }]` : "export const x = 1");
     const manifest: Record<string, object> = {
       "index.html": { file: "assets/index-a.js", isEntry: true, imports: ["_shared"] },
       _shared: { file: "assets/shared-b.js" },
@@ -221,5 +222,51 @@ describe("check-python (tras el build)", () => {
   it("Pyodide en el chunk de entrada: falla siempre", () => {
     const r = checkDist(fakeDist({ worker: true, pyodide: true, pyodideInEntry: true }), true);
     expect(!r.ok && r.errors[0]).toBe(`Pyodide en el grafo de entrada: assets/index-a.js contiene «${PYODIDE_MARKERS[0]}»`);
+  });
+
+  it("la lista de wheels extra en un chunk que importa la entrada: falla siempre", () => {
+    for (const enabled of [false, true]) {
+      const r = checkDist(fakeDist({ worker: enabled, pyodide: enabled, wheelsInShared: true }), enabled);
+      expect(!r.ok && r.errors[0]).toBe(`wheels extra en el grafo de entrada: assets/shared-b.js contiene «${EXTRA_WHEELS[0]!.file}»`);
+    }
+  });
+
+  it("la configuración de Python no importa packages.ts (solo version.ts)", () => {
+    const config = readFileSync(join(root, "src", "features", "labs", "python", "python-config.ts"), "utf8");
+    const storage = readFileSync(join(root, "src", "features", "labs", "labs-storage.ts"), "utf8");
+    expect(config).not.toMatch(/^import (?!type )[^;]*from "\.\/(packages|pyodide-manifest|files|drafts)\.ts"/m);
+    expect(config).toContain('from "./version.ts"');
+    expect(storage).not.toMatch(/packages\.ts/);
+  });
+});
+
+describe("chunk de entrada de una app anfitriona", () => {
+  it("configureLabs en la entrada no arrastra la lista de wheels extra (se queda en el chunk perezoso)", async () => {
+    // La app anfitriona importa configureLabs de forma estática y la pestaña Python (que usa
+    // EXTRA_WHEELS) con import(). Si la configuración importara packages.ts, la lista iría a la entrada.
+    const dir = tmp();
+    const src = join(root, "src", "features", "labs");
+    writeFileSync(
+      join(dir, "host.ts"),
+      [
+        `import { configureLabs } from ${JSON.stringify(join(src, "labs-storage.ts"))};`,
+        'configureLabs({ python: { assetBaseUrl: "/py/" } });',
+        `export const tab = () => import(${JSON.stringify(join(src, "python", "packages.ts"))}).then((m) => m.EXTRA_WHEELS.length);`,
+      ].join("\n"),
+    );
+    const out = (await build({
+      configFile: false,
+      logLevel: "silent",
+      root: dir,
+      build: { write: false, minify: false, rollupOptions: { input: join(dir, "host.ts"), preserveEntrySignatures: "strict" } },
+    })) as Rollup.RollupOutput;
+    const chunks = out.output.filter((o): o is Rollup.OutputChunk => o.type === "chunk");
+    const entry = chunks.find((c) => c.isEntry)!;
+    const lazy = chunks.filter((c) => !c.isEntry);
+    expect(entry.code).toContain("/py/");
+    for (const w of EXTRA_WHEELS) {
+      expect(entry.code, w.file).not.toContain(w.file);
+      expect(lazy.some((c) => c.code.includes(w.file)), w.file).toBe(true);
+    }
   });
 });

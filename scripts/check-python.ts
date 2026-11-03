@@ -3,7 +3,8 @@
 //   node scripts/check-python.ts [dist]
 //
 // - Siempre: Pyodide nunca está en el chunk de entrada ni en lo que este importa de forma estática
-//   (dist/.vite/manifest.json). Se puede llegar a él solo por import() perezoso.
+//   (dist/.vite/manifest.json). Se puede llegar a él solo por import() perezoso. Tampoco la lista de
+//   wheels extra (packages.ts): es del chunk perezoso de la pestaña, no de la entrada.
 // - Python apagado: ningún archivo de dist/ contiene Pyodide y no hay dist/pyodide/.
 // - Python encendido: hay un chunk de worker con el cargador de Pyodide y dist/pyodide/<versión>/
 //   tiene todos los archivos del manifiesto con su tamaño.
@@ -55,6 +56,7 @@ export function checkDist(dist: string, enabled: boolean): CheckResult {
     if (!chunk || !/\.m?js$/.test(chunk.file)) continue;
     const text = readFileSync(join(dist, chunk.file), "utf8");
     for (const m of PYODIDE_MARKERS) if (text.includes(m)) errors.push(`Pyodide en el grafo de entrada: ${chunk.file} contiene «${m}»`);
+    for (const w of EXTRA_WHEELS) if (text.includes(w.file)) errors.push(`wheels extra en el grafo de entrada: ${chunk.file} contiene «${w.file}»`);
   }
 
   const scripts = listFiles(join(dist, "assets")).filter((f) => /\.m?js$/.test(f));
@@ -82,7 +84,7 @@ export function checkDist(dist: string, enabled: boolean): CheckResult {
     for (const f of extra) errors.push(`archivo inesperado en dist/pyodide/${PYODIDE_VERSION}/: ${f}`);
     notes.push(`dist/pyodide/${PYODIDE_VERSION}/: ${expected.length + 1} archivos`);
   }
-  notes.unshift(`${seen.size} chunks en el grafo de entrada, sin Pyodide.`);
+  notes.unshift(`${seen.size} chunks en el grafo de entrada, sin Pyodide ni wheels extra.`);
   return errors.length > 0 ? { ok: false, errors } : { ok: true, notes };
 }
 
