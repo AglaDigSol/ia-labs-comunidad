@@ -524,3 +524,13 @@ export const PROB_DIE_COND: ExerciseType<ProbDieCondInstance> = {
 };
 
 export const PROB_EXERCISES = [PROB_TOTAL, PROB_DIE_COND, PROB_INDEPENDENCE, PROB_BINOMIAL, PROB_GEOMETRIC, PROB_GAME, PROB_PENALTY, PROB_PRODUCT] as const;
+
+/** Afirmaciones para un par de sucesos del contenido (sin semilla): independencia, incompatibilidad, P(A | B) y el error de sumar. */
+export function pairStatementsFor(f: PairFacts): PairStatement[] {
+  return [
+    { kind: "independientes" },
+    { kind: "incompatibles" },
+    { kind: "a-dado-b", value: fracQ(f.aGivenB ?? f.pA) },
+    { kind: "union", value: fracQ(naiveUnion(f.pA, f.pB)) },
+  ];
+}

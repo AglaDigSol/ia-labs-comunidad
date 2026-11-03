@@ -81,20 +81,20 @@ export function repeatSpace<T>(base: SampleSpace<T>, k: number): SampleSpace<T[]
 }
 
 export type Suit = "oros" | "copas" | "espadas" | "bastos";
-export interface Card {
+export interface PlayingCard {
   /** 1–7, 10 (sota), 11 (caballo), 12 (rey). */
   rank: number;
   suit: Suit;
 }
 export const SUITS: readonly Suit[] = ["oros", "copas", "espadas", "bastos"];
 const RANK_NAME: Record<number, string> = { 1: "as", 10: "sota", 11: "caballo", 12: "rey" };
-export const cardLabel = (c: Card) => `${RANK_NAME[c.rank] ?? String(c.rank)} de ${c.suit}`;
+export const cardLabel = (c: PlayingCard) => `${RANK_NAME[c.rank] ?? String(c.rank)} de ${c.suit}`;
 /** ¿Figura? (sota, caballo o rey). */
-export const isFigure = (c: Card) => c.rank >= 10;
+export const isFigure = (c: PlayingCard) => c.rank >= 10;
 
 /** Baraja española de 40 cartas, todas igual de probables. */
-export function spanishDeck(): SampleSpace<Card> {
-  const cards: Card[] = [];
+export function spanishDeck(): SampleSpace<PlayingCard> {
+  const cards: PlayingCard[] = [];
   for (const suit of SUITS) for (const rank of [1, 2, 3, 4, 5, 6, 7, 10, 11, 12]) cards.push({ rank, suit });
   return uniformSpace(cards, cardLabel);
 }
