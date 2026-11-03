@@ -16,6 +16,7 @@ import { GaussPractice } from "./GaussPractice.tsx";
 import { IndependencePractice } from "./IndependencePractice.tsx";
 import { DeterminantPractice, InversePractice, ProductPractice, RankPractice } from "./OperationsPractice.tsx";
 import { BroadcastChecker, ShapePractice } from "./TensorPractice.tsx";
+import { TensorVocabulary } from "./TheorySection.tsx";
 
 /** «(3 1; 5 2)»: la matriz en una línea, para las listas de ejemplos. */
 const inline = (text: string) => `(${text.split("\n").join("; ")})`;
@@ -254,28 +255,31 @@ export function TensorSection() {
   const label = (q: (typeof list)[number]["q"]) =>
     `${tensorOpCode(q)} con a ${shapeText(q.a)}${q.op === "suma" || q.op === "matmul" ? ` y b ${shapeText(q.b)}` : ""}`;
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-12">
-      <div className="flex min-w-0 flex-col gap-3 lg:col-span-6">
-        <label htmlFor="tensor-source" className="text-[14px] font-semibold">
-          Pregunta
-        </label>
-        <select id="tensor-source" className={cn(selectClass, "w-full font-body")} value={choice} onChange={(e) => setChoice(e.target.value)}>
-          {LEVELS.map((level) => (
-            <optgroup key={level} label={levelLabel(level)}>
-              {list
-                .filter((t) => t.level === level)
-                .map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {label(t.q)}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
-        </select>
-        <ShapePractice key={choice} q={item.q} />
-      </div>
-      <div className="min-w-0 lg:col-span-6">
-        <BroadcastChecker />
+    <div className="flex flex-col gap-6">
+      <TensorVocabulary />
+      <div className="grid items-start gap-6 lg:grid-cols-12">
+        <div className="flex min-w-0 flex-col gap-3 lg:col-span-6">
+          <label htmlFor="tensor-source" className="text-[14px] font-semibold">
+            Pregunta
+          </label>
+          <select id="tensor-source" className={cn(selectClass, "w-full font-body")} value={choice} onChange={(e) => setChoice(e.target.value)}>
+            {LEVELS.map((level) => (
+              <optgroup key={level} label={levelLabel(level)}>
+                {list
+                  .filter((t) => t.level === level)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {label(t.q)}
+                    </option>
+                  ))}
+              </optgroup>
+            ))}
+          </select>
+          <ShapePractice key={choice} q={item.q} />
+        </div>
+        <div className="min-w-0 lg:col-span-6">
+          <BroadcastChecker />
+        </div>
       </div>
     </div>
   );

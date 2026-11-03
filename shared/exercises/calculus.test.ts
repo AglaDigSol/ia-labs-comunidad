@@ -35,13 +35,13 @@ const each = (fn: (seed: number, level: ExerciseLevel) => void, seeds = SEEDS) =
 };
 
 describe("registro de cálculo", () => {
-  it("siete tipos en el tema «Cálculo», tras «Álgebra lineal»", () => {
+  it("quince tipos en el tema «Cálculo» (siete de cálculo y ocho de teoría), tras «Álgebra lineal»", () => {
     const ids = exerciseTopics().map((t) => t.id);
     expect(ids.indexOf("calculo")).toBe(ids.indexOf("algebra-lineal") + 1);
     expect(exercisesOfTopic("calculo").map((t) => t.id)).toEqual(CALC_EXERCISES.map((t) => t.id));
-    expect(CALC_EXERCISES).toHaveLength(7);
-    const mixed = new Set(SEEDS.slice(0, 80).map((s) => mixedType("calculo", "medio", s).id));
-    expect(mixed.size).toBe(7);
+    expect(CALC_EXERCISES).toHaveLength(15);
+    const mixed = new Set(SEEDS.slice(0, 150).map((s) => mixedType("calculo", "medio", s).id));
+    expect(mixed.size).toBe(15);
   });
 
   it("deterministas y variados", () => {
@@ -137,7 +137,8 @@ describe("generadores", () => {
 
   it("todas las funciones se leen con el analizador", () => {
     each((s, level) => {
-      for (const t of CALC_EXERCISES) {
+      // Los de teoría (sin campo f o con otras formas) se validan en calculus-theory.test.ts.
+      for (const t of CALC_EXERCISES.slice(0, 7)) {
         const inst = t.generate(s, level) as { f: string; point?: unknown; start?: number[] };
         const two = t === CALC_GRADIENT || t === CALC_CRITICAL || (t === CALC_DESCENT && inst.start!.length === 2);
         expect(parseExpr(inst.f, { vars: two ? ["x", "y"] : ["x"] }).ok, inst.f).toBe(true);

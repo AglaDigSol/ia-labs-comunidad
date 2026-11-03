@@ -29,13 +29,13 @@ const each = (fn: (seed: number, level: ExerciseLevel) => void, seeds = SEEDS) =
 };
 
 describe("registro de álgebra lineal", () => {
-  it("ocho tipos en el tema «Álgebra lineal», justo antes de «Cálculo»", () => {
+  it("trece tipos en el tema «Álgebra lineal» (ocho de cálculo con matrices y cinco de teoría), justo antes de «Cálculo»", () => {
     const ids = exerciseTopics().map((t) => t.id);
     expect(ids.indexOf("calculo")).toBe(ids.indexOf("algebra-lineal") + 1);
     expect(exercisesOfTopic("algebra-lineal").map((t) => t.id)).toEqual(LINALG_EXERCISES.map((t) => t.id));
-    expect(LINALG_EXERCISES).toHaveLength(8);
-    const mixed = new Set(SEEDS.slice(0, 80).map((s) => mixedType("algebra-lineal", "medio", s).id));
-    expect(mixed.size).toBe(8);
+    expect(LINALG_EXERCISES).toHaveLength(13);
+    const mixed = new Set(SEEDS.slice(0, 150).map((s) => mixedType("algebra-lineal", "medio", s).id));
+    expect(mixed.size).toBe(13);
   });
 
   it("deterministas y variados", () => {

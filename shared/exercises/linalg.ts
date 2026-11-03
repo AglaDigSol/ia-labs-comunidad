@@ -8,8 +8,11 @@ import { intMatrix, matrixProduct, type Matrix } from "../linalg/matrix.ts";
 import { matrixInverse, matrixRank, rref } from "../linalg/rref.ts";
 import { analyzeSystem, splitAugmented, type SystemKind } from "../linalg/systems.ts";
 import { tensorOpResult, type Shape, type TensorOp } from "../linalg/tensors.ts";
-import type { Frac } from "../rational.ts";
-import { generateUntil, rngFor, type Rng } from "./random.ts";
+import { claimClass, CLAIM_CLASSES, DIAGONAL_WHY, diagonalClaimText, diagonalClaimTruth, type DiagonalClaim } from "../linalg/claims.ts";
+import { countAlpha, detOfExpr, permutationDeterminant, type AlphaCondition, type AlphaEntry, type AlphaQty, type DetExpr } from "../linalg/theory.ts";
+import { frac, type Frac } from "../rational.ts";
+import { seedFromKey, type ChoiceOption, type ChoiceQuestion } from "./choice.ts";
+import { createRng, generateUntil, rngFor, type Rng } from "./random.ts";
 import type { ExerciseLevel, ExerciseType } from "./types.ts";
 
 type Ints = number[][];
@@ -421,6 +424,376 @@ export const LINALG_TENSORS: ExerciseType<TensorShapeInstance> = {
   },
 };
 
+
+
+// ================================================================ Teoría (tipo examen)
+//
+// Con el formato del examen final: opción múltiple a)–d) con una correcta (o «selecciona la o las
+// correctas») y respuestas numéricas. La instancia guarda el enunciado; qué es correcto lo decide el
+// motor (shared/linalg/theory.ts y claims.ts) al montar la pregunta.
+
+const opt = (id: string, text: string, tex: string | undefined, correct: boolean, why?: string): ChoiceOption => ({ id, text, ...(tex ? { tex } : {}), correct, ...(why ? { why } : {}) });
+const rngOf = (inst: unknown) => createRng(seedFromKey(JSON.stringify(inst)));
+const fracNice = (x: Frac) => x.d <= 12n && (x.n < 0n ? -x.n : x.n) <= 2000n;
+
+// ---------------------------------------------------------------- Propiedades del determinante
+
+export type DetGiven =
+  | { kind: "det"; A: number; B: number | null }
+  | { kind: "autovalores"; eig: number[]; B: number | null }
+  | { kind: "matriz"; A: Ints; B: number | null };
+
+export type DetRulesInstance = { n: number; expr: DetExpr; given: DetGiven };
+
+/** det(A) y det(B) a partir de lo que da el enunciado. */
+export function detRulesDets(inst: DetRulesInstance): { A: Frac; B: Frac } {
+  const g = inst.given;
+  const A =
+    g.kind === "det" ? frac(BigInt(g.A)) : g.kind === "autovalores" ? g.eig.reduce((acc, l) => frac(acc.n * BigInt(l), acc.d), frac(1n)) : permutationDeterminant(intMatrix(g.A))!.det;
+  return { A, B: frac(BigInt(g.B ?? 1)) };
+}
+
+export const detRulesAnswer = (inst: DetRulesInstance): Frac | null => detOfExpr(inst.expr, inst.n, detRulesDets(inst));
+
+/** Una matriz con una sola entrada no nula por fila y columna (la antidiagonal de unos, a veces otra). */
+function permLike(rng: Rng, n: number): Ints {
+  const anti = rng.chance(0.5);
+  const perm = anti ? Array.from({ length: n }, (_, i) => n - 1 - i) : rng.shuffle(Array.from({ length: n }, (_, i) => i));
+  return Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (perm[i] === j ? (anti ? 1 : rng.pick([1, 1, -1, 2])) : 0)));
+}
+
+function detRulesTemplate(rng: Rng, level: ExerciseLevel): DetRulesInstance {
+  const k = rng.pick([-3, -2, -1, 2, 3, 1]);
+  const pow = () => rng.pick([1, 1, -1, 2]);
+  if (level === "básico") {
+    const n = rng.pick([2, 3]);
+    return { n, expr: { k, factors: [{ m: "A", pow: pow(), ...(rng.chance(0.3) ? { T: true } : {}) }] }, given: { kind: "det", A: rng.pick([-3, -2, -1, 2, 3, 4, 5]), B: null } };
+  }
+  const factors = rng.shuffle([
+    { m: "A" as const, pow: pow(), ...(rng.chance(0.25) ? { T: true } : {}) },
+    { m: "B" as const, pow: pow(), ...(rng.chance(0.25) ? { T: true } : {}) },
+  ]);
+  if (level === "medio") {
+    return { n: rng.pick([2, 3]), expr: { k, factors }, given: { kind: "det", A: rng.pick([-3, -2, -1, 2, 3, 4]), B: rng.pick([-2, -1, 2, 3, 5]) } };
+  }
+  if (rng.chance(0.5)) {
+    const n = 3;
+    const eig = Array.from({ length: n }, () => rng.pick([-2, -1, 1, 2, 3]));
+    return { n, expr: { k, factors }, given: { kind: "autovalores", eig, B: rng.pick([-2, -1, 2, 3]) } };
+  }
+  const n = rng.int(3, 5);
+  return { n, expr: { k: rng.pick([-1, 2, -2, 1]), factors: rng.chance(0.5) ? factors : [{ m: "A", pow: rng.pick([1, -1, 2]) }] }, given: { kind: "matriz", A: permLike(rng, n), B: rng.pick([-2, -1, 2, 3]) } };
+}
+
+export const LINALG_DET_RULES: ExerciseType<DetRulesInstance> = {
+  id: "algebra-det-propiedades",
+  topic: "algebra-lineal",
+  title: "Propiedades del determinante",
+  description: "Sin calcular matrices: det(kA) = kⁿ·det A, det(AB) = det A·det B, det(A⁻¹) = 1/det A, det(Aᵀ) = det A y det A = producto de autovalores.",
+  levels: ALL_LEVELS,
+  generate(seed, level) {
+    return generateUntil(
+      rngFor("algebra-det-propiedades", seed),
+      (r) => detRulesTemplate(r, level),
+      (inst) => {
+        const v = detRulesAnswer(inst);
+        // Que haya algo que aplicar (no det(A) a secas) y un resultado cómodo.
+        const trivial = inst.expr.k === 1 && inst.expr.factors.length === 1 && inst.expr.factors[0]!.pow === 1;
+        return v !== null && !trivial && fracNice(v) && v.n !== 0n;
+      },
+    );
+  },
+};
+
+// ---------------------------------------------------------------- Teoría de matrices
+
+export type MatrixTheoryInstance =
+  | { cls: string; claims: string[]; ask: "falsa" | "verdadera" | "varias" }
+  | { cls: "diagonal"; d: number[]; dclaims: DiagonalClaim[]; ask: "falsa" | "verdadera" | "varias" };
+
+export const THEORY_ASK: Record<MatrixTheoryInstance["ask"], string> = {
+  falsa: "¿Cuál de estas afirmaciones es FALSA?",
+  verdadera: "¿Cuál de estas afirmaciones es VERDADERA?",
+  varias: "Selecciónese la o las afirmaciones correctas.",
+};
+
+const intsText = (M: readonly (readonly number[])[]) => `(${M.map((r) => r.join(" ")).join("; ")})`.replace(/-/g, "−");
+
+export function theorySubject(inst: MatrixTheoryInstance): string {
+  return inst.cls === "diagonal" ? "Sea A la matriz diagonal" : claimClass(inst.cls).subject;
+}
+
+export function theoryQuestion(inst: MatrixTheoryInstance): ChoiceQuestion {
+  if (inst.cls === "diagonal") {
+    const d = (inst as { d: number[] }).d;
+    return {
+      mode: inst.ask === "varias" ? "multi" : "single",
+      options: (inst as { dclaims: DiagonalClaim[] }).dclaims.map((c, i) => {
+        const truth = diagonalClaimTruth(d, c);
+        const t = diagonalClaimText(c);
+        return opt(`d${i}`, t.text, t.tex, inst.ask === "falsa" ? !truth : truth, `${truth ? "Verdadera" : "Falsa"}. ${DIAGONAL_WHY[c.k]}`);
+      }),
+    };
+  }
+  const cls = claimClass(inst.cls);
+  return {
+    mode: inst.ask === "varias" ? "multi" : "single",
+    options: (inst as { claims: string[] }).claims.map((id) => {
+      const c = cls.claims.find((x) => x.id === id)!;
+      const ce = c.counterexample;
+      const ceText = ce ? ` Contraejemplo: ${[ce.A ? `A = ${intsText(ce.A)}` : "", ce.B ? `B = ${intsText(ce.B)}` : "", ce.u ? `u = (${ce.u.join(", ")})` : "", ce.v ? `v = (${ce.v.join(", ")})` : ""].filter(Boolean).join(", ")}.` : "";
+      return opt(c.id, c.text, c.tex, inst.ask === "falsa" ? !c.truth : c.truth, `${c.truth ? "Verdadera" : "Falsa"}. ${c.why}${c.truth ? "" : ceText}`);
+    }),
+  };
+}
+
+export const LINALG_THEORY: ExerciseType<MatrixTheoryInstance> = {
+  id: "algebra-teoria",
+  topic: "algebra-lineal",
+  title: "Teoría de matrices y vectores",
+  description: "Verdadero o falso sobre matrices regulares, singulares, simétricas, definidas positivas o diagonalizables, determinantes y normas: elige la correcta o todas las correctas.",
+  levels: ALL_LEVELS,
+  generate(seed, level) {
+    return generateUntil(
+      rngFor("algebra-teoria", seed),
+      (r): MatrixTheoryInstance | null => {
+        const order = ["básico", "medio", "avanzado"];
+        const pool = CLAIM_CLASSES.filter((c) => (level === "avanzado" ? true : order.indexOf(c.level) <= order.indexOf(level)) && (level === "básico" ? c.level === "básico" : level === "medio" ? c.level !== "avanzado" : c.level !== "básico"));
+        const ask: MatrixTheoryInstance["ask"] = level === "básico" ? r.pick(["falsa", "verdadera"]) : level === "medio" ? r.pick(["falsa", "verdadera", "varias"]) : "varias";
+        if (level !== "básico" && r.chance(0.2)) {
+          // Una matriz diagonal concreta.
+          const d = Array.from({ length: 3 }, () => r.pick([-3, -2, -1, 0, 1, 2, 3, 4]));
+          const tr = d.reduce((a, b) => a + b, 0);
+          const pr = d.reduce((a, b) => a * b, 1);
+          const dclaims: DiagonalClaim[] = r.shuffle<DiagonalClaim>([
+            { k: r.pick(["diagonalizable", "no-diagonalizable"] as const) },
+            { k: "suma", v: r.chance(0.5) ? tr : tr + r.pick([-2, -1, 1, 2]) },
+            { k: "producto", v: r.chance(0.5) ? pr : -pr === pr ? pr + 1 : -pr },
+            { k: r.pick(["regular", "definida"] as const) },
+          ]);
+          return { cls: "diagonal", d, dclaims, ask };
+        }
+        const cls = r.pick(pool);
+        const truth = (id: string) => cls.claims.find((c) => c.id === id)!.truth;
+        const ids = r.shuffle(cls.claims.map((c) => c.id));
+        if (ask === "varias") return { cls: cls.id, claims: ids.slice(0, r.int(4, 5)), ask };
+        const target = ask === "verdadera";
+        const hit = ids.filter((id) => truth(id) === target);
+        const rest = ids.filter((id) => truth(id) !== target);
+        if (hit.length === 0 || rest.length < 3) return null;
+        return { cls: cls.id, claims: r.shuffle([hit[0]!, ...rest.slice(0, 3)]), ask };
+      },
+      (inst) => {
+        const q = theoryQuestion(inst);
+        const right = q.options.filter((o) => o.correct).length;
+        const distinct = new Set(q.options.map((o) => o.text)).size === q.options.length;
+        return distinct && (q.mode === "single" ? right === 1 && q.options.length === 4 : right >= 1 && right < q.options.length);
+      },
+    );
+  },
+};
+
+// ---------------------------------------------------------------- Normas
+
+/** Cantidades del enunciado con nombre: u·v, ‖u‖₁, ‖v‖₂², ‖u‖∞ o un número. */
+export type NamedQty = { k: "dot" } | { k: "norm1" | "norm2sq" | "normInf"; of: "u" | "v" } | { k: "num"; value: number };
+export type NamedCond = { lhs: NamedQty; op: "=" | ">" | "<"; rhs: NamedQty };
+
+export type NormsInstance =
+  | { kind: "calcular"; v: number[] }
+  | { kind: "contar"; u: AlphaEntry[]; v: AlphaEntry[] | null; conds: NamedCond[]; domain: "nonneg" | "real" };
+
+const toQty = (q: NamedQty, u: AlphaEntry[], v: AlphaEntry[] | null): AlphaQty =>
+  q.k === "num" ? q : q.k === "dot" ? { k: "dot", u, v: v! } : { k: q.k, v: q.of === "u" ? u : v! };
+
+export const normsConditions = (inst: Extract<NormsInstance, { kind: "contar" }>): AlphaCondition[] =>
+  inst.conds.map((c) => ({ lhs: toQty(c.lhs, inst.u, inst.v), op: c.op, rhs: toQty(c.rhs, inst.u, inst.v) }));
+
+export const normsCount = (inst: Extract<NormsInstance, { kind: "contar" }>) => countAlpha(normsConditions(inst), inst.domain);
+
+const COUNT_OPTIONS = ["0", "1", "2", "3", "infinitos"] as const;
+
+export function normsQuestion(inst: Extract<NormsInstance, { kind: "contar" }>): ChoiceQuestion {
+  const r = normsCount(inst);
+  const right = r.kind === "infinitos" ? "infinitos" : String(r.count);
+  const rng = rngOf(inst);
+  const others = rng.shuffle(COUNT_OPTIONS.filter((x) => x !== right)).slice(0, 3);
+  const label = (x: string) => (x === "infinitos" ? "Infinitos" : x === "1" ? "Exactamente 1" : `Exactamente ${x}`);
+  const values = r.kind === "finito" && r.values.length > 0 ? ` Son α = ${r.values.map((x) => String(Math.round(x * 1e4) / 1e4).replace(".", ",").replace("-", "−")).join(", ")}.` : "";
+  return {
+    mode: "single",
+    options: [...[right, ...others].sort((a, b) => COUNT_OPTIONS.indexOf(a as never) - COUNT_OPTIONS.indexOf(b as never))].map((x) => opt(`n${x}`, label(x), undefined, x === right, x === right ? `Correcta.${values}` : undefined)),
+  };
+}
+
+const entryText = ([c, a]: AlphaEntry) => (a === 0 ? String(c) : `${c === 0 ? "" : `${c} + `}${a === 1 ? "" : a === -1 ? "−" : a}α`).replace(/-/g, "−");
+export const alphaVecText = (v: readonly AlphaEntry[]) => `(${v.map(entryText).join(", ")})`;
+
+function normsTemplate(rng: Rng, level: ExerciseLevel): NormsInstance {
+  if (level === "básico") return { kind: "calcular", v: Array.from({ length: rng.int(3, 4) }, () => rng.int(-5, 5)) };
+  const A: AlphaEntry = [0, 1];
+  const c = () => [rng.int(-3, 3), 0] as AlphaEntry;
+  const domain = rng.pick(["nonneg", "real"] as const);
+  if (level === "medio") {
+    switch (rng.int(0, 2)) {
+      case 0: {
+        const u = [A, c(), c()];
+        const v = [A, c(), c()];
+        return { kind: "contar", u, v, conds: [{ lhs: { k: "dot" }, op: "=", rhs: { k: "num", value: 0 } }], domain };
+      }
+      case 1:
+        return { kind: "contar", u: [A, c(), c()], v: null, conds: [{ lhs: { k: "norm1", of: "u" }, op: "=", rhs: { k: "num", value: rng.int(1, 7) } }], domain };
+      default:
+        return { kind: "contar", u: [A, [rng.pick([-2, -1, 1, 2]), 0]], v: null, conds: [{ lhs: { k: "norm2sq", of: "u" }, op: "=", rhs: { k: "norm1", of: "u" } }], domain };
+    }
+  }
+  const u = [A, c(), c()];
+  const v = [[rng.int(-2, 2), 0], [rng.int(-2, 2), 0], [rng.int(-2, 2), 0]] as AlphaEntry[];
+  return rng.chance(0.6)
+    ? { kind: "contar", u, v, conds: [{ lhs: { k: "normInf", of: "u" }, op: "=", rhs: { k: "num", value: rng.int(2, 4) } }, { lhs: { k: "dot" }, op: rng.pick([">", "<"]), rhs: { k: "num", value: 0 } }], domain }
+    : { kind: "contar", u, v, conds: [{ lhs: { k: "norm2sq", of: "u" }, op: "=", rhs: { k: "num", value: rng.pick([9, 16, 25, 10, 13]) } }, { lhs: { k: "dot" }, op: rng.pick([">", "<", "="]), rhs: { k: "num", value: 0 } }], domain };
+}
+
+export const LINALG_NORMS: ExerciseType<NormsInstance> = {
+  id: "algebra-normas",
+  topic: "algebra-lineal",
+  title: "Normas y producto escalar",
+  description: "Calcula ‖v‖₁, ‖v‖₂ y ‖v‖∞, y cuenta para cuántos valores de α se cumplen condiciones con normas, ortogonalidad (u·v = 0) o el signo de u·v.",
+  levels: ALL_LEVELS,
+  generate(seed, level) {
+    return generateUntil(
+      rngFor("algebra-normas", seed),
+      (r) => normsTemplate(r, level),
+      (inst) => {
+        if (inst.kind === "calcular") return inst.v.filter((x) => x !== 0).length >= 2 && new Set(inst.v.map(Math.abs)).size >= 2;
+        const n = normsCount(inst);
+        // Respuestas variadas: en avanzado no siempre 0.
+        return level === "avanzado" ? n.kind === "infinitos" || n.count > 0 || r01(inst) : true;
+      },
+    );
+  },
+};
+/** Deja pasar algunos «0» en avanzado (de forma determinista). */
+const r01 = (inst: unknown) => seedFromKey(JSON.stringify(inst)) % 4 === 0;
+
+// ---------------------------------------------------------------- Rango y dimensión de un tensor
+
+export type TensorVocabInstance = { ask: "vocabulario" | "componentes" | "numpy" | "inverso" | "matriz"; k: number; n: number; rg: number };
+
+export function tensorVocabQuestion(inst: TensorVocabInstance): ChoiceQuestion {
+  const { k, n } = inst;
+  const rd = (r: number | string, d: number | string) => `Rango ${r} y dimensión ${d}`;
+  const rdTex = (r: string, d: string) => `\\text{Rango } ${r} \\text{ y dimensión } ${d}`;
+  const pick4 = (right: ChoiceOption, wrong: ChoiceOption[]) => {
+    const seen = new Set([right.text]);
+    const w = wrong.filter((o) => (seen.has(o.text) ? false : (seen.add(o.text), true)));
+    return { mode: "single" as const, options: [right, ...w.slice(0, 3)] };
+  };
+  switch (inst.ask) {
+    case "vocabulario":
+    case "inverso":
+      return pick4(opt("ok", rd(k, n), rdTex(String(k), String(n)), true, "Rango: cuántos índices tiene (ndim). Dimensión: cuánto mide cada índice."), [
+        opt("w1", rd(n, k), rdTex(String(n), String(k)), false),
+        opt("w2", rd(`${n}^${k}`, `${k}^${n}`), rdTex(`${n}^{${k}}`, `${k}^{${n}}`), false),
+        opt("w3", rd(k, `${n}^${k}`), rdTex(String(k), `${n}^{${k}}`), false),
+        opt("w4", rd(`${n}^${k}`, n), rdTex(`${n}^{${k}}`, String(n)), false),
+      ]);
+    case "matriz":
+      return pick4(opt("ok", rd(2, n), rdTex("2", String(n)), true, "Toda matriz tiene dos índices: como tensor es de rango 2, tenga el rango matricial (rg) que tenga."), [
+        opt("w1", rd(inst.rg, n), rdTex(String(inst.rg), String(n)), false, "Confunde el rango del tensor (número de índices) con el rango de la matriz (rg)."),
+        opt("w2", rd(n, 2), rdTex(String(n), "2"), false),
+        opt("w3", rd(inst.rg, 2), rdTex(String(inst.rg), "2"), false),
+        opt("w4", rd(2, n * n), rdTex("2", String(n * n)), false),
+      ]);
+    case "componentes":
+      return pick4(opt("ok", String(n ** k), `${n}^{${k}} = ${n ** k}`, true, "Cada uno de los k índices toma n valores: nᵏ componentes."), [
+        opt("w1", String(k ** n), `${k}^{${n}} = ${k ** n}`, false),
+        opt("w2", String(n * k), `${n}\\cdot ${k} = ${n * k}`, false),
+        opt("w3", String(n + k), `${n} + ${k} = ${n + k}`, false),
+        opt("w4", String(n ** (k - 1)), `${n}^{${k - 1}} = ${n ** (k - 1)}`, false),
+      ]);
+    case "numpy": {
+      const shape = (d: number, times: number) => `(${Array.from({ length: times }, () => d).join(", ")}${times === 1 ? "," : ""})`;
+      const o = (id: string, nd: number, sh: string, ok: boolean) => opt(id, `A.ndim == ${nd} y A.shape == ${sh}`, undefined, ok, ok ? "ndim es el rango (número de índices) y shape da lo que mide cada índice (la dimensión)." : undefined);
+      return pick4(o("ok", k, shape(n, k), true), [o("w1", n, shape(k, n), false), o("w2", n ** k, shape(n ** k, 1), false), o("w3", k, shape(k, n), false), o("w4", n, shape(n, k), false)]);
+    }
+  }
+}
+
+export function tensorVocabStatement(inst: TensorVocabInstance): { text: string; tex?: string } {
+  const { k, n } = inst;
+  const space = `\\mathbb{R}^{${Array.from({ length: k }, () => n).join("\\times ")}}`;
+  switch (inst.ask) {
+    case "vocabulario":
+      return { text: `Sea A ∈ ℝ^(${Array.from({ length: k }, () => n).join("×")}). Con la terminología del curso, A es un tensor de…`, tex: `A \\in ${space}` };
+    case "inverso":
+      return { text: `En NumPy, A.shape == (${Array.from({ length: k }, () => n).join(", ")}). Con la terminología del curso, A es un tensor de…` };
+    case "matriz":
+      return { text: `Sea M ∈ ℝ^(${n}×${n}) una matriz con rg(M) = ${inst.rg}. Vista como tensor, con la terminología del curso, M es un tensor de…`, tex: `M \\in \\mathbb{R}^{${n}\\times ${n}},\\ \\operatorname{rg}(M) = ${inst.rg}` };
+    case "componentes":
+      return { text: `¿Cuántas componentes (números) tiene un tensor de rango ${k} y dimensión ${n}?` };
+    case "numpy":
+      return { text: `Sea A un tensor de rango ${k} y dimensión ${n} guardado como un array de NumPy. ¿Qué dan A.ndim y A.shape?` };
+  }
+}
+
+export const LINALG_TENSOR_VOCAB: ExerciseType<TensorVocabInstance> = {
+  id: "algebra-tensor-rango",
+  topic: "algebra-lineal",
+  title: "Rango y dimensión de un tensor",
+  description: "La terminología del curso: un tensor de ℝ^(5×5×5×5) es de rango 4 (índices, ndim) y dimensión 5 (lo que mide cada índice). No es el rango de una matriz.",
+  levels: ALL_LEVELS,
+  generate(seed, level) {
+    return generateUntil(
+      rngFor("algebra-tensor-rango", seed),
+      (r) => {
+        const asks = level === "básico" ? (["vocabulario", "inverso"] as const) : level === "medio" ? (["vocabulario", "componentes", "numpy"] as const) : (["matriz", "componentes", "numpy", "vocabulario"] as const);
+        const ask = r.pick(asks);
+        const n = r.int(2, 6);
+        const k = ask === "matriz" ? 2 : r.int(2, 5);
+        return { ask, k, n, rg: ask === "matriz" ? r.pick(Array.from({ length: n + 1 }, (_, i) => i).filter((x) => x !== 2)) : 0 };
+      },
+      (inst) => inst.k !== inst.n && (inst.ask !== "componentes" || inst.n ** inst.k <= 4096) && tensorVocabQuestion(inst).options.length === 4,
+    );
+  },
+};
+
+// ---------------------------------------------------------------- Rouché–Frobenius (tipo test)
+
+const ROUCHE_OPTIONS = [
+  { id: "cd", text: "Compatible determinado" },
+  { id: "ci1", text: "Compatible indeterminado con 1 parámetro" },
+  { id: "ci2", text: "Compatible indeterminado con 2 parámetros" },
+  { id: "inc", text: "Incompatible" },
+] as const;
+
+export function roucheChoiceQuestion(inst: LinSystemInstance): ChoiceQuestion {
+  const { A, b } = splitAugmented(intMatrix(inst.matrix));
+  const s = analyzeSystem(A, b);
+  const right = s.kind === "determinado" ? "cd" : s.kind === "incompatible" ? "inc" : `ci${s.n - s.rankA}`;
+  const why = `rg A = ${s.rankA}, rg (A|b) = ${s.rankAb}, n = ${s.n} incógnitas.`;
+  return { mode: "single", options: ROUCHE_OPTIONS.map((o) => opt(o.id, o.text, undefined, o.id === right, o.id === right ? why : undefined)) };
+}
+
+export const LINALG_ROUCHE_CHOICE: ExerciseType<LinSystemInstance> = {
+  id: "algebra-rouche-test",
+  topic: "algebra-lineal",
+  title: "Clasificar un sistema (tipo test)",
+  description: "Como en el examen: ¿compatible determinado, indeterminado con 1 o 2 parámetros, o incompatible? Compara rg A, rg (A|b) y el número de incógnitas.",
+  levels: ALL_LEVELS,
+  generate(seed, level) {
+    const gen = systemGenerator("algebra-rouche-test", SYSTEM_LIMITS);
+    // Con el mismo generador que «Sistemas»: se descartan los de 3 o más parámetros.
+    for (let i = 0; i < 50; i++) {
+      const inst = gen((seed + i * 7919) >>> 0, level);
+      if (roucheChoiceQuestion(inst).options.some((o) => o.correct)) return inst;
+    }
+    throw new Error("algebra-rouche-test: sin sistema");
+  },
+};
+
+export const LINALG_THEORY_EXERCISES = [LINALG_DET_RULES, LINALG_THEORY, LINALG_NORMS, LINALG_TENSOR_VOCAB, LINALG_ROUCHE_CHOICE] as const;
+
 export const LINALG_EXERCISES = [
   LINALG_GAUSS,
   LINALG_DETERMINANT,
@@ -430,4 +803,5 @@ export const LINALG_EXERCISES = [
   LINALG_INDEPENDENCE,
   LINALG_EIGEN,
   LINALG_TENSORS,
+  ...LINALG_THEORY_EXERCISES,
 ] as const;

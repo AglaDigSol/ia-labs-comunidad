@@ -2,6 +2,8 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
+import { arrangeChoices } from "../../../../shared/exercises/choice.ts";
+import { detRulesAnswer, LINALG_DET_RULES, LINALG_TENSOR_VOCAB, LINALG_THEORY, tensorVocabQuestion, theoryQuestion } from "../../../../shared/exercises/linalg.ts";
 import { LabsRoutes } from "../labs.tsx";
 
 afterEach(() => {
@@ -237,12 +239,13 @@ describe("Independencia, autovalores, transformaciones y tensores", () => {
     await heading();
     expect(screen.getByText(/a\.shape == \(4, 3\)/)).toBeTruthy();
     const practice = within(screen.getByRole("region", { name: "¿Qué forma tiene el resultado?" }));
+    // En «Tensores» hay dos prácticas (vocabulario y formas): se pulsa el «Comprobar» de las formas.
     fireEvent.click(screen.getByRole("radio", { name: "NumPy da un error" }));
-    click("Comprobar");
+    fireEvent.click(practice.getByRole("button", { name: "Comprobar" }));
     expect(screen.getByText("Esta operación sí da un resultado: vuelve a aplicar la regla.")).toBeTruthy();
     expect(practice.queryByText(/se repite a lo largo de este eje/)).toBeNull();
     type("Forma del resultado", "(4, 3)");
-    click("Comprobar");
+    fireEvent.click(practice.getByRole("button", { name: "Comprobar" }));
     expect(screen.getByText("¡Correcto! La forma es (4, 3).")).toBeTruthy();
     expect(practice.getByText(/b no tiene este eje: se le añade un 1 por la izquierda/)).toBeTruthy();
 
@@ -250,5 +253,60 @@ describe("Independencia, autovalores, transformaciones y tensores", () => {
     type("a.shape", "(3,)");
     type("b.shape", "(4,)");
     expect(screen.getByText("No se pueden emitir: NumPy da un error.")).toBeTruthy();
+  });
+});
+
+describe("Propiedades y teoría", () => {
+  const status = () => screen.getAllByRole("status").map((s) => s.textContent ?? "").join(" ");
+
+  it("determinante por reglas (número), verdadero o falso (a–d) y sistemas tipo test", async () => {
+    renderAt("/laboratorios/algebra-lineal?s=teoria");
+    await heading();
+    expect(screen.getByRole("radio", { name: "Propiedades y teoría" }).getAttribute("aria-checked")).toBe("true");
+    const d = LINALG_DET_RULES.generate(1, "básico");
+    const v = detRulesAnswer(d)!;
+    type("Determinante =", "99999");
+    click("Comprobar");
+    expect(invalid(screen.getByLabelText("Determinante ="))).toBe(true);
+    expect(status()).toMatch(/No es ese número/);
+    type("Determinante =", v.d === 1n ? String(v.n) : `${v.n}/${v.d}`);
+    click("Comprobar");
+    expect(status()).toMatch(/¡Correcto!/);
+
+    fireEvent.click(screen.getByRole("radio", { name: "Matrices: verdadero o falso" }));
+    const t = LINALG_THEORY.generate(1, "básico");
+    const opts = arrangeChoices(theoryQuestion(t), JSON.stringify(t));
+    expect(screen.getAllByRole("radio", { name: /^[a-d]\) / })).toHaveLength(4);
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${opts.find((o) => o.correct)!.letter}\\) `) }));
+    click("Comprobar");
+    expect(status()).toMatch(/¡Correcto!/);
+    click("Ver la solución completa");
+    expect(screen.getByTestId("solution").textContent).toMatch(/Verdadera|Falsa/);
+
+    fireEvent.click(screen.getByRole("radio", { name: "Sistemas tipo test" }));
+    expect(screen.getByRole("radio", { name: /Compatible determinado/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "Normas" }));
+    expect(screen.getByLabelText("‖v‖∞ =")).toBeTruthy();
+  });
+
+  it("Tensores: el vocabulario del curso, que no es el rango de una matriz, y su práctica", async () => {
+    renderAt("/laboratorios/algebra-lineal?s=tensores");
+    await heading();
+    const box = screen.getByRole("region", { name: "Vocabulario: rango y dimensión" });
+    expect(within(box).getByText(/tensor de rango 4 y dimensión 5/)).toBeTruthy();
+    expect(box.textContent).toMatch(/no es el rango de una matriz/);
+    expect(box.textContent).toMatch(/A\.ndim\s+# 4/);
+    const inst = LINALG_TENSOR_VOCAB.generate(1, "básico");
+    const opts = arrangeChoices(tensorVocabQuestion(inst), JSON.stringify(inst));
+    const wrong = opts.find((o) => !o.correct)!;
+    const vocab = within(screen.getByRole("region", { name: "Rango y dimensión de un tensor" }));
+    fireEvent.click(vocab.getByRole("radio", { name: new RegExp(`^${wrong.letter}\\) `) }));
+    fireEvent.click(vocab.getByRole("button", { name: "Comprobar" }));
+    expect(status()).toMatch(/No es esa/);
+    fireEvent.click(vocab.getByRole("radio", { name: new RegExp(`^${opts.find((o) => o.correct)!.letter}\\) `) }));
+    fireEvent.click(vocab.getByRole("button", { name: "Comprobar" }));
+    expect(status()).toMatch(/¡Correcto!/);
+    // La práctica de formas sigue ahí.
+    expect(screen.getByRole("heading", { name: "¿Qué forma tiene el resultado?" })).toBeTruthy();
   });
 });

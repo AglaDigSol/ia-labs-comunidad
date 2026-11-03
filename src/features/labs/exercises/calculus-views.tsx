@@ -10,6 +10,14 @@ import {
   CALC_DESCENT,
   CALC_GRADIENT,
   CALC_TANGENT,
+  CALC_BASIN,
+  CALC_BISECTION,
+  CALC_CHAIN,
+  CALC_CRITICAL_CHOICE,
+  CALC_DOMAIN,
+  CALC_LHOPITAL,
+  CALC_PARTS,
+  CALC_PIECEWISE,
   calcExpr,
   type CalcDescentInstance,
   type CalcFnInstance,
@@ -24,6 +32,16 @@ import { DescentStepPractice } from "../calculus/DescentSection.tsx";
 import { AntiderivativePractice, DefiniteIntegralPractice } from "../calculus/IntegralPractice.tsx";
 import { CriticalPractice, GradientPractice } from "../calculus/MultivarPractice.tsx";
 import { TangentPractice } from "../calculus/TangentPractice.tsx";
+import {
+  BasinPractice,
+  BisectionPractice,
+  ChainPractice,
+  CriticalChoicePractice,
+  DomainPractice,
+  LhopitalPractice,
+  PartsPractice,
+  PiecewisePractice,
+} from "../calculus/TheoryPractice.tsx";
 import type { ExerciseViewProps } from "./views.tsx";
 
 type View = ComponentType<ExerciseViewProps<unknown>>;
@@ -113,4 +131,13 @@ export const CALC_EXERCISE_VIEWS: Array<[string, View]> = [
   entry(CALC_GRADIENT, GradientExercise),
   entry(CALC_CRITICAL, CriticalExercise),
   entry(CALC_DESCENT, DescentExercise),
+  // Teoría (tipo examen): la práctica ya trae el enunciado completo.
+  entry(CALC_PIECEWISE, PiecewisePractice),
+  entry(CALC_LHOPITAL, LhopitalPractice),
+  entry(CALC_DOMAIN, DomainPractice),
+  entry(CALC_BISECTION, BisectionPractice),
+  entry(CALC_CHAIN, ChainPractice),
+  entry(CALC_BASIN, BasinPractice),
+  entry(CALC_CRITICAL_CHOICE, CriticalChoicePractice),
+  entry(CALC_PARTS, PartsPractice),
 ];

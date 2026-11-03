@@ -82,6 +82,21 @@ export function numberMatches(answer: { value: number; exact: boolean }, expecte
   return Math.abs(answer.value - expected) <= Math.max(1.0001e-3, 1e-5 * Math.abs(expected));
 }
 
+/** Indicación del examen para las respuestas numéricas redondeadas. */
+export const ROUNDING_NOTE = "Exacta (fracción o expresión con e, π, ln…) o redondeando a dos decimales con coma (por ejemplo, 3,14).";
+
+/**
+ * Como en el examen: «redondeando a dos decimales con coma». Un decimal escrito vale si, redondeado a
+ * `decimals` cifras, da lo mismo que el valor esperado redondeado (o si está aún más cerca); una
+ * fracción o expresión, con casi toda la precisión.
+ */
+export function numberMatchesRounded(answer: { value: number; exact: boolean }, expected: number, decimals = 2): boolean {
+  if (answer.exact) return close(answer.value, expected, 1e-9);
+  const p = 10 ** decimals;
+  const r = (v: number) => Math.round(v * p + (v >= 0 ? 1e-9 : -1e-9));
+  return r(answer.value) === r(expected) || Math.abs(answer.value - expected) <= 0.1 / p;
+}
+
 export type RiemannRule = "izquierda" | "derecha" | "medio";
 export const RIEMANN_LABEL: Record<RiemannRule, string> = { izquierda: "Extremo izquierdo", derecha: "Extremo derecho", medio: "Punto medio" };
 

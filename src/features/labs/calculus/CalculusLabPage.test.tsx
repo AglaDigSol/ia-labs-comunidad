@@ -3,7 +3,20 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 import { exactDescentSteps } from "../../../../shared/calculus/descent.ts";
-import { alphaFrac, CALC_DESCENT, calcExpr } from "../../../../shared/exercises/calculus.ts";
+import { arrangeChoices } from "../../../../shared/exercises/choice.ts";
+import {
+  alphaFrac,
+  CALC_BISECTION,
+  CALC_CHAIN,
+  CALC_DESCENT,
+  CALC_LHOPITAL,
+  CALC_PIECEWISE,
+  calcExpr,
+  chainAnswer,
+  lhopitalOf,
+  niceText,
+  piecewiseQuestion,
+} from "../../../../shared/exercises/calculus.ts";
 import { toNumber } from "../../../../shared/rational.ts";
 import { LabsRoutes } from "../labs.tsx";
 import { DescentStepPractice } from "./DescentSection.tsx";
@@ -220,5 +233,79 @@ describe("Descenso de gradiente", () => {
     click("Comprobar");
     expect(status()).toMatch(/¡Correcto!/);
     expect(screen.getByRole("region", { name: "Ideas clave" }).textContent).toMatch(/α demasiado grande/);
+  });
+});
+
+describe("Límites y continuidad", () => {
+  it("función a trozos: opción múltiple a)–d); una mal no dice cuál es la buena y la buena se acepta", async () => {
+    renderAt("/laboratorios/calculo?s=limites");
+    await heading();
+    expect(screen.getByRole("radio", { name: "Límites y continuidad" }).getAttribute("aria-checked")).toBe("true");
+    const inst = CALC_PIECEWISE.generate(1, "básico");
+    const options = arrangeChoices(piecewiseQuestion(inst), JSON.stringify(inst));
+    expect(options).toHaveLength(4);
+    expect(screen.getAllByRole("radio", { name: /^[a-d]\) / })).toHaveLength(4);
+    const wrong = options.find((o) => !o.correct)!;
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${wrong.letter}\\) `) }));
+    click("Comprobar");
+    expect(status()).toMatch(/No es esa/);
+    expect(screen.queryByTestId("solution")).toBeNull();
+    const right = options.find((o) => o.correct)!;
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${right.letter}\\) `) }));
+    click("Comprobar");
+    expect(status()).toMatch(/¡Correcto!/);
+  });
+
+  it("L'Hôpital: la forma y el límite; dominio, opciones; bisección, números", async () => {
+    renderAt("/laboratorios/calculo?s=limites");
+    await heading();
+    fireEvent.click(screen.getByRole("radio", { name: "L'Hôpital" }));
+    const inst = CALC_LHOPITAL.generate(1, "básico");
+    const r = lhopitalOf(inst)!;
+    type("Límite =", "12345");
+    click("Comprobar");
+    expect(invalid("Límite =")).toBe(true);
+    expect(status()).toMatch(/Revisa la forma/);
+    fireEvent.change(screen.getByLabelText("Al sustituir, ¿qué forma da?"), { target: { value: r.steps[0]!.form } });
+    type("Límite =", niceText((r.result as { value: number }).value).replace("−", "-"));
+    click("Comprobar");
+    expect(status()).toMatch(/¡Correcto!/);
+
+    fireEvent.click(screen.getByRole("radio", { name: "Dominio" }));
+    expect(screen.getByRole("group", { name: /¿Cuál es el dominio de f\?/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "Bisección" }));
+    const b = CALC_BISECTION.generate(1, "básico");
+    type("Longitud =", `${b.b - b.a}/${2 ** b.k}`);
+    click("Comprobar");
+    expect(status()).toMatch(/¡Correcto!/);
+  });
+});
+
+describe("Teoría en las otras secciones", () => {
+  it("regla de la cadena en «Varias variables», por partes en «Integrales» y cuencas en «Descenso»", async () => {
+    renderAt("/laboratorios/calculo?s=varias-variables");
+    await heading();
+    fireEvent.click(screen.getByRole("radio", { name: "Regla de la cadena" }));
+    const c = CALC_CHAIN.generate(1, "básico");
+    type("Resultado =", String(chainAnswer(c) + 1));
+    click("Comprobar");
+    expect(invalid("Resultado =")).toBe(true);
+    type("Resultado =", String(chainAnswer(c)));
+    click("Comprobar");
+    expect(status()).toMatch(/¡Correcto!/);
+    fireEvent.click(screen.getByRole("radio", { name: "Críticos tipo test" }));
+    expect(screen.getAllByRole("radio", { name: /^[a-d]\) / })).toHaveLength(4);
+    cleanup();
+
+    renderAt("/laboratorios/calculo?s=integrales");
+    await heading();
+    fireEvent.click(screen.getByRole("radio", { name: "Por partes" }));
+    expect(screen.getByRole("group", { name: /¿Cuánto vale la integral\?/ })).toBeTruthy();
+    cleanup();
+
+    renderAt("/laboratorios/calculo?s=descenso");
+    await heading();
+    expect(screen.getByRole("heading", { name: "Descenso de gradiente: ¿adónde converge?" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /Gráfica de f\(x\) = .*punto de partida/ })).toBeTruthy();
   });
 });

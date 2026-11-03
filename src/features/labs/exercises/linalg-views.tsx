@@ -11,6 +11,11 @@ import {
   LINALG_PRODUCT,
   LINALG_SYSTEMS,
   LINALG_TENSORS,
+  LINALG_DET_RULES,
+  LINALG_NORMS,
+  LINALG_ROUCHE_CHOICE,
+  LINALG_TENSOR_VOCAB,
+  LINALG_THEORY,
   type LinSystemInstance,
   type MatrixInstance,
   type ProductInstance,
@@ -29,6 +34,7 @@ import { IndependencePractice } from "../linalg/IndependencePractice.tsx";
 import { DeterminantPractice, InversePractice, ProductPractice } from "../linalg/OperationsPractice.tsx";
 import { equationsLabel, equationsTex, SystemAnswer, SystemSolution } from "../linalg/SystemAnswer.tsx";
 import { ShapePractice } from "../linalg/TensorPractice.tsx";
+import { DetRulesPractice, MatrixTheoryPractice, NormsPractice, RoucheChoicePractice, TensorVocabPractice } from "../linalg/TheoryPractice.tsx";
 import type { ExerciseViewProps } from "./views.tsx";
 
 type View = ComponentType<ExerciseViewProps<unknown>>;
@@ -120,4 +126,10 @@ export const LINALG_EXERCISE_VIEWS: Array<[string, View]> = [
   entry(LINALG_INDEPENDENCE, IndependenceExercise),
   entry(LINALG_EIGEN, EigenExercise),
   entry(LINALG_TENSORS, TensorExercise),
+  // Teoría (tipo examen): la práctica ya trae el enunciado completo.
+  entry(LINALG_DET_RULES, DetRulesPractice),
+  entry(LINALG_THEORY, MatrixTheoryPractice),
+  entry(LINALG_NORMS, NormsPractice),
+  entry(LINALG_TENSOR_VOCAB, TensorVocabPractice),
+  entry(LINALG_ROUCHE_CHOICE, RoucheChoicePractice),
 ];
