@@ -61,12 +61,23 @@ describe("lista de ejercicios", () => {
     renderAt("/laboratorios/ejercicios");
     await page();
     const topics = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    expect(topics).toEqual(["Lógica proposicional", "Lógica de predicados", "Conjuntos", "Combinatoria y complejidad", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad"]);
+    expect(topics).toEqual(["Simulacro de examen (02MIAR)", "Lógica proposicional", "Lógica de predicados", "Conjuntos", "Combinatoria y complejidad", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad"]);
     expect(screen.getByRole("heading", { level: 3, name: "Tabla de verdad paso a paso" })).toBeTruthy();
     expect(screen.getByRole("heading", { level: 3, name: "Mapa de Karnaugh" })).toBeTruthy();
     expect(screen.getByRole("heading", { level: 3, name: "Inclusión–exclusión" })).toBeTruthy();
     expect(screen.getByTestId("progreso-logica-tabla").textContent).toBe("Aún sin resolver.");
     expect(screen.getAllByRole("button", { name: /^Practicar/ }).length).toBe(EXERCISE_TYPES.filter((t) => !t.module).length);
+  });
+
+  it("la tarjeta del simulacro abre …/ejercicios/simulacro, sin pestaña nueva", async () => {
+    renderAt("/laboratorios/ejercicios");
+    await page();
+    const tabs = screen.getAllByRole("tab").map((t) => t.textContent);
+    fireEvent.click(screen.getByRole("link", { name: "Abrir el simulacro" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Simulacro de examen (02MIAR)" }, { timeout: 5000 })).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId("loc").textContent).toMatch(/^\/laboratorios\/ejercicios\/simulacro\?modo=completo&s=[0-9a-z]+$/));
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(tabs);
+    expect(screen.getByRole("tab", { name: "Ejercicios" }).getAttribute("aria-selected")).toBe("true");
   });
 
   it("«Practicar» abre el tipo con el nivel elegido y una semilla en la URL", async () => {

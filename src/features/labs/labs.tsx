@@ -80,6 +80,7 @@ const ProbabilityLabPage = lazy(() =>
   import("./probability/ProbabilityLabPage.tsx").then((m) => ({ default: m.ProbabilityLabPage })),
 );
 const ExercisesPage = lazy(() => import("./exercises/ExercisesPage.tsx").then((m) => ({ default: m.ExercisesPage })));
+const ExamSimulatorPage = lazy(() => import("./exam/ExamSimulatorPage.tsx").then((m) => ({ default: m.ExamSimulatorPage })));
 
 // __LABS_PYTHON__ lo define vite.config.ts en la app independiente (LABS_PYTHON=1 o
 // config.modules.python). Si vale false, este import desaparece del build: ni chunk ni worker. En una
@@ -156,7 +157,7 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
         <nav
           aria-label="Laboratorios"
           role="tablist"
-          className="sticky top-12 z-20 flex gap-1 overflow-x-auto border-b border-border bg-base lg:static"
+          className="sticky top-12 z-20 flex gap-1 overflow-x-auto border-b border-border bg-base lg:static print:hidden"
         >
           {tabs.map((tab) => (
             <LabTab key={tab.id} tab={tab} to={hrefOf(tab)} active={tab === activeTab} />
@@ -177,6 +178,8 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
           <Route path="calculo" element={<CalculusLabPage />} />
           <Route path="probabilidad" element={<ProbabilityLabPage />} />
           <Route path="ejercicios" element={<ExercisesPage python={withPython} />} />
+          {/* El simulacro de examen va dentro de «Ejercicios» (sin pestaña propia). */}
+          <Route path="ejercicios/simulacro" element={<ExamSimulatorPage />} />
           {withPython && PythonLabPage && <Route path={PYTHON_LAB.path} element={<PythonLabPage />} />}
           {extras.map((t) => (
             <Route key={t.id} path={`${t.path}/*`} element={t.element} />

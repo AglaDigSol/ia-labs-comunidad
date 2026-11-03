@@ -4,9 +4,9 @@
 // ejercicio se puede compartir o repetir. La app solo corrige y da pistas; las soluciones están detrás
 // de «Ver la solución completa». El progreso (resueltos y último día, por tipo y nivel) se guarda con
 // labs-storage.ts; las respuestas no.
-import { ArrowLeft, Check, Shuffle, SkipForward } from "lucide-react";
+import { ArrowLeft, Check, ClipboardCheck, Shuffle, SkipForward } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { exerciseTopics, exercisesOfTopic, exerciseType, mixedType, type AnyExerciseType } from "../../../../shared/exercises/registry.ts";
 import { randomSeed, seedFromText, seedToText } from "../../../../shared/exercises/random.ts";
 import {
@@ -18,7 +18,7 @@ import {
   type ExerciseModules,
   type ExerciseTopic,
 } from "../../../../shared/exercises/types.ts";
-import { Button } from "../../../components/ui/button.tsx";
+import { Button, buttonVariants } from "../../../components/ui/button.tsx";
 import { Chip } from "../../../components/ui/chip.tsx";
 import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group.tsx";
 import { cn } from "../../../lib/cn.ts";
@@ -59,10 +59,14 @@ function paramsOf(c: Current): URLSearchParams {
   return p;
 }
 
-/** Módulos opcionales de LabsRoutes: con `python`, el tema «Python (01MIAR)» y sus ejercicios. */
-export type ExercisesPageProps = { python?: boolean };
+/**
+ * Módulos opcionales de LabsRoutes: con `python`, el tema «Python (01MIAR)» y sus ejercicios.
+ * `examPath`: ruta del simulacro de examen, relativa a esta página (por defecto «simulacro», como en
+ * LabsRoutes); con null no se enseña la tarjeta del simulacro.
+ */
+export type ExercisesPageProps = { python?: boolean; examPath?: string | null };
 
-export function ExercisesPage({ python = false }: ExercisesPageProps = {}) {
+export function ExercisesPage({ python = false, examPath = "simulacro" }: ExercisesPageProps = {}) {
   const [params, setParams] = useSearchParams();
   const [progress, setProgress] = useState<ExercisesProgress>(loadProgress);
   // Ejercicios resueltos desde que se abrió la página.
@@ -110,13 +114,37 @@ export function ExercisesPage({ python = false }: ExercisesPageProps = {}) {
           }}
         />
       ) : read ? null : (
-        <ExerciseList progress={progress} session={session} modules={modules} onStart={start} onMix={mix} />
+        <>
+          {examPath !== null ? <ExamCard to={examPath} /> : null}
+          <ExerciseList progress={progress} session={session} modules={modules} onStart={start} onMix={mix} />
+        </>
       )}
     </section>
   );
 }
 
 // ---------------------------------------------------------------- Lista
+
+/** Tarjeta destacada del simulacro de examen. */
+function ExamCard({ to }: { to: string }) {
+  const id = useId();
+  return (
+    <section aria-labelledby={`${id}-title`} className="flex flex-col gap-3 rounded-lg border-2 border-accent bg-raised p-4">
+      <h2 id={`${id}-title`} className="flex items-center gap-2 font-display text-[22px] font-semibold">
+        <ClipboardCheck size={22} aria-hidden="true" />
+        Simulacro de examen (02MIAR)
+      </h2>
+      <p className="text-muted">
+        Un examen como el final, con preguntas nuevas del banco: 20 preguntas en 2 horas (o 10 en 1 hora, o por temas), opción múltiple a)–d) y respuestas numéricas, con reloj, nota sobre 10 y la solución de cada pregunta al entregar.
+      </p>
+      <div>
+        <Link to={to} relative="path" className={buttonVariants({ variant: "primary" })}>
+          Abrir el simulacro
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 function LevelSelect({ id, value, onChange, levels }: { id: string; value: ExerciseLevel; onChange: (l: ExerciseLevel) => void; levels: readonly ExerciseLevel[] }) {
   return (
