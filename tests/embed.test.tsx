@@ -68,6 +68,19 @@ import {
   MAX_TOTAL_BYTES,
   safeFilePath,
   type DraftActionsContext,
+  ExamSimulatorPage,
+  buildExam,
+  FULL_BLUEPRINT,
+  examItem,
+  EXAM_TYPE_IDS,
+  scoreExam,
+  parseExamStore,
+  arrangeChoices,
+  gradeChoice,
+  ChoiceOptions,
+  ChoicePractice,
+  NumericField,
+  numericMatches,
 } from "../src/embed/index.ts";
 
 let storage: MemoryAdapter;
@@ -235,6 +248,34 @@ describe("LabsRoutes como dependencia", () => {
     expect(screen.getByTestId("header-action").textContent).toBe("Ejercicios");
     expect(tabNames().slice(-2)).toEqual(["Ejercicios", "Python"]);
     expect(localStorage.length).toBe(0);
+  });
+
+  it("abre el simulacro de examen dentro de «Ejercicios» y guarda los intentos en el almacén del anfitrión", async () => {
+    renderAt("/laboratorios/ejercicios/simulacro?modo=rapido&s=7");
+    expect(await screen.findByRole("heading", { level: 1, name: "Simulacro de examen (02MIAR)" }, { timeout: 5000 })).toBeTruthy();
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Combinatoria", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad", "Markov", "Ejercicios", "Python"]);
+    expect(screen.getByRole("tab", { name: "Ejercicios" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByTestId("header-action").textContent).toBe("Ejercicios");
+    fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+    expect(screen.getByRole("timer")).toBeTruthy();
+    expect(parseExamStore(String(storage.load()?.exam))?.active?.config.mode).toBe("rapido");
+    expect(localStorage.length).toBe(0);
+  });
+
+  it("exporta el simulacro, sus piezas y la pregunta de opción múltiple", () => {
+    expect(typeof ExamSimulatorPage).toBe("function");
+    expect(typeof ChoiceOptions).toBe("function");
+    expect(typeof ChoicePractice).toBe("function");
+    expect(typeof NumericField).toBe("function");
+    const exam = buildExam(3, FULL_BLUEPRINT);
+    expect(exam).toHaveLength(20);
+    expect(scoreExam(exam, [], false).score).toBe(0);
+    expect(EXAM_TYPE_IDS).toContain("combinatoria-problema");
+    expect(examItem("probabilidad-total", 1, "medio")?.kind).toBe("numeric");
+    expect(numericMatches("0,67", { n: 2n, d: 3n }, "dos-decimales")).toBe(true);
+    const options = arrangeChoices({ mode: "single", options: [{ id: "x", text: "X", correct: true }, { id: "y", text: "Y", correct: false }] }, 1);
+    expect(gradeChoice(options, ["x"]).correct).toBe(true);
+    expect(DEFAULT_LABS_KEYS.exam).toBe("ia-labs.exam.v1");
   });
 
   it("abre el laboratorio de álgebra lineal en su pestaña, entre Boole y Markov", async () => {

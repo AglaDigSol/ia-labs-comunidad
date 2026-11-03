@@ -17,6 +17,25 @@ export { PredicatesLabPage } from "../features/labs/predicates/PredicatesLabPage
 export { SetsLabPage } from "../features/labs/sets/SetsLabPage.tsx";
 export { CombinatoricsLabPage } from "../features/labs/combinatorics/CombinatoricsLabPage.tsx";
 export { ExercisesPage, type ExercisesPageProps } from "../features/labs/exercises/ExercisesPage.tsx";
+// Simulacro de examen (02MIAR). En LabsRoutes va en «ejercicios/simulacro»; montado aparte,
+// `exercisesPath` dice dónde está el banco de ejercicios para «Practicar este tipo».
+export {
+  clockText,
+  durationText,
+  ExamSimulatorPage,
+  INTEGRITY_EXAM_NOTE,
+  type ExamSimulatorPageProps,
+} from "../features/labs/exam/ExamSimulatorPage.tsx";
+export { ExamBlocks } from "../features/labs/exam/ExamBlocks.tsx";
+// Preguntas de opción múltiple (a–d, «Ninguna de las otras», varias correctas) y campo numérico neutro.
+export {
+  CHOICE_INSTRUCTIONS,
+  ChoiceOptions,
+  ChoicePractice,
+  ChoiceSolution,
+  OptionContent,
+} from "../components/practice/ChoiceQuestion.tsx";
+export { NumericField } from "../components/practice/NumericField.tsx";
 export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
 export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
 export { LinearAlgebraLabPage } from "../features/labs/linalg/LinearAlgebraLabPage.tsx";
@@ -112,6 +131,17 @@ export * from "../../shared/exercises/linalg.ts";
 export * from "../../shared/exercises/calculus.ts";
 export * from "../../shared/exercises/probability.ts";
 export * from "../../shared/exercises/registry.ts";
+export * from "../../shared/exercises/choice.ts";
+
+// Simulacro de examen: preguntas, plantillas, nota e intentos.
+export * from "../../shared/exam/types.ts";
+export * from "../../shared/exam/numeric.ts";
+export * from "../../shared/exam/blocks.ts";
+export * from "../../shared/exam/adapter.ts";
+export * from "../../shared/exam/items.ts";
+export * from "../../shared/exam/blueprint.ts";
+export * from "../../shared/exam/grading.ts";
+export * from "../../shared/exam/attempt.ts";
 // Ejercicios de Python (solo se muestran con <LabsRoutes python /> o <ExercisesPage python />).
 export {
   PYTHON_EXERCISES,

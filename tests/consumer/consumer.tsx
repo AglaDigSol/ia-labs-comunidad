@@ -117,6 +117,19 @@ import {
   PYODIDE_VERSION,
   PYTHON_LAB,
   PythonLabPage,
+  ExamSimulatorPage,
+  buildExam,
+  QUICK_BLUEPRINT,
+  scoreExam,
+  examItem,
+  arrangeChoices,
+  ChoiceOptions,
+  NumericField,
+  type ExamItem,
+  type ExamQuestion,
+  type ExamSimulatorPageProps,
+  type ExamStore,
+  type ChoiceQuestion,
   fileLimits,
   MAX_FILE_BYTES,
   MAX_FILES,
@@ -191,6 +204,14 @@ export function HostApp() {
         <Route path="/probabilidad" element={<ProbabilityLabPage />} />
         <Route path="/ejercicios" element={<ExercisesPage />} />
         <Route path="/ejercicios-python" element={<ExercisesPage python />} />
+        <Route path="/ejercicios/simulacro" element={<ExamSimulatorPage />} />
+        <Route path="/simulacro" element={<ExamSimulatorPage {...simulatorProps} />} />
+        <Route path="/ejercicios-sin-simulacro" element={<ExercisesPage examPath={null} />} />
+        <Route
+          path="/una-pregunta"
+          element={<ChoiceOptions legend="¿Cuál?" options={arrangeChoices(oneChoice, 1)} mode="single" value={[]} onChange={() => {}} />}
+        />
+        <Route path="/un-numero" element={<NumericField label="Resultado" value="" onChange={() => {}} note="Con coma." />} />
       </Routes>
     </MemoryRouter>
   );
@@ -265,3 +286,10 @@ export const probOk: boolean = checkProbAnswer("0,06", probTotal);
 const binomial: DistSpec = binomialSpec(PROB_BINOMIAL.generate(1, "medio"));
 export const atLeast = probAtLeast(binomial, 2);
 export const treeAsk = (i: ProbTreeInstance) => i.ask;
+
+const simulatorProps: ExamSimulatorPageProps = { exercisesPath: "/ejercicios" };
+const oneChoice: ChoiceQuestion = { mode: "single", options: [{ id: "a", text: "Sí", correct: true }, { id: "b", text: "No", correct: false }] };
+const quick: ExamQuestion[] = buildExam(1, QUICK_BLUEPRINT);
+export const quickScore: number = scoreExam(quick, [], true).score;
+export const oneItem: ExamItem | null = examItem("calculo-integral", 1, "medio");
+export const noStore: ExamStore = { active: null, history: [] };
