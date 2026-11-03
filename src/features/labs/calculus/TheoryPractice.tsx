@@ -453,8 +453,9 @@ export function BasinPractice({ instance, onSolved }: Props<CalcBasinInstance>) 
   const q = useMemo(() => basinQuestion(instance), [instance]);
   const crit = criticalPoints1D(f) ?? [];
   const xs = crit.map((c) => Number(c.x.n) / Number(c.x.d));
-  const lo = Math.min(...xs, instance.x0) - 1.5;
-  const hi = Math.max(...xs, instance.x0) + 1.5;
+  // Un poco más allá de los puntos críticos (y de x₀): lo justo para ver los valles.
+  const lo = Math.min(...xs, instance.ask === "destino" ? instance.x0 : Infinity) - 1;
+  const hi = Math.max(...xs, instance.ask === "destino" ? instance.x0 : -Infinity) + 1;
   const fx = compile(f);
   const legend =
     instance.ask === "destino"

@@ -71,7 +71,7 @@ export function LinearAlgebraLabPage() {
         onValueChange={(v) => {
           if (isSection(v)) go(v);
         }}
-        className="grid max-w-full grid-cols-2 self-start sm:grid-cols-3 xl:inline-flex"
+        className="grid max-w-full grid-cols-2 self-start sm:grid-cols-4 xl:grid-cols-7"
       >
         {SECTIONS.map((s) => (
           <ToggleGroupItem key={s} value={s} className="py-1 leading-tight">

@@ -1126,6 +1126,9 @@ export const CALC_BASIN: ExerciseType<CalcBasinInstance> = {
         if (/\d{3}/.test(inst.f)) return false;
         if (inst.ask === "destino") {
           if (crit.some((c) => Number(c.x.n) === inst.x0)) return false;
+          // x₀ cerca de los puntos críticos, para que se vea bien en la gráfica.
+          const xs = crit.map((c) => Number(c.x.n));
+          if (inst.x0 < Math.min(...xs) - 2 || inst.x0 > Math.max(...xs) + 2) return false;
           const lim = descentLimit1D(f, frac(BigInt(inst.x0)))!;
           // En básico, que converja a un mínimo; en medio, vale también que diverja.
           return level === "básico" ? lim.kind === "punto" && crit.length >= 2 : crit.length >= 2;
