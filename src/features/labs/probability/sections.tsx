@@ -6,13 +6,13 @@ import { useId, useMemo, useState } from "react";
 import { PROB_PACK } from "../../../../content/probabilidad/practica.ts";
 import { PROB_DIE_COND, qFrac } from "../../../../shared/exercises/probability.ts";
 import { randomSeed } from "../../../../shared/exercises/random.ts";
-import { coinGameRows, dieGameRows, dieRuleText } from "../../../../shared/probability/variable.ts";
+import { coinGameRows, dieGameRows } from "../../../../shared/probability/variable.ts";
 import { loadedDieWeights } from "../../../../shared/probability/events.ts";
 import { distFromContent, readProb } from "../../../../shared/probability/schema.ts";
 import { Button } from "../../../components/ui/button.tsx";
 import { cn } from "../../../lib/cn.ts";
 import { selectClass } from "../boole/AxiomPractice.tsx";
-import { dataText, levelLabel, LEVELS, loadedDieText, Statement } from "./common.tsx";
+import { dataText, levelLabel, LEVELS, Statement } from "./common.tsx";
 import { ContingencyPractice, DieCondPractice, PairPractice } from "./ConditionalPractice.tsx";
 import { DistributionExplorer, DistributionPractice } from "./DistributionPractice.tsx";
 import { GamePractice, PenaltyPractice, ProductPractice } from "./ExpectationPractice.tsx";
@@ -143,7 +143,6 @@ export function ExpectationSection() {
         <Picker label="Juego" presets={PROB_PACK.games.map((x) => ({ id: x.id, level: x.level, label: x.title }))} value={game.id} onChange={game.setId} />
         <Statement>
           <p>{g.story}</p>
-          {g.kind === "dado" ? <p className="text-[14px] text-muted">{`Con ${loadedDieText(g.odd, g.even)}. ${dieRuleText(g.rule)}`}</p> : null}
         </Statement>
         <GamePractice key={g.id} rows={rows} outcome={g.kind === "dado" ? "Cara" : "Resultado"} askVariance={g.level === "avanzado"} />
       </div>

@@ -36,25 +36,27 @@ export function TreeDiagram({
   label: string;
 }) {
   const n = branches.length;
-  const W = 640;
-  const rowH = 52;
+  // Estrecho a propósito: a 390 px de ancho el texto sigue leyéndose.
+  const W = 430;
+  const rowH = 60;
   const H = n * 2 * rowH + 16;
   const rootY = H / 2;
-  const x0 = 24;
-  const x1 = 250;
-  const x2 = 470;
+  const x0 = 12;
+  const x1 = 118;
+  const x2 = 322;
   const leafY = (i: number, j: number) => 8 + (2 * i + j) * rowH + rowH / 2;
   const midY = (i: number) => (leafY(i, 0) + leafY(i, 1)) / 2;
   const edge = (key: string, ax: number, ay: number, bx: number, by: number, e: TreeEdge) => {
-    const mx = (ax + bx) / 2;
-    const my = (ay + by) / 2;
+    // La etiqueta, a un 60 % del camino: así las dos ramas de un nodo no se tapan.
+    const mx = ax + (bx - ax) * 0.6;
+    const my = ay + (by - ay) * 0.6;
     const text = e.state === "mal" ? `✗ ${e.text}` : e.text;
     return (
       <g key={key} data-edge={key} data-state={e.state}>
         <line x1={ax} y1={ay} x2={bx} y2={by} stroke={EDGE_COLOR[e.state]} strokeWidth={e.state === "mal" ? 2.5 : 2} strokeDasharray={e.state === "mal" ? "7 5" : e.state === "vacío" ? "2 4" : undefined} />
-        <rect x={mx - 48} y={my - 13} width={96} height={24} rx={4} fill="var(--surface-raised)" stroke={EDGE_COLOR[e.state]} strokeWidth={1} />
-        <text x={mx} y={my + 4} textAnchor="middle" fontSize="13" fill={EDGE_COLOR[e.state]} className="font-mono">
-          {text.length > 13 ? `${text.slice(0, 12)}…` : text}
+        <rect x={mx - 38} y={my - 13} width={76} height={26} rx={4} fill="var(--surface-raised)" stroke={EDGE_COLOR[e.state]} strokeWidth={1} />
+        <text x={mx} y={my + 5} textAnchor="middle" fontSize="15" fill={EDGE_COLOR[e.state]} className="font-mono">
+          {text.length > 8 ? `${text.slice(0, 7)}…` : text}
         </text>
       </g>
     );
@@ -64,20 +66,20 @@ export function TreeDiagram({
       <circle cx={x0} cy={rootY} r={6} fill="var(--text)" />
       {branches.map((b, i) => (
         <g key={b}>
-          {edge(`p${i}`, x0, rootY, x1 - 20, midY(i), first[i]!)}
-          {edge(`c${i}`, x1 + 20, midY(i), x2 - 22, leafY(i, 0), second[i]![0])}
-          {edge(`n${i}`, x1 + 20, midY(i), x2 - 22, leafY(i, 1), second[i]![1])}
-          <text x={x1} y={midY(i) + 5} textAnchor="middle" fontSize="15" fontWeight="600" fill="var(--text)">
+          {edge(`p${i}`, x0, rootY, x1 - 46, midY(i), first[i]!)}
+          {edge(`c${i}`, x1 + 46, midY(i), x2 - 10, leafY(i, 0), second[i]![0])}
+          {edge(`n${i}`, x1 + 46, midY(i), x2 - 10, leafY(i, 1), second[i]![1])}
+          <text x={x1} y={midY(i) + 5} textAnchor="middle" fontSize="16" fontWeight="600" fill="var(--text)">
             {b.length > 10 ? `${b.slice(0, 9)}…` : b}
           </text>
-          <text x={x2} y={leafY(i, 0) + 5} fontSize="15" fontWeight="600" fill="var(--text)">
+          <text x={x2} y={leafY(i, 0) + 5} fontSize="16" fontWeight="600" fill="var(--text)">
             C
           </text>
-          <text x={x2} y={leafY(i, 1) + 5} fontSize="15" fontWeight="600" fill="var(--text)">
+          <text x={x2} y={leafY(i, 1) + 5} fontSize="16" fontWeight="600" fill="var(--text)">
             Cᶜ
           </text>
-          <text x={x2 + 26} y={leafY(i, 0) + 5} fontSize="13" fill={EDGE_COLOR[leaves[i]!.state]} className="font-mono">
-            {`∩: ${leaves[i]!.state === "mal" ? "✗ " : ""}${leaves[i]!.text.length > 12 ? `${leaves[i]!.text.slice(0, 11)}…` : leaves[i]!.text}`}
+          <text x={x2 + 22} y={leafY(i, 0) + 5} fontSize="14" fill={EDGE_COLOR[leaves[i]!.state]} className="font-mono">
+            {`∩ ${leaves[i]!.state === "mal" ? "✗" : ""}${leaves[i]!.text.length > 8 ? `${leaves[i]!.text.slice(0, 7)}…` : leaves[i]!.text}`}
           </text>
         </g>
       ))}
