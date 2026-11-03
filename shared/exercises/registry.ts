@@ -4,6 +4,7 @@
 // Los tipos de un módulo opcional (module: "python") solo existen si se pide ese módulo: sin él no
 // aparecen en la lista, en «Mezclar» ni por su id en la URL.
 import { BOOLE_EXERCISES } from "./boole.ts";
+import { LINALG_EXERCISES } from "./linalg.ts";
 import { LOGIC_EXERCISES } from "./logic.ts";
 import { PREDICATE_EXERCISES } from "./predicates.ts";
 import { PYTHON_EXERCISES } from "./python.ts";
@@ -24,6 +25,7 @@ export const EXERCISE_TYPES: readonly AnyExerciseType[] = [
   ...PREDICATE_EXERCISES,
   ...SET_EXERCISES,
   ...BOOLE_EXERCISES,
+  ...LINALG_EXERCISES,
   ...(WITH_PYTHON ? PYTHON_EXERCISES : []),
 ];
 

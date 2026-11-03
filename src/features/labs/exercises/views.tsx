@@ -60,6 +60,7 @@ import { CardinalProblem } from "../sets/CardinalSection.tsx";
 import { EqualityQuestion, SetProof } from "../sets/LawsSection.tsx";
 import { PartsPractice } from "../sets/PartsSection.tsx";
 import { ShadePractice } from "../sets/VennSection.tsx";
+import { LINALG_EXERCISE_VIEWS } from "./linalg-views.tsx";
 
 export type ExerciseViewProps<I> = { instance: I; onSolved: () => void };
 type View = ComponentType<ExerciseViewProps<unknown>>;
@@ -384,4 +385,5 @@ export const EXERCISE_VIEWS: Readonly<Record<string, View>> = Object.fromEntries
   entry(BOOLE_CANONICAL, BooleCanonicalExercise),
   entry(BOOLE_KARNAUGH, BooleKarnaughExercise),
   entry(BOOLE_SIMPLIFY, BooleSimplifyExercise),
+  ...LINALG_EXERCISE_VIEWS,
 ]);

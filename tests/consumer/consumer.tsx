@@ -6,6 +6,19 @@ import {
   ALL_SYMBOLS,
   BOOLE_PACK,
   BooleLabPage,
+  LinearAlgebraLabPage,
+  LINALG_PACK,
+  LINALG_EIGEN,
+  analyzeSystem,
+  broadcastShapes,
+  checkTypedStep,
+  isEigenpair,
+  matrixRank,
+  parseMatrix,
+  type LinSystemInstance,
+  type Matrix,
+  type RowOp,
+  type TensorOp,
   SetsLabPage,
   SETS_PACK,
   ExercisesPage,
@@ -140,6 +153,7 @@ export function HostApp() {
         <Route path="/markov" element={<MarkovLabPage />} />
         <Route path="/boole" element={<BooleLabPage />} />
         <Route path="/conjuntos" element={<SetsLabPage />} />
+        <Route path="/algebra-lineal" element={<LinearAlgebraLabPage />} />
         <Route path="/ejercicios" element={<ExercisesPage />} />
         <Route path="/ejercicios-python" element={<ExercisesPage python />} />
       </Routes>
@@ -183,3 +197,15 @@ export const exerciseIds: string[] = EXERCISE_TYPES.map((t) => t.id);
 export const knownType: boolean = exerciseType("conjuntos-venn") !== null;
 export const pythonType: boolean = exerciseType("py-que-imprime", { python: true }) !== null;
 export const pythonIds: string[] = PYTHON_EXERCISES.map((t) => t.id);
+const linParsed = parseMatrix(LINALG_PACK.systems[0]?.matrix ?? "1 1");
+export const linMatrix: Matrix | null = linParsed.ok ? linParsed.value : null;
+export const linRank: number = linMatrix ? matrixRank(linMatrix) : 0;
+export const linKind = linMatrix ? analyzeSystem(linMatrix.map((r) => r.slice(0, -1)), linMatrix.map((r) => r[r.length - 1]!)).kind : null;
+const swap: RowOp = { k: "swap", i: 0, j: 1 };
+export const firstOp: RowOp = swap;
+export const sameStep = linMatrix ? checkTypedStep(linMatrix, linMatrix).kind : null;
+export const eigenOk: boolean = isEigenpair([[{ n: 2n, d: 1n }]], [{ n: 1n, d: 1n }], { n: 2n, d: 1n });
+export const eigenMatrix: number[][] = LINALG_EIGEN.generate(1, "medio").matrix;
+const shapes: TensorOp = { op: "matmul", a: [2, 3], b: [3] };
+export const broadcastOk: boolean = broadcastShapes(shapes.a, [1]).ok;
+export const gaussInstance = (i: LinSystemInstance) => i.unknowns;

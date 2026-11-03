@@ -72,6 +72,16 @@ publicó (los calendarios suscritos lo actualizarán).
 3. Ejecuta `npx vitest run tests/content.test.ts`: comprueba que no hay ciclos, que todo está definido y que `table`
    coincide con lo que calcula el circuito.
 
+### Un ejemplo de álgebra lineal
+
+1. Abre `content/algebra-lineal/practica.ts` y añade un objeto a la lista que toque: `systems` (matriz ampliada A | b),
+   `products` (A y B), `square` (determinante, rango e inversa), `vectors` (un vector por línea), `eigen` (2×2 o 3×3 con
+   autovalores racionales), `transforms` o `tensors`. Las matrices van como en el laboratorio: una fila por línea y los
+   números separados por espacios (`"1 2 3\n0 1 -1"`).
+2. Invéntalo tú: nada de matrices ni sistemas copiados de diapositivas, apuntes ni actividades.
+3. Ejecuta `npx vitest run tests/content-algebra-lineal.test.ts`: comprueba que cada matriz se lee, que los productos
+   están definidos y que los autovalores son racionales.
+
 ### Una plantilla nueva de laboratorio o un módulo
 
 Los módulos se registran en `src/config.ts` (id, ruta, navegación, componente perezoso y contenido que usa). Copia la

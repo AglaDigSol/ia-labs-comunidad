@@ -22,6 +22,7 @@ export const EXERCISE_TOPICS = [
   { id: "predicados", label: "Lógica de predicados" },
   { id: "conjuntos", label: "Conjuntos" },
   { id: "boole", label: "Álgebra de Boole" },
+  { id: "algebra-lineal", label: "Álgebra lineal" },
   { id: "python", label: "Python (01MIAR)" },
 ] as const;
 export type ExerciseTopic = (typeof EXERCISE_TOPICS)[number]["id"];
