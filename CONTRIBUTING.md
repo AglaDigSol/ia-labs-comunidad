@@ -93,6 +93,18 @@ publicó (los calendarios suscritos lo actualizarán).
 3. Ejecuta `npx vitest run tests/content-calculo.test.ts`: comprueba que cada función se lee, que las primitivas son
    inmediatas y que los puntos críticos son racionales y caen en el dibujo.
 
+### Un problema de combinatoria o un ejemplo de complejidad
+
+1. Abre `content/combinatoria/practica.ts` y añade un objeto a la lista que toque: `problems` (título, enunciado y su
+   modelo: `n`, `k`, ¿importa el orden?, ¿se repite? y, si hay elementos iguales que se colocan todos, `groups`; la
+   respuesta no se escribe, la calcula el motor), `functions` (`a` = |A|, `b` = |B|, opcional `image` = |f(A)|, y sus
+   afirmaciones), `algorithms` (un fragmento de pseudocódigo con bucles `for`, `forEach`, `halve` y llamadas `call` a un
+   algoritmo de coste `sub` en k) o `costs` (un coste como `(n^4 - 3n + 2)^3`).
+2. Invéntalo tú: nada de enunciados ni números copiados de exámenes, diapositivas ni actividades.
+3. Ejecuta `npx vitest run tests/content-combinatoria.test.ts`: comprueba que cada modelo tiene sentido (grupos que suman
+   n, k ≤ n sin repetición), que cada planteamiento de funciones tiene afirmaciones verdaderas y falsas y que cada
+   fragmento usa variables de sus bucles.
+
 ### Una plantilla nueva de laboratorio o un módulo
 
 Los módulos se registran en `src/config.ts` (id, ruta, navegación, componente perezoso y contenido que usa). Copia la

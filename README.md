@@ -1,7 +1,7 @@
 # IA Labs · Comunidad
 
 Laboratorios interactivos para estudiar el Máster en Inteligencia Artificial: simbología matemática, lógica
-proposicional y de predicados, cadenas de Markov, álgebras de Boole, álgebra lineal y tensores, cálculo y descenso de gradiente, calendario de clases con tu zona horaria, flashcards con repaso espaciado y una
+proposicional y de predicados, combinatoria y complejidad, cadenas de Markov, álgebras de Boole, álgebra lineal y tensores, cálculo y descenso de gradiente, calendario de clases con tu zona horaria, flashcards con repaso espaciado y una
 calculadora de notas.
 
 > **Proyecto comunitario de estudiantes del Máster en IA. No oficial ni afiliado a la Universidad Internacional de Valencia (VIU).**
@@ -18,11 +18,12 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Lógica | Tablas de verdad (también paso a paso, una subfórmula cada vez), comparar dos fórmulas, FND/FNC y el espacio F₁. | siempre activo |
 | Predicados | Evaluar fórmulas con ∀ y ∃ en un dominio finito (extensiones con casillas, paso a paso por instancias, testigos y contraejemplos), negar paso a paso con las leyes de la negación, comprobado en cada línea, y traducir frases a fórmulas. | siempre activo |
 | Conjuntos | Diagramas de Venn de 2 y 3 conjuntos (sombrear la expresión o calcularla con elementos), igualdades demostradas paso a paso con una ley por línea y «¿Son iguales?» con contraejemplo, problemas de inclusión–exclusión y conjunto de partes y producto cartesiano. | siempre activo |
+| Combinatoria | «¿Qué fórmula es?»: problemas de recuento con una guía para decidir (¿importa el orden?, ¿se repiten?, ¿se usan todos?), el modelo (Pₙ, PR, V, VR, C o CR) y el número, los dos comprobados, con la respuesta escrita como en el examen (coma decimal, sin separador de miles); calculadora guiada con enteros exactos; funciones por cardinal (¿puede o es necesariamente inyectiva, sobreyectiva, biyectiva? ¿tiene inversa? ¿cuántas hay?), y complejidad: orden O grande de pseudocódigo y de costes, con cuatro opciones a)–d), y verdadero o falso sobre P, NP y NP-completo. | siempre activo |
 | Álgebra de Boole | ¿Es un álgebra de Boole? (axiomas B1–B5 sobre estructuras finitas, tablas y diagrama de Hasse), simplificación paso a paso con leyes, comprobada en cada línea, puertas y circuitos (circuito → función, función → circuito con solo NAND o solo NOR, y las siete puertas) los espacios F₁ y F₂, y mapas de Karnaugh de 2 a 4 variables con las formas Σm y ΠM. ⊕ es la suma, no el XOR (que se escribe ⊻). | siempre activo |
 | Álgebra lineal | Gauss-Jordan paso a paso (eliges cada operación elemental o escribes la matriz siguiente, y se comprueba antes de seguir; luego clasificas el sistema con Rouché–Frobenius y escribes su solución, también paramétrica), producto, determinante, rango e inversa celda a celda, independencia lineal y bases, autovalores y autovectores (comprobados con Av = λv), transformaciones del plano dibujadas con sus direcciones propias y formas de tensores con las reglas de NumPy (emisión, `@`, `sum(axis)`, `reshape`, `.T`). Con fracciones exactas. | siempre activo |
 | Cálculo | Derivadas paso a paso (escribes cada línea y eliges la regla: suma, factor constante, producto, cociente, potencia, cadena o derivadas elementales; cada línea se comprueba en muchos puntos y se avisa si la regla no encaja), o solo el resultado; recta tangente con f y f′ dibujadas y tu recta encima; primitivas (comprobadas derivándolas, con + C) e integrales definidas con sumas de Riemann; derivadas parciales, gradiente y curvas de nivel con flechas, y puntos críticos clasificados con la hessiana; descenso de gradiente en una y dos variables (α, punto de partida, iteraciones, momento y Adam; Rosenbrock, valle alargado, varios mínimos y punto de silla) y los primeros pasos a mano. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
-| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias y FND/FNC; evaluar y negar con cuantificadores; Venn, igualdades, inclusión–exclusión, partes y producto; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 5) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)). | siempre activo |
+| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias, FND/FNC y formalizar frases («es suficiente», «solo si», «a menos que», «ni… ni…»); evaluar y negar con cuantificadores, negar frases en lenguaje natural y predicados sobre ℕ, ℤ, ℚ y ℝ; Venn, igualdades, inclusión–exclusión, partes y producto; problemas de combinatoria, ¿qué modelo es?, funciones por cardinal, complejidad de un algoritmo y P y NP; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 5) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)). | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
 | Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
 | Calculadora de notas | Nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
@@ -42,7 +43,7 @@ apagado y también se enciende sin tocar el código, al construir: `LABS_PYTHON=
 ### Modo «Comprueba tu respuesta»
 
 Los laboratorios están pensados para **comprobar y entrenar, no para resolver**. Donde la app calcula un resultado
-(tabla de verdad, clasificación, equivalencia, evolución de Markov, π, u₀, axiomas B1–B5, simplificaciones, pasos de Gauss-Jordan, determinantes, inversas, autovalores, derivadas, primitivas, integrales, gradientes, puntos críticos, pasos de descenso de gradiente, la función de
+(tabla de verdad, clasificación, equivalencia, evolución de Markov, π, u₀, axiomas B1–B5, simplificaciones, pasos de Gauss-Jordan, determinantes, inversas, autovalores, derivadas, primitivas, integrales, gradientes, puntos críticos, pasos de descenso de gradiente, recuentos de combinatoria, órdenes O grande, la función de
 un circuito, las tablas de F₁ o una expresión para una función de F₂), la vista por defecto te pide tu resultado,
 lo corrige y te da pistas paso a paso. La solución completa queda detrás de «Ver la solución completa», con un aviso
 de integridad. El explorador de F₁ ya funcionaba así (rellenas la tabla y pulsas «Comprobar»). La tabla de verdad
@@ -318,7 +319,7 @@ subdominio (gratis hasta 50 usuarios):
 
 ## Usar como dependencia
 
-Los laboratorios (Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole, Álgebra lineal, Cálculo y Markov), el banco de ejercicios, la pestaña Python opcional y sus motores se pueden integrar en otra app de React. No hay paquete
+Los laboratorios (Simbología, Lógica, Predicados, Conjuntos, Combinatoria, Álgebra de Boole, Álgebra lineal, Cálculo y Markov), el banco de ejercicios, la pestaña Python opcional y sus motores se pueden integrar en otra app de React. No hay paquete
 en npm: se instala el tarball de una etiqueta publicada y el paquete trae el código TypeScript, que compilan el Vite y
 el `tsc` de la app anfitriona.
 
@@ -369,7 +370,7 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
 </Routes>;
 ```
 
-- `extraTabs`: pestañas propias, en ese orden, después de los ocho laboratorios, de «Ejercicios» y de «Python» (si está
+- `extraTabs`: pestañas propias, en ese orden, después de los nueve laboratorios, de «Ejercicios» y de «Python» (si está
   encendida). `element` puede ser perezoso: hay un `Suspense` alrededor. Una pestaña con el id o la ruta de un
   laboratorio se ignora; con `python`, también una con el id o la ruta `python`.
 - `python`: enciende la pestaña Python (por defecto, apagada). Ver «Pestaña Python en una app anfitriona», abajo.
@@ -378,7 +379,7 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
 - `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el
   almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises, python })` guarda en localStorage con las
   claves que elijas, por ejemplo las que ya usaba tu app; las que no pases usan `DEFAULT_LABS_KEYS`.
-- También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `SetsLabPage`, `MarkovLabPage`, `BooleLabPage`, `LinearAlgebraLabPage`, `CalculusLabPage`,
+- También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `SetsLabPage`, `CombinatoricsLabPage`, `MarkovLabPage`, `BooleLabPage`, `LinearAlgebraLabPage`, `CalculusLabPage`,
   `ExercisesPage` y `PythonLabPage` por separado, y los motores: banco de ejercicios (`EXERCISE_TYPES`, `exerciseType`, cada tipo con
   `generate(semilla, nivel)`, `createRng`, `seedToText`/`seedFromText`), símbolos (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador,
   tabla de verdad, formas canónicas, comparación, F₁, notación), lógica de predicados (`parsePredicate`,
@@ -391,7 +392,9 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
   `charPolynomial`, `eigenvalues`, `isEigenpair`, `transformMatrix`, `broadcastShapes`, `tensorOpResult` y `LINALG_PACK`), cálculo (`parseCalcExpr`, `calcToTex`,
   `derivative`, `derivativeTidy`, `gradient`, `hessian`, `checkDerivStep`, `derivationSteps`, `calcEquivalent`,
   `checkAntiderivative`, `definiteIntegral`, `riemannSum`, `criticalPoints`, `classifyHessian`, `runDescent`,
-  `exactDescentSteps` y `CALC_PACK`; los nombres que chocarían con otros motores llevan el prefijo `calc`),
+  `exactDescentSteps` y `CALC_PACK`; los nombres que chocarían con otros motores llevan el prefijo `calc`), combinatoria
+  (`factorial`, `variations`, `combinations`, `permutationsRep`, `countingFormula`, `countModel`, `acceptedFormulas`, `parseExamNumber`,
+  `parseCost`, `growthOf`, `bigOTex`, `algorithmGrowth`, `functionFacts`, `statementTrue`, `PNP_STATEMENTS` y `COMB_PACK`),
   Markov (matrices, evolución, sistemas, validación), racionales exactos y
   repaso espaciado SM-2 (`review`, barajas, `dueSummary`, esquemas). Con `"sideEffects"` declarado, lo que no se usa
   no entra en el bundle.
@@ -504,7 +507,7 @@ el uso completo.
 ## Contenido y licencias
 
 - Código: [MIT](LICENSE).
-- Contenido de [`content/`](content) (símbolos, notación, ejercicios y circuitos de Boole, dominios y ejercicios de predicados, ejemplos de álgebra lineal, funciones de cálculo, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
+- Contenido de [`content/`](content) (símbolos, notación, ejercicios y circuitos de Boole, dominios y ejercicios de predicados, ejemplos de álgebra lineal, funciones de cálculo, problemas de combinatoria y complejidad, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
 - Cada paquete de contenido declara materia, tema, nivel, idioma, autoría, licencia y fuente, y se valida con zod en los
   tests. Los pesos y las fechas se citan de las guías docentes como dato, sin copiar texto.
 - No se incluye material docente de la VIU (diapositivas, guías, enunciados ni soluciones).
