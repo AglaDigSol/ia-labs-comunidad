@@ -5,7 +5,8 @@
 // - Siempre: Pyodide nunca está en el chunk de entrada ni en lo que este importa de forma estática
 //   (dist/.vite/manifest.json). Se puede llegar a él solo por import() perezoso. Tampoco la lista de
 //   wheels extra (packages.ts): es del chunk perezoso de la pestaña, no de la entrada.
-// - Python apagado: ningún archivo de dist/ contiene Pyodide y no hay dist/pyodide/.
+// - Python apagado: ningún archivo de dist/ contiene Pyodide ni los ejercicios de Python, y no hay
+//   dist/pyodide/.
 // - Python encendido: hay un chunk de worker con el cargador de Pyodide y dist/pyodide/<versión>/
 //   tiene todos los archivos del manifiesto con su tamaño.
 // Al terminar borra dist/.vite/ (el manifiesto de Vite no se publica).
@@ -20,6 +21,8 @@ type Chunk = { file: string; isEntry?: boolean; imports?: string[] };
 
 /** Texto que solo aparece en el cargador de Pyodide o en su runtime. */
 export const PYODIDE_MARKERS = ["loadPyodide", "pyodide.asm"];
+/** Id de un tipo de ejercicio de Python (shared/exercises/python.ts): solo está si van esos ejercicios. */
+export const PYTHON_EXERCISE_MARKER = "py-que-imprime";
 
 export type CheckResult = { ok: true; notes: string[] } | { ok: false; errors: string[] };
 
@@ -64,8 +67,12 @@ export function checkDist(dist: string, enabled: boolean): CheckResult {
   const pyodideDir = join(dist, "pyodide");
   if (!enabled) {
     for (const f of withPyodide) errors.push(`Python apagado, pero assets/${f} contiene Pyodide`);
-    const python = scripts.filter((f) => /^PythonLabPage-|^py\.worker-/.test(f));
+    const python = scripts.filter((f) => /^PythonLabPage-|^py\.worker-|^PythonExercise-/.test(f));
     for (const f of python) errors.push(`Python apagado, pero se ha generado assets/${f}`);
+    // Los ejercicios de Python (enunciados y soluciones) tampoco van en el build sin Python.
+    for (const f of scripts) {
+      if (readFileSync(join(dist, "assets", f), "utf8").includes(PYTHON_EXERCISE_MARKER)) errors.push(`Python apagado, pero assets/${f} lleva los ejercicios de Python`);
+    }
     if (existsSync(pyodideDir)) errors.push("Python apagado, pero existe dist/pyodide/");
     notes.push("Python apagado: sin chunks ni archivos de Pyodide.");
   } else {

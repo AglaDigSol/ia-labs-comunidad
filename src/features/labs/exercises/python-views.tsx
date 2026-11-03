@@ -21,6 +21,6 @@ function PythonExerciseView(props: ExerciseViewProps<PyInstance>) {
 
 type View = ComponentType<ExerciseViewProps<unknown>>;
 
-export const PYTHON_EXERCISE_VIEWS: Readonly<Record<string, View>> = Object.fromEntries(
-  PYTHON_EXERCISES.map((t) => [t.id, PythonExerciseView as View]),
-);
+export const PYTHON_EXERCISE_VIEWS: Readonly<Record<string, View>> = PythonExercise
+  ? Object.fromEntries(PYTHON_EXERCISES.map((t) => [t.id, PythonExerciseView as View]))
+  : {};

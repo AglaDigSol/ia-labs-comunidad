@@ -13,12 +13,18 @@ import { EXERCISE_TOPICS, type ExerciseLevel, type ExerciseModules, type Exercis
 
 export type AnyExerciseType = ExerciseType<unknown>;
 
+// La app independiente construida sin Python (vite.config.ts define __LABS_PYTHON__ = false) deja
+// fuera los ejercicios de Python y su código; en una app anfitriona no está definido y van siempre
+// (solo se muestran con <LabsRoutes python />).
+declare const __LABS_PYTHON__: boolean | undefined;
+const WITH_PYTHON = typeof __LABS_PYTHON__ === "boolean" ? __LABS_PYTHON__ : true;
+
 export const EXERCISE_TYPES: readonly AnyExerciseType[] = [
   ...LOGIC_EXERCISES,
   ...PREDICATE_EXERCISES,
   ...SET_EXERCISES,
   ...BOOLE_EXERCISES,
-  ...PYTHON_EXERCISES,
+  ...(WITH_PYTHON ? PYTHON_EXERCISES : []),
 ];
 
 const BY_ID = new Map(EXERCISE_TYPES.map((t) => [t.id, t]));

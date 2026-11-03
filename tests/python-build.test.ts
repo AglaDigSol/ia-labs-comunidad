@@ -209,6 +209,13 @@ describe("check-python (tras el build)", () => {
     expect(!r.ok && r.errors.join("\n")).toMatch(/assets\/py\.worker-d\.js contiene Pyodide[\s\S]*existe dist\/pyodide/);
   });
 
+  it("apagado con los ejercicios de Python en un chunk: falla", () => {
+    const dist = fakeDist({ worker: false, pyodide: false });
+    writeFileSync(join(dist, "assets", "ExercisesPage-e.js"), 'const t = { id: "py-que-imprime" }');
+    const r = checkDist(dist, false);
+    expect(!r.ok && r.errors.join("\n")).toMatch(/assets\/ExercisesPage-e\.js lleva los ejercicios de Python/);
+  });
+
   it("encendido con worker y todos los archivos: OK", () => {
     const r = checkDist(fakeDist({ worker: true, pyodide: true }), true);
     expect(r).toMatchObject({ ok: true });
