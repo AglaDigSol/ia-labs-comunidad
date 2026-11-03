@@ -35,7 +35,7 @@ export function FormulaChoice({ id }: { id: FormulaId }) {
   const f = FORMULAS[id];
   return (
     <span className="flex flex-wrap items-baseline gap-x-3">
-      <span>{f.name}</span>
+      <span>{f.name}</span>{" "}
       <Tex tex={f.tex} label={f.spoken} />
     </span>
   );

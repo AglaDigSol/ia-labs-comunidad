@@ -43,7 +43,7 @@ export function OptionList({
           )}
         >
           <input type="radio" name={name} className="h-5 w-5 shrink-0" checked={value === o.key} onChange={() => onChange(o.key)} />
-          {letters ? <span className="font-semibold">{`${LETTERS[i]})`}</span> : null}
+          {letters ? <span className="font-semibold">{`${LETTERS[i]})`}</span> : null}{" "}
           <span className="min-w-0 overflow-x-auto">{o.content}</span>
         </label>
       ))}
@@ -79,7 +79,7 @@ export function CheckList({
               onChange(next);
             }}
           />
-          <span className="font-semibold">{`${LETTERS[i]})`}</span>
+          <span className="font-semibold">{`${LETTERS[i]})`}</span>{" "}
           <span className="min-w-0">{o.content}</span>
         </label>
       ))}
