@@ -190,7 +190,7 @@ export function BroadcastChecker() {
                 {r.dims.map((d, k) => (
                   <tr key={k}>
                     <th scope="row" className="border border-border px-2 py-1">
-                      {k - r.dims.length}
+                      {String(k - r.dims.length).replace("-", "−")}
                     </th>
                     <td className="border border-border px-2 py-1">{d.a ?? "—"}</td>
                     <td className="border border-border px-2 py-1">{d.b ?? "—"}</td>
@@ -202,7 +202,7 @@ export function BroadcastChecker() {
           </div>
           <ul className="flex flex-col gap-1 text-[14px]">
             {r.dims.map((d, k) => (
-              <li key={k}>{`Eje ${k - r.dims.length}: ${broadcastDimText(d)}`}</li>
+              <li key={k}>{`Eje ${String(k - r.dims.length).replace("-", "−")}: ${broadcastDimText(d)}`}</li>
             ))}
           </ul>
           <p className="font-semibold">{r.ok ? `a + b tiene forma ${shapeText(r.shape)}.` : "No se pueden emitir: NumPy da un error."}</p>
