@@ -11,7 +11,7 @@ import type { FileInfo } from "./files.ts";
 /** principal -> worker */
 export type WorkerIn =
   | { type: "init"; indexURL: string; interrupt?: SharedArrayBuffer }
-  | { type: "run"; id: number; code: string; stdin: string[] }
+  | { type: "run"; id: number; code: string; stdin: string[]; capture?: boolean; imports?: string }
   | { type: "fs-write"; path: string; data: ArrayBuffer }
   | { type: "fs-read"; id: number; path: string }
   | { type: "fs-delete"; path: string }
@@ -22,17 +22,25 @@ export type WorkerOut =
   | { type: "ready"; python: string; numpy?: string }
   | { type: "stdout" | "stderr"; text: string }
   | { type: "package"; name: string; phase: "start" | "done" }
-  | { type: "done"; id: number; figures: string[]; ms: number; files: FileInfo[] }
+  | { type: "done"; id: number; figures: string[]; ms: number; files: FileInfo[]; value?: string }
   | { type: "error"; id: number; message: string; line: number | null; ms: number; files?: FileInfo[] }
   | { type: "fs-data"; id: number; path: string; data: ArrayBuffer | null };
 
 export type PyEvent = Extract<WorkerOut, { type: "ready" | "stdout" | "stderr" | "package" }>;
 
 export type RunOutcome =
-  | { kind: "done"; figures: string[]; ms: number; files: FileInfo[] }
+  | { kind: "done"; figures: string[]; ms: number; files: FileInfo[]; value?: string }
   | { kind: "error"; message: string; line: number | null; ms: number; files: FileInfo[] | null }
   | { kind: "stopped"; restarted: boolean }
   | { kind: "timeout"; seconds: number };
+
+/**
+ * Opciones de una ejecución. `capture`: el valor de la última expresión, si es un str, vuelve en
+ * `value` (lo usan los ejercicios y el paso a paso, que devuelven su resultado como JSON). `imports`:
+ * el código del que se sacan los paquetes que cargar, cuando el que se ejecuta lo lleva dentro de
+ * una cadena (por defecto, el propio código).
+ */
+export type RunOptions = { capture?: boolean; imports?: string };
 
 export const STOP_ESCALATE_MS = 1500;
 /**
@@ -110,7 +118,7 @@ export class PyClient {
     return this.ready!;
   }
 
-  async run(code: string, timeoutMs: number, onEvent: (e: PyEvent) => void, stdin: string[] = []): Promise<RunOutcome> {
+  async run(code: string, timeoutMs: number, onEvent: (e: PyEvent) => void, stdin: string[] = [], opts: RunOptions = {}): Promise<RunOutcome> {
     if (!this.ready) throw new Error("not_loaded");
     if (this.pending) throw new Error("busy");
     await this.ready;
@@ -125,7 +133,10 @@ export class PyClient {
         this.finish(p, { kind: "timeout", seconds: Math.round(timeoutMs / 1000) });
       }, timeoutMs);
       this.pending = p;
-      worker.postMessage({ type: "run", id, code, stdin } satisfies WorkerIn);
+      const msg: WorkerIn = { type: "run", id, code, stdin };
+      if (opts.capture) msg.capture = true;
+      if (opts.imports !== undefined) msg.imports = opts.imports;
+      worker.postMessage(msg);
     });
   }
 
@@ -282,7 +293,9 @@ export class PyClient {
       case "done":
         if (p && p.id === msg.id) {
           const figures = msg.figures.filter((f) => typeof f === "string" && BASE64.test(f));
-          this.finish(p, { kind: "done", figures, ms: msg.ms, files: validFiles(msg.files) });
+          const done: RunOutcome = { kind: "done", figures, ms: msg.ms, files: validFiles(msg.files) };
+          if (typeof msg.value === "string") done.value = msg.value;
+          this.finish(p, done);
         }
         return;
       case "error":

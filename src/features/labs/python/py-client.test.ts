@@ -129,6 +129,27 @@ describe("PyClient: ejecución", () => {
     expect(await p).toEqual({ kind: "error", message: "MemoryError", line: null, ms: 5, files: null });
   });
 
+  it("capture e imports van con la ejecución y el valor final vuelve en value", async () => {
+    const { client, workers } = await loaded(false);
+    const p = client.run("__labs_check()", 30_000, () => {}, [], { capture: true, imports: "import json" });
+    await Promise.resolve();
+    await Promise.resolve();
+    const w = workers[0]!;
+    const run = w.posted.find((m) => m.type === "run");
+    expect(run).toEqual({ type: "run", id: w.lastRunId(), code: "__labs_check()", stdin: [], capture: true, imports: "import json" });
+    w.emit({ type: "done", id: w.lastRunId(), figures: [], ms: 3, files: [], value: '{"ok": true}' });
+    expect(await p).toEqual({ kind: "done", figures: [], ms: 3, files: [], value: '{"ok": true}' });
+  });
+
+  it("sin opciones, la ejecución no lleva capture ni imports", async () => {
+    const { client, workers } = await loaded(false);
+    void client.run("1", 30_000, () => {});
+    await Promise.resolve();
+    await Promise.resolve();
+    const run = workers[0]!.posted.find((m) => m.type === "run")!;
+    expect(Object.keys(run).sort()).toEqual(["code", "id", "stdin", "type"]);
+  });
+
   it("parseErrorLine toma el último marco <exec>", () => {
     expect(parseErrorLine('File "<exec>", line 3\n  File "<exec>", line 12, in f')).toBe(12);
     expect(parseErrorLine('File "/lib/python.zip/x.py", line 9')).toBeNull();

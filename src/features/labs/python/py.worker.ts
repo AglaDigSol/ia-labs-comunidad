@@ -151,7 +151,7 @@ function listFiles(p: PyodideInterface | null): FileInfo[] {
   return p ? listTree(treeFS(p), WORKDIR) : [];
 }
 
-async function run(id: number, code: string, stdin: string[]): Promise<void> {
+async function run(id: number, code: string, stdin: string[], capture: boolean, imports: string): Promise<void> {
   const t0 = performance.now();
   const p = py;
   if (!p) {
@@ -161,11 +161,11 @@ async function run(id: number, code: string, stdin: string[]): Promise<void> {
   stdinLines = [...stdin];
   let ns: PyDict | null = null;
   try {
-    const modules = importedModules(p, code);
+    const modules = importedModules(p, imports);
     const extras = modules.map(extraForImport).filter((w): w is ExtraWheel => w !== null);
     const lockPkgs = missingLockPackages(p, modules);
     for (const name of lockPkgs) post({ type: "package", name, phase: "start" });
-    if (lockPkgs.length > 0) await p.loadPackagesFromImports(code, quiet);
+    if (lockPkgs.length > 0) await p.loadPackagesFromImports(imports, quiet);
     for (const name of lockPkgs) post({ type: "package", name, phase: "done" });
     await installExtras(p, extras);
     if (!mplReady && "matplotlib" in p.loadedPackages) {
@@ -177,11 +177,16 @@ async function run(id: number, code: string, stdin: string[]): Promise<void> {
     globals.set("__name__", "__main__");
     (globals as unknown as { update(d: unknown): void }).update(magicsExports);
     p.FS.chdir(WORKDIR);
-    await p.runPythonAsync(code, { globals });
+    const result: unknown = await p.runPythonAsync(code, { globals });
+    // Con capture, una cadena final vuelve tal cual (los str llegan ya convertidos a JS).
+    const value = capture && typeof result === "string" ? result : undefined;
+    if (capture && result && typeof (result as { destroy?: unknown }).destroy === "function") (result as { destroy(): void }).destroy();
     const figsProxy = await p.runPythonAsync(FLUSH_FIGS);
     const figures = figsProxy.toJs() as string[];
     figsProxy.destroy();
-    post({ type: "done", id, figures, ms: Math.round(performance.now() - t0), files: listFiles(p) });
+    const done: WorkerOut = { type: "done", id, figures, ms: Math.round(performance.now() - t0), files: listFiles(p) };
+    if (value !== undefined) done.value = value;
+    post(done);
   } catch (e) {
     const message = cleanTraceback(errorMessage(e));
     try {
@@ -249,7 +254,7 @@ ctx.onmessage = (e: MessageEvent<WorkerIn>) => {
       case "init":
         return init(msg.indexURL, msg.interrupt);
       case "run":
-        return run(msg.id, msg.code, msg.stdin);
+        return run(msg.id, msg.code, msg.stdin, msg.capture === true, msg.imports ?? msg.code);
       case "fs-write":
         return writeFile(msg.path, msg.data);
       case "fs-read":
