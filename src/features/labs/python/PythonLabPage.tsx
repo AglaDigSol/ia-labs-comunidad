@@ -2,7 +2,8 @@
 // desde aquí: el PyClient (y su worker) se crea al montar esta ruta perezosa, y la descarga empieza
 // cuando se pulsa «Cargar Python» (o sola, si ya se cargó antes en este dispositivo).
 // Integridad: solo se ejecuta el código del editor al pulsar «Ejecutar código»; un ?borrador= se
-// abre en el editor y nunca se ejecuta solo.
+// abre en el editor y nunca se ejecuta solo. Lo que escribe el anfitrión (writeFiles en sus ranuras)
+// solo va a la carpeta de trabajo, en memoria: escribir un archivo nunca lo ejecuta.
 import {
   CircleCheck,
   CircleDashed,
@@ -17,7 +18,18 @@ import {
   Trash2,
   WifiOff,
 } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import {
+  Component,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { useSearchParams } from "react-router";
 import { Button } from "../../../components/ui/button.tsx";
 import { Chip } from "../../../components/ui/chip.tsx";
@@ -35,13 +47,23 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../../components/ui/tooltip.tsx";
 import { readLabItem, writeLabItem } from "../labs-storage.ts";
 import { consumeFreshDraft, getDraft, listDrafts, updateDraftCode, type Draft, type DraftOrigin } from "./drafts.ts";
-import { checkUpload, fmtBytes, mimeFor, UPLOAD_ACCEPT, type FileInfo } from "./files.ts";
+import { baseName, checkHostFile, checkUpload, fmtBytes, mimeFor, UPLOAD_ACCEPT, type FileInfo } from "./files.ts";
 import { transformMagics } from "./magics.ts";
 import { hintsFor } from "./messages.ts";
 import { closureBytes, EXTRA_WHEELS } from "./packages.ts";
 import { PYODIDE_CORE, PYODIDE_PACKAGES } from "./pyodide-manifest.ts";
 import { createPyWorker, PyClient, type PyEvent, type RunOutcome } from "./py-client.ts";
-import { isolationAvailable, pyodideBaseUrl } from "./python-config.ts";
+import {
+  fileLimits,
+  isolationAvailable,
+  pyodideBaseUrl,
+  pythonSlots,
+  type FileLimits,
+  type PythonFilesApi,
+  type PythonLabConfig,
+  type SkippedFile,
+  type WriteFilesResult,
+} from "./python-config.ts";
 import { templateById, TEMPLATES, type TemplateId } from "./templates.ts";
 
 const LIMITS = [10, 30, 60, 120] as const;
@@ -70,6 +92,37 @@ const AFTER_NUMPY = new Set(["numpy"]);
 /** Bytes que baja el primer import de un paquete (sin numpy, que ya está); 0 si no se sabe. */
 const packageBytes = (name: string) =>
   closureBytes(PYODIDE_PACKAGES, [name], AFTER_NUMPY) || (EXTRA_WHEELS.find((w) => w.name === name)?.size ?? 0);
+
+/** Ranuras del anfitrión; si se pasan, mandan sobre las de configureLabs({ python }). */
+export type PythonLabPageProps = Pick<PythonLabConfig, "renderDraftActions" | "renderFilesActions">;
+
+const byPath = (a: FileInfo, b: FileInfo) => a.name.localeCompare(b.name, "es");
+
+/** Los bytes que pasa el anfitrión, copiados (así puede reutilizar o transferir los suyos). */
+function copyBytes(data: unknown): ArrayBuffer | null {
+  if (Object.prototype.toString.call(data) === "[object ArrayBuffer]") return (data as ArrayBuffer).slice(0);
+  if (ArrayBuffer.isView(data)) return new Uint8Array(data.buffer, data.byteOffset, data.byteLength).slice().buffer;
+  return null;
+}
+
+/** Un fallo en la ranura del anfitrión no tumba la pestaña: la ranura desaparece. */
+class SlotBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+/** Llama a la ranura dentro de su propio componente, para que SlotBoundary recoja sus errores. */
+function HostSlot({ render }: { render: () => ReactNode }) {
+  return <>{render()}</>;
+}
+
+/** Un límite para el texto de «Archivos»: «20 MB» si es un número redondo de MB. */
+const fmtLimit = (n: number) => (n % (1024 * 1024) === 0 ? `${n / (1024 * 1024)} MB` : fmtBytes(n));
 
 export const fmtMB = (bytes: number) => `${(bytes / 1_000_000).toFixed(1).replace(".", ",")} MB`;
 
@@ -174,7 +227,7 @@ function saveBlob(blob: Blob, name: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-export function PythonLabPage() {
+export function PythonLabPage(props: PythonLabPageProps = {}) {
   const [prefs] = useState(readPrefs);
   const prefsRef = useRef<Prefs>(prefs);
   const [phase, setPhase] = useState<Phase>(() => (prefs.loaded ? { k: "preparing" } : { k: "idle" }));
@@ -192,7 +245,8 @@ export function PythonLabPage() {
   const [limit, setLimit] = useState(prefs.limit);
   const [stdin, setStdin] = useState(prefs.stdin);
   const [out, setOut] = useState<OutItem[]>([]);
-  const [files, setFiles] = useState<FileInfo[]>([]);
+  const [files, setFilesState] = useState<FileInfo[]>([]);
+  const filesRef = useRef<FileInfo[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [lastMs, setLastMs] = useState<number | null>(null);
   const [runningSince, setRunningSince] = useState<number | null>(null);
@@ -213,6 +267,50 @@ export function PythonLabPage() {
   const escRef = useRef(false);
   const halfRef = useRef(false);
   const outputRef = useRef("");
+
+  /** La lista «Archivos», ordenada; también para files.list() de las ranuras. */
+  const setFiles = useCallback((list: FileInfo[]) => {
+    const sorted = [...list].sort(byPath);
+    filesRef.current = sorted;
+    setFilesState(sorted);
+  }, []);
+
+  // API de archivos para las ranuras del anfitrión. Estable mientras la pestaña está montada.
+  const filesApi = useMemo<PythonFilesApi>(() => {
+    const limits: FileLimits = fileLimits();
+    return {
+      limits,
+      list: () => [...filesRef.current],
+      async writeFiles(input) {
+        const client = clientRef.current;
+        const written: FileInfo[] = [];
+        const skipped: SkippedFile[] = [];
+        let list = filesRef.current;
+        for (const f of Array.isArray(input) ? input : []) {
+          const path = typeof f?.path === "string" ? f.path : String(f?.path);
+          const data = copyBytes(f?.data);
+          if (!client || !data) {
+            skipped.push({ path, reason: "name", message: `«${path.slice(0, 80)}» no tiene contenido que escribir.` });
+            continue;
+          }
+          const check = checkHostFile(client.uploadedFiles(), { path: f.path, size: data.byteLength }, limits);
+          if (!check.ok) {
+            skipped.push({ path, reason: check.reason, message: check.message });
+            continue;
+          }
+          client.upload(check.name, data);
+          written.push({ name: check.name, size: data.byteLength });
+          list = [...list.filter((x) => x.name !== check.name), { name: check.name, size: data.byteLength }];
+        }
+        if (aliveRef.current && written.length > 0) setFiles(list);
+        return { written, skipped } satisfies WriteFilesResult;
+      },
+    };
+  }, [setFiles]);
+
+  const configured = pythonSlots();
+  const renderDraftActions = props.renderDraftActions ?? configured.renderDraftActions;
+  const renderFilesActions = props.renderFilesActions ?? configured.renderFilesActions;
 
   const template = templateById(templateId)!;
   const draft = draftId ? (drafts.find((d) => d.id === draftId) ?? null) : null;
@@ -459,7 +557,7 @@ export function PythonLabPage() {
     e.target.value = "";
     if (!client || picked.length === 0) return;
     setFileError(null);
-    let list = files;
+    let list = filesRef.current;
     const errors: string[] = [];
     for (const f of picked) {
       const check = checkUpload(client.uploadedFiles(), f);
@@ -468,9 +566,7 @@ export function PythonLabPage() {
         continue;
       }
       client.upload(check.name, await f.arrayBuffer());
-      list = [...list.filter((x) => x.name !== check.name), { name: check.name, size: f.size }].sort((a, b) =>
-        a.name.localeCompare(b.name, "es"),
-      );
+      list = [...list.filter((x) => x.name !== check.name), { name: check.name, size: f.size }];
     }
     setFiles(list);
     if (errors.length > 0) setFileError(errors.join(" "));
@@ -482,7 +578,13 @@ export function PythonLabPage() {
       setFileError(`«${name}» ya no está en la carpeta de trabajo.`);
       return;
     }
-    saveBlob(new Blob([data], { type: mimeFor(name) }), name);
+    saveBlob(new Blob([data], { type: mimeFor(name) }), baseName(name));
+  }
+
+  function deleteFile(name: string) {
+    clientRef.current?.removeFile(name);
+    setFiles(filesRef.current.filter((f) => f.name !== name));
+    setFileError(null);
   }
 
   function clearFiles() {
@@ -687,10 +789,19 @@ export function PythonLabPage() {
 
         <div className="grid items-start gap-6 lg:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-2 lg:col-span-7">
-            {draft?.origin.kind === "cell" && (
-              <p className="rounded-md border border-border bg-sunken px-3 py-2 text-[14px] font-semibold text-muted">
-                {copyDraftBand(draft.origin.notebookTitle, draft.origin.cell)}
-              </p>
+            {draft && (draft.origin.kind === "cell" || renderDraftActions) && (
+              <div className="flex flex-col gap-2 rounded-md border border-border bg-sunken px-3 py-2">
+                {draft.origin.kind === "cell" && (
+                  <p className="text-[14px] font-semibold text-muted">{copyDraftBand(draft.origin.notebookTitle, draft.origin.cell)}</p>
+                )}
+                {renderDraftActions && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <SlotBoundary key={draft.id}>
+                      <HostSlot render={() => renderDraftActions({ draft, files: filesApi })} />
+                    </SlotBoundary>
+                  </div>
+                )}
+              </div>
             )}
             <div className="flex overflow-hidden rounded-lg border border-border bg-sunken focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">
               <div
@@ -746,8 +857,17 @@ export function PythonLabPage() {
             <FilesPanel
               files={files}
               error={fileError}
+              limits={filesApi.limits}
+              actions={
+                renderFilesActions ? (
+                  <SlotBoundary>
+                    <HostSlot render={() => renderFilesActions({ draft, files: filesApi })} />
+                  </SlotBoundary>
+                ) : null
+              }
               onPick={() => fileInputRef.current?.click()}
               onDownload={(n) => void downloadFile(n)}
+              onDelete={deleteFile}
               onClear={clearFiles}
             />
             <input
@@ -816,14 +936,20 @@ export function PythonLabPage() {
 function FilesPanel({
   files,
   error,
+  limits,
+  actions,
   onPick,
   onDownload,
+  onDelete,
   onClear,
 }: {
   files: FileInfo[];
   error: string | null;
+  limits: FileLimits;
+  actions: ReactNode;
   onPick: () => void;
   onDownload: (name: string) => void;
+  onDelete: (name: string) => void;
   onClear: () => void;
 }) {
   return (
@@ -833,6 +959,7 @@ function FilesPanel({
           Archivos
         </h2>
         <div className="flex flex-wrap gap-2">
+          {actions}
           <Button variant="secondary" onClick={onPick} className="touch-manipulation">
             <FileUp size={16} strokeWidth={1.75} aria-hidden="true" />
             Subir archivo
@@ -844,8 +971,9 @@ function FilesPanel({
         </div>
       </div>
       <p className="text-[14px] text-muted">
-        CSV, TXT, JSON o imágenes, hasta 20 MB cada uno y 50 MB en total. Se abren con su nombre, por ejemplo
-        open(&quot;datos.txt&quot;) o pd.read_csv(&quot;datos.csv&quot;). No salen del navegador.
+        CSV, TXT, JSON o imágenes, hasta {fmtLimit(limits.maxFileBytes)} cada uno y {fmtLimit(limits.maxTotalBytes)} en total.
+        Se abren con su nombre (o su ruta, si están en una carpeta), por ejemplo open(&quot;datos.txt&quot;) o
+        pd.read_csv(&quot;datos.csv&quot;). No salen del navegador.
       </p>
       {error && (
         <p role="alert" className="flex items-start gap-2 text-[14px] text-crit">
@@ -860,10 +988,16 @@ function FilesPanel({
               <span className="mono min-w-0 truncate text-[14px]">
                 {f.name} <span className="text-muted">· {fmtBytes(f.size)}</span>
               </span>
-              <Button variant="ghost" onClick={() => onDownload(f.name)} aria-label={`Descargar ${f.name}`}>
-                <Download size={16} strokeWidth={1.75} aria-hidden="true" />
-                Descargar
-              </Button>
+              <div className="flex shrink-0 gap-1">
+                <Button variant="ghost" onClick={() => onDownload(f.name)} aria-label={`Descargar ${f.name}`}>
+                  <Download size={16} strokeWidth={1.75} aria-hidden="true" />
+                  Descargar
+                </Button>
+                <Button variant="ghost" onClick={() => onDelete(f.name)} aria-label={`Borrar ${f.name}`}>
+                  <Trash2 size={16} strokeWidth={1.75} aria-hidden="true" />
+                  Borrar
+                </Button>
+              </div>
             </li>
           ))}
         </ul>

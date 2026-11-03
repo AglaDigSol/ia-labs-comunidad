@@ -19,6 +19,7 @@ const h = vi.hoisted(() => ({
     upload: ReturnType<typeof vi.fn>;
     readFile: ReturnType<typeof vi.fn>;
     clearFiles: ReturnType<typeof vi.fn>;
+    removeFile: ReturnType<typeof vi.fn>;
     uploads: Map<string, ArrayBuffer>;
     resolveLoad: () => void;
     rejectLoad: (e: Error) => void;
@@ -53,6 +54,7 @@ vi.mock("./py-client.ts", async (orig) => {
     upload = vi.fn((name: string, data: ArrayBuffer) => this.uploads.set(name, data));
     readFile = vi.fn(async (name: string) => this.uploads.get(name) ?? null);
     clearFiles = vi.fn(() => this.uploads.clear());
+    removeFile = vi.fn((name: string) => this.uploads.delete(name));
     uploadedFiles = () => [...this.uploads].map(([name, d]) => ({ name, size: d.byteLength }));
     uploadsSnapshot = () => [...this.uploads];
     constructor(opts: { indexURL: string; isolated: boolean }) {
@@ -500,5 +502,205 @@ describe("PythonLabPage: borradores de «Abrir en Python»", () => {
     await flush();
     expect(editor().value).toBe(TEMPLATES.find((t) => t.id === "minmax")!.code);
     expect(screen.queryByText(/borrador nuevo/)).toBeNull();
+  });
+});
+
+describe("PythonLabPage: archivos del anfitrión (ranuras y writeFiles)", () => {
+  type Ctx = import("./python-config.ts").DraftActionsContext;
+  const csv = (text: string) => new TextEncoder().encode(text).buffer;
+  /** Ruta y tamaño de lo que recibió el cliente (los bytes son copias). */
+  const uploaded = () => client().upload.mock.calls.map((c) => [c[0], (c[1] as ArrayBuffer).byteLength]);
+  const repoDraft = () =>
+    createDraft({
+      origin: { kind: "cell", notebookTitle: "Tensores", cell: 3, source: { kind: "repo", path: "notebooks/tema1.ipynb" } },
+      code: "import pandas as pd\nprint(pd.read_csv('res/data.csv').shape)",
+    });
+
+  /** Ranura de ejemplo: un botón que escribe dos archivos y enseña lo que devolvió writeFiles. */
+  function slot(seen: Ctx[], results: unknown[]) {
+    return (ctx: Ctx) => {
+      seen.push(ctx);
+      return (
+        <button
+          type="button"
+          onClick={() =>
+            void ctx.files
+              .writeFiles([
+                { path: "res/data.csv", data: csv("a,b\n1,2\n") },
+                { path: "img/oop/x.png", data: new Uint8Array([137, 80, 78, 71]) },
+                { path: "../fuera.txt", data: csv("no") },
+              ])
+              .then((r) => results.push(r))
+          }
+        >
+          Cargar los archivos del repositorio (res/, img/)
+        </button>
+      );
+    };
+  }
+
+  it("la ranura del borrador recibe el borrador (con origin.source) y writeFiles escribe con carpetas", async () => {
+    const seen: Ctx[] = [];
+    const results: unknown[] = [];
+    configureLabs({ python: { renderDraftActions: slot(seen, results) } });
+    const id = repoDraft();
+    await renderReady(`/laboratorios/python?borrador=${id}`);
+    expect(seen.at(-1)!.draft).toMatchObject({ id, origin: { source: { kind: "repo", path: "notebooks/tema1.ipynb" } } });
+    expect(seen.at(-1)!.files.limits).toEqual({ maxFileBytes: 20 * 1024 * 1024, maxTotalBytes: 50 * 1024 * 1024, maxFiles: 30 });
+    fireEvent.click(screen.getByRole("button", { name: "Cargar los archivos del repositorio (res/, img/)" }));
+    await flush();
+    expect(results[0]).toEqual({
+      written: [
+        { name: "res/data.csv", size: 8 },
+        { name: "img/oop/x.png", size: 4 },
+      ],
+      skipped: [{ path: "../fuera.txt", reason: "name", message: "«../fuera.txt» no es una ruta válida dentro de la carpeta de trabajo." }],
+    });
+    expect(uploaded()).toEqual([
+      ["res/data.csv", 8],
+      ["img/oop/x.png", 4],
+    ]);
+    const list = screen.getByRole("list", { name: "Archivos de la carpeta de trabajo" });
+    expect(within(list).getByText("res/data.csv")).toBeTruthy();
+    expect(within(list).getByText("img/oop/x.png")).toBeTruthy();
+    expect(seen.at(-1)!.files.list().map((f) => f.name)).toEqual(["img/oop/x.png", "res/data.csv"]);
+    // Nada se ejecuta por escribir archivos.
+    expect(client().run).not.toHaveBeenCalled();
+  });
+
+  it("sin borrador no hay ranura del borrador; la de «Archivos» sale siempre", async () => {
+    const draftSlot = vi.fn(() => <span>ranura del borrador</span>);
+    const filesSlot = vi.fn((ctx: import("./python-config.ts").FilesActionsContext) => <span>{ctx.draft ? "con borrador" : "sin borrador"}</span>);
+    configureLabs({ python: { renderDraftActions: draftSlot, renderFilesActions: filesSlot } });
+    await renderReady();
+    expect(draftSlot).not.toHaveBeenCalled();
+    expect(screen.queryByText("ranura del borrador")).toBeNull();
+    expect(screen.getByText("sin borrador")).toBeTruthy();
+  });
+
+  it("las props de PythonLabPage mandan sobre configureLabs; un borrador de archivo también tiene banda", async () => {
+    configureLabs({ python: { renderDraftActions: () => <span>de la configuración</span> } });
+    const id = createDraft({ origin: { kind: "file", fileName: "utils.py" }, code: "x = 1" });
+    render(
+      <MemoryRouter initialEntries={[`/laboratorios/python?borrador=${id}`]}>
+        <PythonLabPage renderDraftActions={({ draft }) => <span>de la prop: {draft.label}</span>} />
+      </MemoryRouter>,
+    );
+    await flush();
+    expect(screen.getByText("de la prop: utils.py")).toBeTruthy();
+    expect(screen.queryByText("de la configuración")).toBeNull();
+  });
+
+  it("si la ranura falla, la pestaña sigue", async () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    configureLabs({
+      python: {
+        renderDraftActions: () => {
+          throw new Error("ranura rota");
+        },
+      },
+    });
+    await renderReady(`/laboratorios/python?borrador=${repoDraft()}`);
+    expect(editor().value).toContain("res/data.csv");
+    expect(screen.getByText("Python listo")).toBeTruthy();
+    err.mockRestore();
+  });
+
+  it("límites del anfitrión: total configurable; lo que no cabe se descarta con su motivo", async () => {
+    const seen: Ctx[] = [];
+    configureLabs({ python: { maxTotalBytes: 12, maxFiles: 2, renderDraftActions: (ctx) => (seen.push(ctx), null) } });
+    await renderReady(`/laboratorios/python?borrador=${repoDraft()}`);
+    const files = seen.at(-1)!.files;
+    expect(files.limits).toMatchObject({ maxTotalBytes: 12, maxFiles: 2 });
+    let r!: Awaited<ReturnType<typeof files.writeFiles>>;
+    await act(async () => {
+      r = await files.writeFiles([
+        { path: "a.txt", data: csv("12345") },
+        { path: "b.txt", data: csv("1234567890") },
+        { path: "c.txt", data: csv("1") },
+        { path: "d.txt", data: csv("1") },
+        { path: "e.txt", data: "no es binario" as unknown as ArrayBuffer },
+      ]);
+    });
+    expect(r.written.map((f) => f.name)).toEqual(["a.txt", "c.txt"]);
+    expect(r.skipped.map((s) => [s.path, s.reason])).toEqual([
+      ["b.txt", "total"],
+      ["d.txt", "count"],
+      ["e.txt", "name"],
+    ]);
+  });
+
+  it("descarga con el nombre del archivo, borra uno, sobrevive al reinicio y «Vaciar archivos» los borra", async () => {
+    const seen: Ctx[] = [];
+    configureLabs({ python: { renderDraftActions: (ctx) => (seen.push(ctx), null) } });
+    await renderReady(`/laboratorios/python?borrador=${repoDraft()}`);
+    await act(async () => {
+      await seen.at(-1)!.files.writeFiles([
+        { path: "res/data.csv", data: csv("a\n1\n") },
+        { path: "res/one_line.txt", data: csv("hola") },
+      ]);
+    });
+    const created: HTMLAnchorElement[] = [];
+    const realCreate = document.createElement.bind(document);
+    const spy = vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
+      const el = realCreate(tag);
+      if (tag === "a") {
+        created.push(el as HTMLAnchorElement);
+        (el as HTMLAnchorElement).click = () => {};
+      }
+      return el;
+    });
+    vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: vi.fn(() => "blob:x"), revokeObjectURL: vi.fn() }));
+    fireEvent.click(screen.getByRole("button", { name: "Descargar res/data.csv" }));
+    await flush();
+    expect(client().readFile).toHaveBeenCalledWith("res/data.csv");
+    expect(created.at(-1)!.download).toBe("data.csv");
+    spy.mockRestore();
+    fireEvent.click(screen.getByRole("button", { name: "Borrar res/one_line.txt" }));
+    expect(client().removeFile).toHaveBeenCalledWith("res/one_line.txt");
+    expect(screen.queryByText("res/one_line.txt")).toBeNull();
+    // Tiempo superado: el worker se reinicia y la lista vuelve a los archivos guardados.
+    const run = await startRun();
+    await act(async () => run.resolve({ kind: "timeout", seconds: 30 }));
+    expect(within(screen.getByRole("list", { name: "Archivos de la carpeta de trabajo" })).getByText("res/data.csv")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Vaciar archivos" }));
+    expect(client().clearFiles).toHaveBeenCalled();
+    expect(seen.at(-1)!.files.list()).toEqual([]);
+  });
+
+  it("«Reintentar carga» pasa los archivos del anfitrión al cliente nuevo", async () => {
+    const seen: Ctx[] = [];
+    configureLabs({ python: { renderDraftActions: (ctx) => (seen.push(ctx), null) } });
+    stubFetch({ fail: true });
+    renderAt(`/laboratorios/python?borrador=${repoDraft()}`);
+    await flush();
+    await act(async () => {
+      await seen.at(-1)!.files.writeFiles([{ path: "res/data.csv", data: csv("a\n1\n") }]);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cargar Python" }));
+    await flush();
+    fireEvent.click(await screen.findByRole("button", { name: "Reintentar carga" }));
+    await flush();
+    expect(h.clients).toHaveLength(2);
+    expect(uploaded()).toEqual([["res/data.csv", 4]]);
+  });
+
+  it("no guarda los archivos en ningún almacenamiento del navegador", async () => {
+    const idb = { open: vi.fn() };
+    const cacheStorage = { open: vi.fn(), put: vi.fn() };
+    vi.stubGlobal("indexedDB", idb);
+    vi.stubGlobal("caches", cacheStorage);
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    const seen: Ctx[] = [];
+    configureLabs({ python: { renderDraftActions: (ctx) => (seen.push(ctx), null) } });
+    await renderReady(`/laboratorios/python?borrador=${repoDraft()}`);
+    await act(async () => {
+      await seen.at(-1)!.files.writeFiles([{ path: "res/data.csv", data: csv("SECRETO,1\n") }]);
+    });
+    expect(idb.open).not.toHaveBeenCalled();
+    expect(cacheStorage.open).not.toHaveBeenCalled();
+    for (const [, value] of setItem.mock.calls) expect(String(value)).not.toContain("SECRETO");
+    for (let i = 0; i < localStorage.length; i++) expect(localStorage.getItem(localStorage.key(i)!)).not.toContain("SECRETO");
+    setItem.mockRestore();
   });
 });
