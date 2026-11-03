@@ -7,6 +7,16 @@ import {
   BOOLE_PACK,
   BooleLabPage,
   CalculusLabPage,
+  ProbabilityLabPage,
+  PROB_PACK,
+  PROB_BINOMIAL,
+  probAtLeast,
+  binomialSpec,
+  checkProbAnswer,
+  solveTree,
+  readProb,
+  type DistSpec,
+  type ProbTreeInstance,
   CALC_PACK,
   CALC_DESCENT,
   calcToPlain,
@@ -178,6 +188,7 @@ export function HostApp() {
         <Route path="/combinatoria" element={<CombinatoricsLabPage />} />
         <Route path="/algebra-lineal" element={<LinearAlgebraLabPage />} />
         <Route path="/calculo" element={<CalculusLabPage />} />
+        <Route path="/probabilidad" element={<ProbabilityLabPage />} />
         <Route path="/ejercicios" element={<ExercisesPage />} />
         <Route path="/ejercicios-python" element={<ExercisesPage python />} />
       </Routes>
@@ -248,3 +259,9 @@ export const combCount: bigint = countModel(combModel);
 export const combFormula: FormulaId = "CR";
 export const examNumberOk: boolean = parseExamNumber("12870").ok;
 export const complexityInstance: CombComplexityInstance = COMB_COMPLEXITY.generate(1, "medio");
+const probTree = PROB_PACK.trees[0]!;
+export const probTotal = solveTree({ priors: probTree.priors.map(readProb), likelihoods: probTree.likelihoods.map(readProb) }).total;
+export const probOk: boolean = checkProbAnswer("0,06", probTotal);
+const binomial: DistSpec = binomialSpec(PROB_BINOMIAL.generate(1, "medio"));
+export const atLeast = probAtLeast(binomial, 2);
+export const treeAsk = (i: ProbTreeInstance) => i.ask;

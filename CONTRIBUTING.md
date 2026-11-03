@@ -105,6 +105,18 @@ publicó (los calendarios suscritos lo actualizarán).
    n, k ≤ n sin repetición), que cada planteamiento de funciones tiene afirmaciones verdaderas y falsas y que cada
    fragmento usa variables de sus bucles.
 
+### Un ejemplo de probabilidad
+
+1. Abre `content/probabilidad/practica.ts` y añade un objeto a la lista que toque: `trees` (partición de 2 o 3 ramas
+   con sus P(Aᵢ), que suman 1, y P(C | Aᵢ)), `contingency` (las cuatro casillas de la tabla 2×2 y las que se dan),
+   `pairs` (P(A), P(B) y P(A ∩ B), P(A ∪ B) o P(A | B)), `stories` (una historia con su distribución), `games` (dado
+   o monedas), `penalties` o `products`. Las probabilidades van como texto: `"3/10"` o `"0,25"`.
+2. Invéntalo tú: nada de problemas copiados de diapositivas, apuntes, actividades ni exámenes (tampoco con los números
+   cambiados de uno real reconocible).
+3. Ejecuta `npx vitest run tests/content-probabilidad.test.ts`: comprueba que cada probabilidad está entre 0 y 1, que
+   las particiones suman 1, que la tabla se puede completar con las casillas dadas y que los pares de sucesos son
+   posibles.
+
 ### Una plantilla nueva de laboratorio o un módulo
 
 Los módulos se registran en `src/config.ts` (id, ruta, navegación, componente perezoso y contenido que usa). Copia la

@@ -21,6 +21,7 @@ export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
 export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
 export { LinearAlgebraLabPage } from "../features/labs/linalg/LinearAlgebraLabPage.tsx";
 export { CalculusLabPage } from "../features/labs/calculus/CalculusLabPage.tsx";
+export { ProbabilityLabPage } from "../features/labs/probability/ProbabilityLabPage.tsx";
 // Pestaña Python (opcional): mejor con <LabsRoutes python />; PythonLabPage sirve para montarla
 // en otra ruta. Pyodide (worker y runtime) solo se descarga al abrirla y pulsar «Cargar Python».
 // Las ranuras (renderDraftActions, renderFilesActions) dan al anfitrión writeFiles para escribir
@@ -109,6 +110,7 @@ export * from "../../shared/exercises/discrete.ts";
 export * from "../../shared/exercises/boole.ts";
 export * from "../../shared/exercises/linalg.ts";
 export * from "../../shared/exercises/calculus.ts";
+export * from "../../shared/exercises/probability.ts";
 export * from "../../shared/exercises/registry.ts";
 // Ejercicios de Python (solo se muestran con <LabsRoutes python /> o <ExercisesPage python />).
 export {
@@ -248,6 +250,17 @@ export { exprToPoly, polyDerivative, polyEval2, polyToExpr, type Poly2 } from ".
 export { contourLevels, contourSegments, gradientField, sampleCurve, sampleGrid } from "../../shared/calculus/plot.ts";
 export * from "../../shared/calculus/schema.ts";
 
+// Probabilidad (las fracciones exactas son las de rational.ts).
+export * from "../../shared/probability/answer.ts";
+export * from "../../shared/probability/events.ts";
+export * from "../../shared/probability/conditional.ts";
+export * from "../../shared/probability/distributions.ts";
+export * from "../../shared/probability/variable.ts";
+export * from "../../shared/probability/continuous.ts";
+export * from "../../shared/probability/simulation.ts";
+export * from "../../shared/probability/format.ts";
+export * from "../../shared/probability/schema.ts";
+
 export * from "../../shared/predicates/ast.ts";
 export * from "../../shared/predicates/parser.ts";
 export * from "../../shared/predicates/evaluate.ts";
@@ -273,3 +286,4 @@ export { SETS_PACK } from "../../content/conjuntos/practica.ts";
 export { COMB_PACK } from "../../content/combinatoria/practica.ts";
 export { LINALG_PACK } from "../../content/algebra-lineal/practica.ts";
 export { CALC_PACK } from "../../content/calculo/practica.ts";
+export { PROB_PACK } from "../../content/probabilidad/practica.ts";
