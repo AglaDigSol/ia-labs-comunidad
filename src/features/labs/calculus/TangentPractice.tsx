@@ -92,10 +92,10 @@ export function TangentPractice({ f, x0, range, onSolved }: { f: Expr; x0: numbe
         <LegendItem label="(x₀, f(x₀))" color="var(--accent)" shape="circle" />
       </ul>
       <div className="grid gap-3 sm:grid-cols-2">
-        <NumberField label="f(x₀) =" value={value} invalid={checked && !valueOk} onChange={(v) => (setValue(v), touch())} placeholder="3" />
-        <NumberField label="Pendiente f′(x₀) =" value={slope} invalid={checked && !slopeOk} onChange={(v) => (setSlope(v), touch())} placeholder="−1/2" />
+        <NumberField label="f(x₀) =" value={value} invalid={checked && !valueOk} onChange={(v) => (setValue(v), touch())} />
+        <NumberField label="Pendiente f′(x₀) =" value={slope} invalid={checked && !slopeOk} onChange={(v) => (setSlope(v), touch())} />
       </div>
-      <FunctionField id={`${id}-line`} label="Recta tangente: y =" value={line} onChange={(v) => (setLine(v), touch())} invalid={checked && !lineOk} placeholder="4x − 9" />
+      <FunctionField id={`${id}-line`} label="Recta tangente: y =" value={line} onChange={(v) => (setLine(v), touch())} invalid={checked && !lineOk} />
       <p className="text-[14px] text-muted">Los números, exactos (3/4, e, ln 2) o con tres decimales.</p>
       <div className="flex flex-wrap gap-2">
         <Button

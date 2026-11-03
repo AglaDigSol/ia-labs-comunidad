@@ -7,7 +7,7 @@ import { Check, ClipboardCopy, Lightbulb, RotateCcw, Undo2 } from "lucide-react"
 import { useId, useMemo, useState } from "react";
 import { derivativeRaw, RULE_BY_ID, RULES, type RuleId } from "../../../../shared/calculus/derive.ts";
 import { equivalent } from "../../../../shared/calculus/equivalence.ts";
-import { hasD, toPlain, toSpoken, toTex, type Expr } from "../../../../shared/calculus/expr.ts";
+import { toPlain, toSpoken, toTex, type Expr } from "../../../../shared/calculus/expr.ts";
 import { checkDerivStep, derivationSteps, nextRuleHints, SIMPLIFY_LABEL, stepRuleName, type StepRule } from "../../../../shared/calculus/steps.ts";
 import { SolutionGate } from "../../../components/practice/SolutionGate.tsx";
 import { Button } from "../../../components/ui/button.tsx";
@@ -109,7 +109,6 @@ function ResultOnly({ f, onSolved }: { f: Expr; onSolved?: () => void }) {
           setChecked(false);
         }}
         invalid={verdict === "different"}
-        placeholder="2x·cos(x) + 3"
       />
       <HowToWrite />
       <div className="flex flex-wrap gap-2">
@@ -158,7 +157,6 @@ function StepByStep({ f, onSolved }: { f: Expr; onSolved?: () => void }) {
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [hint, setHint] = useState<string[] | null>(null);
   const current = lines[lines.length - 1]!.expr;
-  const finished = !hasD(current);
 
   const addStep = () => {
     setHint(null);
@@ -266,7 +264,6 @@ function StepByStep({ f, onSolved }: { f: Expr; onSolved?: () => void }) {
             setNext(v);
             setFeedback(null);
           }}
-          placeholder={finished ? "x·(2·sen(x) + x·cos(x))" : "(x^2)′·sen(x) + x^2·(sen(x))′"}
         />
         <label htmlFor={`${id}-rule`} className="text-[14px] font-semibold">
           Regla que aplicas

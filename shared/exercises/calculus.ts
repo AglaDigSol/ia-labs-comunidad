@@ -285,7 +285,7 @@ export const CALC_DEFINITE: ExerciseType<CalcIntegralInstance> = {
   id: "calculo-integral",
   topic: "calculo",
   title: "Integral definida",
-  description: "Calcula ∫ₐᵇ f(x) dx con la regla de Barrow; escribe el número (con tres decimales) o el valor exacto (16/3, e − 1, ln 2).",
+  description: "Calcula ∫ₐᵇ f(x) dx con la regla de Barrow; escribe el número (con tres decimales) o el valor exacto (como 7/2, 2 + ln 3 o π/6).",
   levels: ALL_LEVELS,
   generate(seed, level) {
     return generateUntil(

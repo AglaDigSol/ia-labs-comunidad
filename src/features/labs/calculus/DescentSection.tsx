@@ -22,7 +22,6 @@ import { Tex } from "../../../lib/tex.tsx";
 import { selectClass } from "../boole/AxiomPractice.tsx";
 import { ContourPlot, FunctionPlot, LegendItem } from "./charts.tsx";
 import { FnTex, FunctionField, Hints, levelLabel, LEVELS, NumberField, PracticeBox, readFunction, readNumber, Status, Verdict } from "./common.tsx";
-import { numTex } from "./TangentPractice.tsx";
 
 const ALPHAS = [0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.08, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9, 1, 1.05, 1.1];
 const fmt = (v: number) => decimalText(v, 4);
@@ -306,7 +305,7 @@ export function DescentStepPractice({ instance, onSolved }: { instance: CalcDesc
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
         <FnTex e={f} lhs={two ? "f(x, y)" : "f(x)"} className="text-[18px]" />
         <Tex
-          tex={`${two ? "(x_0, y_0)" : "x_0"} = ${two ? `(${instance.start.join(", ")})` : instance.start[0]},\\quad \\alpha = ${numTex(instance.alpha).replace(".", "{,}")}`}
+          tex={`${two ? "(x_0, y_0)" : "x_0"} = ${two ? `(${instance.start.join(", ")})` : instance.start[0]},\\quad \\alpha = ${decimalText(instance.alpha).replace(",", "{,}")}`}
           label={`punto de partida ${instance.start.join(", ")}; alfa ${decimalText(instance.alpha)}`}
           className="text-[18px]"
         />
@@ -314,7 +313,7 @@ export function DescentStepPractice({ instance, onSolved }: { instance: CalcDesc
       <Tex display tex={two ? "(x_{k+1}, y_{k+1}) = (x_k, y_k) - \\alpha\\,\\nabla f(x_k, y_k)" : "x_{k+1} = x_k - \\alpha\\, f'(x_k)"} label="regla del descenso de gradiente" />
       {values.map((row, k) => (
         <fieldset key={k} className="flex flex-col gap-1">
-          <legend className="text-[14px] font-semibold">{two ? `(x${sub(k + 1)}, y${sub(k + 1)})` : `x${sub(k + 1)}`}</legend>
+          {two ? <legend className="text-[14px] font-semibold">{`(x${sub(k + 1)}, y${sub(k + 1)})`}</legend> : null}
           <div className={cn("grid gap-3", two ? "grid-cols-2" : "grid-cols-1 sm:max-w-xs")}>
             {row.map((t, i) => (
               <NumberField
@@ -326,7 +325,6 @@ export function DescentStepPractice({ instance, onSolved }: { instance: CalcDesc
                   setValues((vs) => vs.map((r, kk) => (kk === k ? r.map((x, ii) => (ii === i ? v : x)) : r)));
                   setChecked(false);
                 }}
-                placeholder="1,6"
               />
             ))}
           </div>

@@ -84,15 +84,15 @@ export function GradientPractice({ f, point, x, y, onSolved }: { f: Expr; point:
         <input type="checkbox" checked={arrows} onChange={(e) => setArrows(e.target.checked)} className="h-5 w-5" />
         Flechas del gradiente
       </label>
-      <FunctionField id={`${id}-dx`} label="∂f/∂x =" value={dx} vars={XY} onChange={(v) => (setDx(v), touch())} invalid={checked && !okDx} placeholder="2x·y + 3" />
-      <FunctionField id={`${id}-dy`} label="∂f/∂y =" value={dy} vars={XY} onChange={(v) => (setDy(v), touch())} invalid={checked && !okDy} placeholder="x^2 − 4y" />
+      <FunctionField id={`${id}-dx`} label="∂f/∂x =" value={dx} vars={XY} onChange={(v) => (setDx(v), touch())} invalid={checked && !okDx} />
+      <FunctionField id={`${id}-dy`} label="∂f/∂y =" value={dy} vars={XY} onChange={(v) => (setDy(v), touch())} invalid={checked && !okDy} />
       <fieldset className="flex flex-col gap-1">
         <legend className="text-[14px] font-semibold">
           <Tex tex="\nabla f(P)" label="Gradiente de f en P" /> = (… , …)
         </legend>
         <div className="grid grid-cols-2 gap-3">
-          <NumberField label="Primera componente" value={g1} invalid={checked && !okG1} onChange={(v) => (setG1(v), touch())} placeholder="7" />
-          <NumberField label="Segunda componente" value={g2} invalid={checked && !okG2} onChange={(v) => (setG2(v), touch())} placeholder="−7" />
+          <NumberField label="Primera componente" value={g1} invalid={checked && !okG1} onChange={(v) => (setG1(v), touch())} />
+          <NumberField label="Segunda componente" value={g2} invalid={checked && !okG2} onChange={(v) => (setG2(v), touch())} />
         </div>
       </fieldset>
       <HowToWrite extra="Aquí hay dos variables: x e y (x y es x·y)." />
@@ -223,8 +223,8 @@ export function CriticalPractice({ f, x, y, onSolved }: { f: Expr; x?: [number, 
           return (
             <div key={i} role="group" aria-label={`Punto ${i + 1}`} className="flex flex-col gap-2 rounded-md border border-border p-2">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <NumberField label={`x (punto ${i + 1})`} value={r.x} invalid={badPoint} onChange={(v) => set(i, { x: v })} placeholder="1" />
-                <NumberField label={`y (punto ${i + 1})`} value={r.y} invalid={badPoint} onChange={(v) => set(i, { y: v })} placeholder="−2" />
+                <NumberField label={`x (punto ${i + 1})`} value={r.x} invalid={badPoint} onChange={(v) => set(i, { x: v })} />
+                <NumberField label={`y (punto ${i + 1})`} value={r.y} invalid={badPoint} onChange={(v) => set(i, { y: v })} />
                 <div className="flex min-w-0 flex-col gap-1">
                   <label htmlFor={`${id}-k${i}`} className="text-[14px] font-semibold">
                     Tipo
@@ -244,7 +244,7 @@ export function CriticalPractice({ f, x, y, onSolved }: { f: Expr; x?: [number, 
                     ))}
                   </select>
                 </div>
-                <NumberField label="|H| (opcional)" value={r.det} invalid={checked && e.detOk === false} onChange={(v) => set(i, { det: v })} placeholder="12" />
+                <NumberField label="|H| (opcional)" value={r.det} invalid={checked && e.detOk === false} onChange={(v) => set(i, { det: v })} />
               </div>
               <Button
                 variant="ghost"

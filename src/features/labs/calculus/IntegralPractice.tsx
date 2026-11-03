@@ -50,7 +50,6 @@ export function AntiderivativePractice({ f, onSolved }: { f: Expr; onSolved?: ()
           setChecked(false);
         }}
         invalid={result !== null && !result.ok && result.reason === "wrong"}
-        placeholder="x^3/3 + sen(x) + C"
       />
       <HowToWrite extra="La constante de integración se escribe al final: + C." />
       <div className="flex flex-wrap gap-2">
@@ -119,10 +118,9 @@ export function DefiniteIntegralPractice({ f, a, b, onSolved }: { f: Expr; a: st
           setText(v);
           setChecked(false);
         }}
-        placeholder="16/3 o 5,333"
         className="max-w-xs"
       />
-      <p className="text-[14px] text-muted">Exacto (16/3, e − 1, ln 2, π/4) o con tres decimales.</p>
+      <p className="text-[14px] text-muted">Exacto (como 7/2, 2 + ln 3 o π/6) o con tres decimales.</p>
       <div className="flex flex-wrap gap-2">
         <Button
           variant="primary"
