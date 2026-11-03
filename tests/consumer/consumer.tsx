@@ -6,6 +6,20 @@ import {
   ALL_SYMBOLS,
   BOOLE_PACK,
   BooleLabPage,
+  CalculusLabPage,
+  CALC_PACK,
+  CALC_DESCENT,
+  calcToPlain,
+  checkDerivStep,
+  criticalPoints,
+  derivativeTidy,
+  descentObjective,
+  parseCalcExpr,
+  runDescent,
+  type CalcDescentInstance,
+  type CalcExpr,
+  type CriticalKind,
+  type DerivStepRule,
   LinearAlgebraLabPage,
   LINALG_PACK,
   LINALG_EIGEN,
@@ -154,6 +168,7 @@ export function HostApp() {
         <Route path="/boole" element={<BooleLabPage />} />
         <Route path="/conjuntos" element={<SetsLabPage />} />
         <Route path="/algebra-lineal" element={<LinearAlgebraLabPage />} />
+        <Route path="/calculo" element={<CalculusLabPage />} />
         <Route path="/ejercicios" element={<ExercisesPage />} />
         <Route path="/ejercicios-python" element={<ExercisesPage python />} />
       </Routes>
@@ -209,3 +224,13 @@ export const eigenMatrix: number[][] = LINALG_EIGEN.generate(1, "medio").matrix;
 const shapes: TensorOp = { op: "matmul", a: [2, 3], b: [3] };
 export const broadcastOk: boolean = broadcastShapes(shapes.a, [1]).ok;
 export const gaussInstance = (i: LinSystemInstance) => i.unknowns;
+const calcParsed = parseCalcExpr(CALC_PACK.derivatives[0]?.f ?? "x^2");
+export const calcF: CalcExpr | null = calcParsed.ok ? calcParsed.expr : null;
+export const calcDerivative: string = calcF ? calcToPlain(derivativeTidy(calcF)) : "";
+const productRule: DerivStepRule = "producto";
+export const stepOk: boolean = calcF ? checkDerivStep(calcF, { k: "d", a: calcF, v: "x" }, derivativeTidy(calcF), productRule).ok : false;
+const saddle = parseCalcExpr("x^2 - y^2", { vars: ["x", "y"] });
+const saddleAnalysis = saddle.ok ? criticalPoints(saddle.expr) : null;
+export const saddleKind: CriticalKind | null = saddleAnalysis?.ok ? (saddleAnalysis.points[0]?.kind ?? null) : null;
+export const descentEnd: number[] | undefined = calcF ? runDescent(descentObjective(calcF), { alpha: 0.01, start: [1], iterations: 10 }).points.at(-1) : undefined;
+export const descentInstance: CalcDescentInstance = CALC_DESCENT.generate(1, "básico");

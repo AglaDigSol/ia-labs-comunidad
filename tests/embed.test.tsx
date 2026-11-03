@@ -9,6 +9,11 @@ import {
   BOOLE_PACK,
   LINALG_PACK,
   LINALG_GAUSS,
+  CALC_DERIVATIVE,
+  CALC_PACK,
+  calcToPlain,
+  derivativeTidy,
+  parseCalcExpr,
   matrixRank,
   parseMatrix,
   tensorOpResult,
@@ -94,9 +99,9 @@ function renderAt(url: string, mount = "/laboratorios", onHeader?: (a: LabsActiv
 const tabNames = () => screen.getAllByRole("tab").map((t) => t.textContent);
 
 describe("LabsRoutes como dependencia", () => {
-  it("muestra los siete laboratorios, «Ejercicios» y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
+  it("muestra los ocho laboratorios, «Ejercicios» y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
     renderAt("/laboratorios/python");
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
     expect(await screen.findByText("Zona de Python del anfitrión")).toBeTruthy();
     const tab = screen.getByRole("tab", { name: "Python" });
     expect(tab.getAttribute("aria-selected")).toBe("true");
@@ -124,7 +129,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Markov", "Ejercicios"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Boole", () => {
@@ -138,7 +143,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Predicados", () => {
@@ -152,7 +157,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
   });
 
   it("abre el laboratorio de predicados sin guardar nada en localStorage", async () => {
@@ -232,6 +237,22 @@ describe("LabsRoutes como dependencia", () => {
     expect(r.ok && r.shape).toEqual([4, 3]);
     expect(LINALG_GAUSS.generate(1, "básico").unknowns).toBe(2);
     expect(LINALG_PACK.systems.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("abre el laboratorio de cálculo en su pestaña, entre Álgebra lineal y Markov", async () => {
+    renderAt("/laboratorios/calculo");
+    expect(await screen.findByRole("heading", { level: 1, name: "Cálculo" }, { timeout: 5000 })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Cálculo" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tab", { name: "Cálculo" }).getAttribute("href")).toBe("/laboratorios/calculo");
+    expect(screen.getByTestId("header-action").textContent).toBe("Cálculo");
+    expect(localStorage.length).toBe(0);
+  });
+
+  it("exporta el motor, los ejercicios y el contenido de cálculo", () => {
+    const r = parseCalcExpr("x^2 sen x");
+    expect(r.ok && calcToPlain(derivativeTidy(r.expr))).toBe("2x·sen(x) + x^2·cos(x)");
+    expect(CALC_DERIVATIVE.generate(1, "básico").f.length).toBeGreaterThan(0);
+    expect(CALC_PACK.descent2.map((d) => d.id)).toContain("rosenbrock");
   });
 
   it("abre el laboratorio de conjuntos en su pestaña", async () => {

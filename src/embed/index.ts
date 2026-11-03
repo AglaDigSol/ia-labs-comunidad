@@ -19,6 +19,7 @@ export { ExercisesPage, type ExercisesPageProps } from "../features/labs/exercis
 export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
 export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
 export { LinearAlgebraLabPage } from "../features/labs/linalg/LinearAlgebraLabPage.tsx";
+export { CalculusLabPage } from "../features/labs/calculus/CalculusLabPage.tsx";
 // Pestaña Python (opcional): mejor con <LabsRoutes python />; PythonLabPage sirve para montarla
 // en otra ruta. Pyodide (worker y runtime) solo se descarga al abrirla y pulsar «Cargar Python».
 // Las ranuras (renderDraftActions, renderFilesActions) dan al anfitrión writeFiles para escribir
@@ -96,6 +97,7 @@ export * from "../../shared/exercises/predicates.ts";
 export * from "../../shared/exercises/sets.ts";
 export * from "../../shared/exercises/boole.ts";
 export * from "../../shared/exercises/linalg.ts";
+export * from "../../shared/exercises/calculus.ts";
 export * from "../../shared/exercises/registry.ts";
 // Ejercicios de Python (solo se muestran con <LabsRoutes python /> o <ExercisesPage python />).
 export {
@@ -138,6 +140,103 @@ export * from "../../shared/linalg/transform2d.ts";
 export * from "../../shared/linalg/tensors.ts";
 export * from "../../shared/linalg/schema.ts";
 
+// Cálculo: con nombres propios donde chocarían con la lógica o los racionales (toPlain, add…).
+export {
+  FUNCTIONS as CALC_FUNCTIONS,
+  compile as calcCompile,
+  decimalText,
+  evaluate as calcEvaluate,
+  exprVars as calcVars,
+  hasD,
+  toPlain as calcToPlain,
+  toSpoken as calcToSpoken,
+  toTex as calcToTex,
+  type Env as CalcEnv,
+  type Expr as CalcExpr,
+  type FnName as CalcFnName,
+  type VarName as CalcVarName,
+} from "../../shared/calculus/expr.ts";
+export {
+  HOW_TO_WRITE_FUNCTION,
+  MAX_EXPR_TEXT as MAX_CALC_TEXT,
+  parseExpr as parseCalcExpr,
+  type CalcParse,
+  type CalcParseError,
+} from "../../shared/calculus/parser.ts";
+export { canonKey as calcCanonKey, simplify as calcSimplify, tidy as calcTidy } from "../../shared/calculus/simplify.ts";
+export {
+  derivative,
+  derivativeRaw,
+  derivativeTidy,
+  expandD,
+  gradient,
+  hessian,
+  resolveD,
+  RULE_BY_ID as DERIVATIVE_RULE_BY_ID,
+  RULES as DERIVATIVE_RULES,
+  rulesFor,
+  type RuleId as DerivativeRuleId,
+} from "../../shared/calculus/derive.ts";
+export {
+  differByConstant,
+  equivalent as calcEquivalent,
+  isEquivalent as calcIsEquivalent,
+  type Equivalence as CalcEquivalence,
+} from "../../shared/calculus/equivalence.ts";
+export {
+  checkDerivStep,
+  derivationSteps,
+  nextRuleHints,
+  pendingDerivatives,
+  type SolutionStep as DerivSolutionStep,
+  type StepCheck as DerivStepCheck,
+  type StepRule as DerivStepRule,
+} from "../../shared/calculus/steps.ts";
+export {
+  checkAntiderivative,
+  definiteIntegral,
+  numberMatches,
+  parseNumberAnswer,
+  RIEMANN_LABEL,
+  riemannSum,
+  simpson,
+  stripConstant,
+  type AntiderivativeCheck,
+  type NumberAnswer,
+  type Riemann,
+  type RiemannRule,
+} from "../../shared/calculus/integrals.ts";
+export { antiderivative } from "../../shared/calculus/antiderivative.ts";
+export {
+  classifyHessian,
+  CRITICAL_LABEL,
+  criticalPoints,
+  hessianAt,
+  isCriticalPoint,
+  type CriticalAnalysis,
+  type CriticalKind,
+  type Hessian2,
+  type Point2,
+} from "../../shared/calculus/critical.ts";
+export {
+  exactDescentSteps,
+  iterationsTo,
+  MAX_ITERATIONS as MAX_DESCENT_ITERATIONS,
+  METHOD_LABEL as DESCENT_METHOD_LABEL,
+  METHODS as DESCENT_METHODS,
+  objective as descentObjective,
+  oscillates,
+  runDescent,
+  type DescentOptions,
+  type DescentRun,
+  type DescentStatus,
+  type Method as DescentMethod,
+  type Objective as DescentObjective,
+} from "../../shared/calculus/descent.ts";
+export { exprToPoly, polyDerivative, polyEval2, polyToExpr, type Poly2 } from "../../shared/calculus/poly.ts";
+export { contourLevels, contourSegments, gradientField, sampleCurve, sampleGrid } from "../../shared/calculus/plot.ts";
+export * from "../../shared/calculus/schema.ts";
+
 export * from "../../shared/predicates/ast.ts";
 export * from "../../shared/predicates/parser.ts";
 export * from "../../shared/predicates/evaluate.ts";
@@ -161,3 +260,4 @@ export { KARNAUGH_PACK } from "../../content/boole/karnaugh.ts";
 export { PREDICADOS_PACK } from "../../content/predicados/practica.ts";
 export { SETS_PACK } from "../../content/conjuntos/practica.ts";
 export { LINALG_PACK } from "../../content/algebra-lineal/practica.ts";
+export { CALC_PACK } from "../../content/calculo/practica.ts";
