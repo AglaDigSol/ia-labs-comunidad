@@ -140,7 +140,7 @@ export function CountingPractice({
           letters={ask === "model"}
         />
       ) : null}
-      {askNumber ? <ExamNumberField label="Resultado" value={number} onChange={(v) => (setNumber(v), touch())} invalid={checked && !numberOk} checked={checked} /> : null}
+      {askNumber ? <ExamNumberField label="Resultado" value={number} onChange={(v) => (setNumber(v), touch())} invalid={checked && !numberOk && parsed !== null} checked={checked} /> : null}
       <div className="flex flex-wrap gap-2">
         <Button
           variant="primary"
