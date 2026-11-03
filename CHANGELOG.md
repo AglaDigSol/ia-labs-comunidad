@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.11)
+## [Próximamente] (0.12)
 
 - i18n completo: mover a `src/i18n/` los textos internos de los laboratorios, las flashcards, la calculadora y el
   calendario (hoy están en sus componentes) y añadir inglés.
@@ -12,6 +12,49 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.11.0] - 2026-11-04
+
+### Añadido
+
+- **Simulacro de examen (02MIAR)** en «Ejercicios» (`…/ejercicios/simulacro`, sin pestaña nueva): completo (20
+  preguntas · 2 h), rápido (10 · 1 h) o por temas, con preguntas generadas por el banco (44 tipos): opción múltiple
+  a)–d) con una correcta y respuestas numéricas con coma y redondeo a dos decimales, como en el examen.
+  - Reloj que no se para y sobrevive a recargar, avisos accesibles cada 15 minutos y a los 5, entrega automática a 0,
+    navegador con preguntas marcadas para revisar y penalización opcional (−1/3 por fallo).
+  - Resultados con nota, desglose por temas, la solución de cada pregunta y «Practicar este tipo»; historial,
+    impresión, y configuración y semilla en la URL.
+- **Combinatoria** (pestaña nueva, entre «Conjuntos» y «Álgebra de Boole»): «¿Qué fórmula es?» con guía para decidir
+  (¿importa el orden?, ¿se repiten?, ¿se usan todos?), modelo (Pₙ, PR, V, VR, C, CR) y número comprobados;
+  «Calculadora guiada»; «Funciones y cardinales» (puede / necesariamente inyectiva, sobreyectiva, biyectiva o
+  invertible; A ⊊ B); «Complejidad» (O grande de pseudocódigo y de costes, con la trampa de la constante dentro de la
+  O) y verdadero o falso sobre P, NP y NP-completo.
+- **Probabilidad** (pestaña nueva, entre «Cálculo» y «Markov»): árbol de probabilidad total y Bayes que se rellena
+  casilla a casilla, tabla de contingencia 2×2, condicionada con un dado, independencia, explorador de distribuciones
+  discretas (Bernoulli, binomial, geométrica, Poisson y uniforme) con práctica por historias, juegos con dados o
+  monedas trucados, penalización por fallo en un test, E[XY] con independientes y simulación con semilla. Las
+  respuestas se corrigen como en el examen: fracción exacta o redondeadas a dos decimales con coma.
+- **Cálculo**: sección «Límites y continuidad» (funciones a trozos, L'Hôpital, dominio y bisección); «Regla de la
+  cadena» (también con la matriz jacobiana) y «Críticos tipo test»; «Por partes» en «Integrales»; «¿Adónde converge?»
+  en «Descenso de gradiente».
+- **Álgebra lineal**: sección «Propiedades y teoría» (propiedades del determinante, verdadero o falso sobre matrices y
+  vectores, normas y sistemas tipo test) y, en «Tensores», el vocabulario del curso: rango (número de índices, `ndim`)
+  y dimensión (lo que mide cada índice, `shape`), que no es el rango de una matriz.
+- **Ejercicios**: temas «Combinatoria y complejidad» y «Probabilidad»; trece tipos de teoría de cálculo y álgebra
+  lineal; «Formalizar un enunciado», «Negar en lenguaje natural» y «Predicados sobre conjuntos numéricos».
+- Respuestas numéricas como en el examen: coma decimal, sin separador de miles y redondeo a dos decimales cuando se
+  pide, con avisos si se escribe un punto o se trunca.
+- Componente reutilizable de preguntas de opción múltiple (`ChoiceOptions`, `ChoicePractice`) y `NumericField`.
+- Clave nueva de los laboratorios `exam` (`ia-labs.exam.v1` por defecto), incluida en «Exportar mis datos».
+- API: `CombinatoricsLabPage`, `ProbabilityLabPage`, `ExamSimulatorPage`, los motores `shared/discrete`,
+  `shared/probability` y `shared/exam`, y los contenidos `COMB_PACK` y `PROB_PACK` (CC BY 4.0). `ExercisesPage` acepta
+  `examPath`.
+
+### Cambiado
+
+- Orden de las pestañas: Simbología, Lógica, Predicados, Conjuntos, Combinatoria, Álgebra de Boole, Álgebra lineal,
+  Cálculo, Probabilidad, Markov y Ejercicios (y Python, si está encendida). `combinatoria` y `probabilidad` quedan
+  reservados como identificadores.
 
 ## [0.10.0] - 2026-11-03
 
@@ -391,7 +434,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.10.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.11.0
 [0.10.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.10.0
 [0.9.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.9.0
 [0.8.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.8.1
