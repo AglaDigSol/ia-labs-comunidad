@@ -82,6 +82,17 @@ publicó (los calendarios suscritos lo actualizarán).
 3. Ejecuta `npx vitest run tests/content-algebra-lineal.test.ts`: comprueba que cada matriz se lee, que los productos
    están definidos y que los autovalores son racionales.
 
+### Un ejemplo de cálculo
+
+1. Abre `content/calculo/practica.ts` y añade un objeto a la lista que toque: `derivatives`, `tangents` (con `x0` y el
+   intervalo del dibujo), `antiderivatives` (solo primitivas inmediatas), `definite` (con `a < b`), `multivariable`
+   (f(x, y) y un punto), `critical` (polinomios con puntos críticos racionales) o `descent1`/`descent2` (función,
+   intervalo del dibujo, punto de partida, α e iteraciones). Las funciones van como en el laboratorio: `x^2 sen(x)`,
+   `e^(2x)`, `sqrt(x)`, `x y`.
+2. Invéntalo tú: nada de funciones ni ejercicios copiados de diapositivas, apuntes ni actividades.
+3. Ejecuta `npx vitest run tests/content-calculo.test.ts`: comprueba que cada función se lee, que las primitivas son
+   inmediatas y que los puntos críticos son racionales y caen en el dibujo.
+
 ### Una plantilla nueva de laboratorio o un módulo
 
 Los módulos se registran en `src/config.ts` (id, ruta, navegación, componente perezoso y contenido que usa). Copia la

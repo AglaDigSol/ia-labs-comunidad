@@ -2,7 +2,7 @@
   "name": "ia-labs-comunidad",
   "version": "0.9.0",
   "private": true,
-  "description": "Laboratorios interactivos para estudiantes del Máster en IA: simbología, lógica, Markov, álgebra de Boole, calendario, flashcards, calculadora de notas y Python opcional en el navegador.",
+  "description": "Laboratorios interactivos para estudiantes del Máster en IA: simbología, lógica, Markov, álgebra de Boole, álgebra lineal, cálculo, calendario, flashcards, calculadora de notas y Python opcional en el navegador.",
   "license": "MIT",
   "repository": {
     "type": "git",
