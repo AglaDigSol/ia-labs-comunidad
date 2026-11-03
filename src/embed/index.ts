@@ -18,6 +18,7 @@ export { SetsLabPage } from "../features/labs/sets/SetsLabPage.tsx";
 export { ExercisesPage } from "../features/labs/exercises/ExercisesPage.tsx";
 export { MarkovLabPage } from "../features/labs/markov/MarkovLabPage.tsx";
 export { BooleLabPage } from "../features/labs/boole/BooleLabPage.tsx";
+export { LinearAlgebraLabPage } from "../features/labs/linalg/LinearAlgebraLabPage.tsx";
 // Pestaña Python (opcional): mejor con <LabsRoutes python />; PythonLabPage sirve para montarla
 // en otra ruta. Pyodide (worker y runtime) solo se descarga al abrirla y pulsar «Cargar Python».
 // Las ranuras (renderDraftActions, renderFilesActions) dan al anfitrión writeFiles para escribir
@@ -94,6 +95,7 @@ export * from "../../shared/exercises/logic.ts";
 export * from "../../shared/exercises/predicates.ts";
 export * from "../../shared/exercises/sets.ts";
 export * from "../../shared/exercises/boole.ts";
+export * from "../../shared/exercises/linalg.ts";
 export * from "../../shared/exercises/registry.ts";
 
 export * from "../../shared/markov/matrix.ts";
@@ -112,6 +114,16 @@ export * from "../../shared/boole/circuit.ts";
 export * from "../../shared/boole/fn.ts";
 export * from "../../shared/boole/canonical.ts";
 export * from "../../shared/boole/karnaugh.ts";
+
+export * from "../../shared/linalg/matrix.ts";
+export * from "../../shared/linalg/det.ts";
+export * from "../../shared/linalg/rref.ts";
+export * from "../../shared/linalg/systems.ts";
+export * from "../../shared/linalg/spaces.ts";
+export * from "../../shared/linalg/eigen.ts";
+export * from "../../shared/linalg/transform2d.ts";
+export * from "../../shared/linalg/tensors.ts";
+export * from "../../shared/linalg/schema.ts";
 
 export * from "../../shared/predicates/ast.ts";
 export * from "../../shared/predicates/parser.ts";
@@ -135,3 +147,4 @@ export { CIRCUIT_PACK } from "../../content/boole/circuitos.ts";
 export { KARNAUGH_PACK } from "../../content/boole/karnaugh.ts";
 export { PREDICADOS_PACK } from "../../content/predicados/practica.ts";
 export { SETS_PACK } from "../../content/conjuntos/practica.ts";
+export { LINALG_PACK } from "../../content/algebra-lineal/practica.ts";

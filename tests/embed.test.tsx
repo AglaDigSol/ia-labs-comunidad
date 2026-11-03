@@ -7,6 +7,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   ALL_SYMBOLS,
   BOOLE_PACK,
+  LINALG_PACK,
+  LINALG_GAUSS,
+  matrixRank,
+  parseMatrix,
+  tensorOpResult,
   buildTable,
   checkSetStep,
   compareSetExprs,
@@ -89,9 +94,9 @@ function renderAt(url: string, mount = "/laboratorios", onHeader?: (a: LabsActiv
 const tabNames = () => screen.getAllByRole("tab").map((t) => t.textContent);
 
 describe("LabsRoutes como dependencia", () => {
-  it("muestra los seis laboratorios, «Ejercicios» y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
+  it("muestra los siete laboratorios, «Ejercicios» y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
     renderAt("/laboratorios/python");
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Markov", "Ejercicios", "Python"]);
     expect(await screen.findByText("Zona de Python del anfitrión")).toBeTruthy();
     const tab = screen.getByRole("tab", { name: "Python" });
     expect(tab.getAttribute("aria-selected")).toBe("true");
@@ -119,7 +124,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Ejercicios"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Markov", "Ejercicios"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Boole", () => {
@@ -133,7 +138,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Markov", "Ejercicios", "Python"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Predicados", () => {
@@ -147,7 +152,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Markov", "Ejercicios", "Python"]);
   });
 
   it("abre el laboratorio de predicados sin guardar nada en localStorage", async () => {
@@ -209,6 +214,24 @@ describe("LabsRoutes como dependencia", () => {
     expect(screen.getByTestId("header-action").textContent).toBe("Ejercicios");
     expect(tabNames().slice(-2)).toEqual(["Ejercicios", "Python"]);
     expect(localStorage.length).toBe(0);
+  });
+
+  it("abre el laboratorio de álgebra lineal en su pestaña, entre Boole y Markov", async () => {
+    renderAt("/laboratorios/algebra-lineal");
+    expect(await screen.findByRole("heading", { level: 1, name: "Álgebra lineal" }, { timeout: 5000 })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Álgebra lineal" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tab", { name: "Álgebra lineal" }).getAttribute("href")).toBe("/laboratorios/algebra-lineal");
+    expect(screen.getByTestId("header-action").textContent).toBe("Álgebra lineal");
+    expect(localStorage.length).toBe(0);
+  });
+
+  it("exporta el motor, los ejercicios y el contenido de álgebra lineal", () => {
+    const m = parseMatrix("1 2\n2 4");
+    expect(m.ok && matrixRank(m.value)).toBe(1);
+    const r = tensorOpResult({ op: "suma", a: [4, 3], b: [3] });
+    expect(r.ok && r.shape).toEqual([4, 3]);
+    expect(LINALG_GAUSS.generate(1, "básico").unknowns).toBe(2);
+    expect(LINALG_PACK.systems.length).toBeGreaterThanOrEqual(4);
   });
 
   it("abre el laboratorio de conjuntos en su pestaña", async () => {
