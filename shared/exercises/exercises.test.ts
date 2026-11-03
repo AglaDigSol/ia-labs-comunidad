@@ -96,7 +96,7 @@ describe("registro", () => {
       expect(t.levels).toEqual(EXERCISE_LEVELS);
       expect(t.title.length).toBeGreaterThan(3);
       expect(t.description.length).toBeGreaterThan(10);
-      expect(exerciseType(t.id)).toBe(t);
+      expect(exerciseType(t.id, { python: true })).toBe(t);
     }
     expect(exerciseType("no-existe")).toBeNull();
     expect(exerciseTopics().map((t) => t.id)).toEqual(["logica", "predicados", "conjuntos", "boole"]);

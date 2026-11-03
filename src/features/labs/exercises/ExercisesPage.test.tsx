@@ -190,7 +190,7 @@ describe("práctica", () => {
 
 describe("vistas", () => {
   it("cada tipo y nivel se abre con su práctica y un botón «Comprobar…», sin la solución a la vista", async () => {
-    for (const t of EXERCISE_TYPES) {
+    for (const t of EXERCISE_TYPES.filter((x) => !x.module)) {
       for (const level of EXERCISE_LEVELS) {
         const { unmount } = renderAt(`/laboratorios/ejercicios?t=${t.id}&n=${LEVEL_SLUGS[level]}&s=2`);
         await page();

@@ -22,8 +22,14 @@ export const EXERCISE_TOPICS = [
   { id: "predicados", label: "Lógica de predicados" },
   { id: "conjuntos", label: "Conjuntos" },
   { id: "boole", label: "Álgebra de Boole" },
+  { id: "python", label: "Python (01MIAR)" },
 ] as const;
 export type ExerciseTopic = (typeof EXERCISE_TOPICS)[number]["id"];
+
+/** Módulos opcionales de los laboratorios que traen ejercicios propios. */
+export type ExerciseModule = "python";
+/** Módulos encendidos (por defecto, ninguno). */
+export type ExerciseModules = Partial<Record<ExerciseModule, boolean>>;
 
 export interface ExerciseType<I> {
   /** Identificador estable (va en la URL y en el progreso guardado): «logica-tabla». */
@@ -32,6 +38,8 @@ export interface ExerciseType<I> {
   title: string;
   description: string;
   levels: readonly ExerciseLevel[];
+  /** Módulo opcional del que depende (solo existe con él encendido): «python» necesita Pyodide. */
+  module?: ExerciseModule;
   /** Misma semilla y nivel ⇒ misma instancia. */
   generate(seed: number, level: ExerciseLevel): I;
 }
