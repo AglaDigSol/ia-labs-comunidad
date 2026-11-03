@@ -7,6 +7,7 @@
 import { loadPyodide, type PyodideInterface } from "pyodide";
 import type { PyDict } from "pyodide/ffi";
 import type { FileInfo } from "./files.ts";
+import { clearTree, listTree, readTree, removeTree, writeTree, type TreeFS } from "./fs-tree.ts";
 import { MAGICS_PY } from "./magics.ts";
 import { extraClosure, extraForImport, type ExtraWheel } from "./packages.ts";
 import { INIT_ID, parseErrorLine, type WorkerIn, type WorkerOut } from "./py-client.ts";
@@ -17,7 +18,7 @@ const ctx = self as unknown as {
 };
 const post = (m: WorkerOut, transfer: Transferable[] = []) => ctx.postMessage(m, transfer);
 
-/** Carpeta de trabajo: la HOME de Pyodide. Ahí van los archivos subidos. */
+/** Carpeta de trabajo: la HOME de Pyodide. Ahí van los archivos subidos y los del anfitrión (con sus carpetas). */
 const WORKDIR = "/home/pyodide";
 
 // Backend Agg y plt.show sin efecto, para que el código que llama a show() funcione sin pantalla.
@@ -144,19 +145,10 @@ async function installExtras(p: PyodideInterface, wanted: ExtraWheel[]): Promise
   for (const name of unique) post({ type: "package", name, phase: "done" });
 }
 
+const treeFS = (p: PyodideInterface) => p.FS as unknown as TreeFS;
+
 function listFiles(p: PyodideInterface | null): FileInfo[] {
-  if (!p) return [];
-  try {
-    const out: FileInfo[] = [];
-    for (const name of p.FS.readdir(WORKDIR) as string[]) {
-      if (name === "." || name === "..") continue;
-      const st = p.FS.stat(`${WORKDIR}/${name}`);
-      if (p.FS.isFile(st.mode)) out.push({ name, size: st.size });
-    }
-    return out.sort((a, b) => a.name.localeCompare(b.name, "es"));
-  } catch {
-    return [];
-  }
+  return p ? listTree(treeFS(p), WORKDIR) : [];
 }
 
 async function run(id: number, code: string, stdin: string[]): Promise<void> {
@@ -212,29 +204,31 @@ async function run(id: number, code: string, stdin: string[]): Promise<void> {
   }
 }
 
-function writeFile(name: string, data: ArrayBuffer): void {
-  py?.FS.writeFile(`${WORKDIR}/${name}`, new Uint8Array(data));
+function writeFile(path: string, data: ArrayBuffer): void {
+  if (!py) return;
+  try {
+    writeTree(treeFS(py), WORKDIR, path, new Uint8Array(data));
+  } catch {
+    // ruta no válida o que choca con un archivo del código: no se escribe
+  }
 }
 
-function readFile(id: number, name: string): void {
-  try {
-    if (!py || name.includes("/")) throw new Error("no");
-    const bytes = py.FS.readFile(`${WORKDIR}/${name}`) as Uint8Array;
-    const copy = bytes.slice().buffer;
-    post({ type: "fs-data", id, name, data: copy }, [copy]);
-  } catch {
-    post({ type: "fs-data", id, name, data: null });
+function readFile(id: number, path: string): void {
+  const bytes = py ? readTree(treeFS(py), WORKDIR, path) : null;
+  if (!bytes) {
+    post({ type: "fs-data", id, path, data: null });
+    return;
   }
+  const copy = bytes.slice().buffer;
+  post({ type: "fs-data", id, path, data: copy }, [copy]);
+}
+
+function deleteFile(path: string): void {
+  if (py) removeTree(treeFS(py), WORKDIR, path);
 }
 
 function clearFiles(): void {
-  for (const f of listFiles(py)) {
-    try {
-      py?.FS.unlink(`${WORKDIR}/${f.name}`);
-    } catch {
-      /* ya no está */
-    }
-  }
+  if (py) clearTree(treeFS(py), WORKDIR);
 }
 
 // Al interrumpir con «Detener», el bucle de eventos de Pyodide vuelve a lanzar el KeyboardInterrupt
@@ -257,9 +251,11 @@ ctx.onmessage = (e: MessageEvent<WorkerIn>) => {
       case "run":
         return run(msg.id, msg.code, msg.stdin);
       case "fs-write":
-        return writeFile(msg.name, msg.data);
+        return writeFile(msg.path, msg.data);
       case "fs-read":
-        return readFile(msg.id, msg.name);
+        return readFile(msg.id, msg.path);
+      case "fs-delete":
+        return deleteFile(msg.path);
       case "fs-clear":
         return clearFiles();
     }

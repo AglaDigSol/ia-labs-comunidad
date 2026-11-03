@@ -227,7 +227,7 @@ describe("PyClient: entrada, archivos y carga", () => {
     const { client, workers } = await loaded(false);
     client.upload("datos.csv", new TextEncoder().encode("x,y\n1,2\n").buffer);
     const write = workers[0]!.posted.find((m) => m.type === "fs-write");
-    expect(write).toMatchObject({ type: "fs-write", name: "datos.csv" });
+    expect(write).toMatchObject({ type: "fs-write", path: "datos.csv" });
     expect(client.uploadedFiles()).toEqual([{ name: "datos.csv", size: 8 }]);
     void client.run("while True: pass", 30_000, () => {});
     await Promise.resolve();
@@ -243,14 +243,49 @@ describe("PyClient: entrada, archivos y carga", () => {
     const { client, workers } = await loaded(false);
     const p = client.readFile("salida.csv");
     const req = workers[0]!.posted.at(-1)!;
-    expect(req).toMatchObject({ type: "fs-read", name: "salida.csv" });
+    expect(req).toMatchObject({ type: "fs-read", path: "salida.csv" });
     const data = new TextEncoder().encode("ok").buffer;
-    workers[0]!.emit({ type: "fs-data", id: req.type === "fs-read" ? req.id : -1, name: "salida.csv", data });
+    workers[0]!.emit({ type: "fs-data", id: req.type === "fs-read" ? req.id : -1, path: "salida.csv", data });
     expect(new TextDecoder().decode((await p)!)).toBe("ok");
     const missing = client.readFile("no.txt");
     const req2 = workers[0]!.posted.at(-1)!;
-    workers[0]!.emit({ type: "fs-data", id: req2.type === "fs-read" ? req2.id : -1, name: "no.txt", data: null });
+    workers[0]!.emit({ type: "fs-data", id: req2.type === "fs-read" ? req2.id : -1, path: "no.txt", data: null });
     expect(await missing).toBeNull();
+  });
+
+  it("los archivos del anfitrión con carpetas se guardan y se reescriben, antes de cargar y tras un reinicio", async () => {
+    const { client, workers } = setup(false);
+    // Antes de cargar Python: no hay worker hasta load(); se guardan y se envían tras init.
+    client.upload("res/data.csv", new TextEncoder().encode("a\n1\n").buffer);
+    client.upload("img/tema/x.png", new ArrayBuffer(4));
+    const p = client.load(() => {});
+    expect(workers[0]!.posted.map((m) => (m.type === "fs-write" ? `${m.type}:${m.path}` : m.type))).toEqual([
+      "init",
+      "fs-write:res/data.csv",
+      "fs-write:img/tema/x.png",
+    ]);
+    workers[0]!.emit({ type: "ready", python: "3.12.7" });
+    await p;
+    expect(client.uploadedFiles()).toEqual([
+      { name: "res/data.csv", size: 4 },
+      { name: "img/tema/x.png", size: 4 },
+    ]);
+    void client.run("while True: pass", 30_000, () => {});
+    await Promise.resolve();
+    await Promise.resolve();
+    await client.stop();
+    const again = workers[1]!.posted.filter((m) => m.type === "fs-write");
+    expect(again.map((m) => m.type === "fs-write" && m.path)).toEqual(["res/data.csv", "img/tema/x.png"]);
+    expect(again[0]!.type === "fs-write" && new TextDecoder().decode(again[0]!.data)).toBe("a\n1\n");
+  });
+
+  it("removeFile borra en el worker y olvida el archivo para los reinicios", async () => {
+    const { client, workers } = await loaded(false);
+    client.upload("res/a.txt", new ArrayBuffer(2));
+    client.upload("b.txt", new ArrayBuffer(3));
+    client.removeFile("res/a.txt");
+    expect(workers[0]!.posted.at(-1)).toEqual({ type: "fs-delete", path: "res/a.txt" });
+    expect(client.uploadedFiles()).toEqual([{ name: "b.txt", size: 3 }]);
   });
 
   it("clearFiles vacía la carpeta del worker y olvida los subidos", async () => {

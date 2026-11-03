@@ -3,16 +3,18 @@
 // orígenes) y, si nadie responde en STOP_ESCALATE_MS, termina el worker y arranca otro. Sin
 // aislamiento reinicia al momento. El límite de tiempo usa el mismo reinicio.
 //
-// Los archivos subidos se guardan también aquí, para volver a escribirlos en el worker nuevo tras un
-// reinicio; los que haya creado el código se pierden con él.
+// Los archivos subidos (y los que escribe el anfitrión) se guardan también aquí, solo en memoria, para
+// volver a escribirlos en el worker nuevo tras un reinicio; los que haya creado el código se pierden
+// con él. Las rutas son relativas a la carpeta de trabajo y pueden tener carpetas ("datos/a.csv").
 import type { FileInfo } from "./files.ts";
 
 /** principal -> worker */
 export type WorkerIn =
   | { type: "init"; indexURL: string; interrupt?: SharedArrayBuffer }
   | { type: "run"; id: number; code: string; stdin: string[] }
-  | { type: "fs-write"; name: string; data: ArrayBuffer }
-  | { type: "fs-read"; id: number; name: string }
+  | { type: "fs-write"; path: string; data: ArrayBuffer }
+  | { type: "fs-read"; id: number; path: string }
+  | { type: "fs-delete"; path: string }
   | { type: "fs-clear" };
 
 /** worker -> principal */
@@ -22,7 +24,7 @@ export type WorkerOut =
   | { type: "package"; name: string; phase: "start" | "done" }
   | { type: "done"; id: number; figures: string[]; ms: number; files: FileInfo[] }
   | { type: "error"; id: number; message: string; line: number | null; ms: number; files?: FileInfo[] }
-  | { type: "fs-data"; id: number; name: string; data: ArrayBuffer | null };
+  | { type: "fs-data"; id: number; path: string; data: ArrayBuffer | null };
 
 export type PyEvent = Extract<WorkerOut, { type: "ready" | "stdout" | "stderr" | "package" }>;
 
@@ -150,22 +152,31 @@ export class PyClient {
     return "restarted";
   }
 
-  /** Sube un archivo a la carpeta de trabajo (y lo recuerda para los reinicios). */
-  upload(name: string, data: ArrayBuffer): void {
-    this.uploads.set(name, data);
+  /**
+   * Escribe un archivo en la carpeta de trabajo (y lo recuerda para los reinicios). La ruta ya viene
+   * comprobada (checkUpload o checkHostFile); el worker la vuelve a comprobar.
+   */
+  upload(path: string, data: ArrayBuffer): void {
+    this.uploads.set(path, data);
     // Se envía una copia: la original queda aquí para un reinicio.
-    if (this.worker) this.worker.postMessage({ type: "fs-write", name, data: data.slice(0) } satisfies WorkerIn);
+    if (this.worker) this.worker.postMessage({ type: "fs-write", path, data: data.slice(0) } satisfies WorkerIn);
   }
 
-  /** Lee un archivo de la carpeta de trabajo (subido o creado por el código). null si no existe. */
-  readFile(name: string): Promise<ArrayBuffer | null> {
+  /** Lee un archivo de la carpeta de trabajo (subido, del anfitrión o creado por el código). null si no existe. */
+  readFile(path: string): Promise<ArrayBuffer | null> {
     const worker = this.worker;
-    if (!worker) return Promise.resolve(this.uploads.get(name)?.slice(0) ?? null);
+    if (!worker) return Promise.resolve(this.uploads.get(path)?.slice(0) ?? null);
     const id = this.nextId++;
     return new Promise((resolve) => {
       this.reads.set(id, resolve);
-      worker.postMessage({ type: "fs-read", id, name } satisfies WorkerIn);
+      worker.postMessage({ type: "fs-read", id, path } satisfies WorkerIn);
     });
+  }
+
+  /** Borra un archivo de la carpeta de trabajo (y lo olvida, si era de los guardados). */
+  removeFile(path: string): void {
+    this.uploads.delete(path);
+    this.worker?.postMessage({ type: "fs-delete", path } satisfies WorkerIn);
   }
 
   /** Borra todos los archivos de la carpeta de trabajo. */
@@ -174,12 +185,12 @@ export class PyClient {
     this.worker?.postMessage({ type: "fs-clear" } satisfies WorkerIn);
   }
 
-  /** Los archivos subidos con su contenido, para pasarlos a otro cliente. */
+  /** Los archivos guardados con su contenido, para pasarlos a otro cliente. */
   uploadsSnapshot(): Array<[string, ArrayBuffer]> {
     return [...this.uploads].map(([name, data]) => [name, data.slice(0)]);
   }
 
-  /** Archivos subidos (los que sobreviven a un reinicio). */
+  /** Archivos guardados: subidos y del anfitrión (los que sobreviven a un reinicio). */
   uploadedFiles(): FileInfo[] {
     return [...this.uploads].map(([name, data]) => ({ name, size: data.byteLength }));
   }
@@ -230,8 +241,8 @@ export class PyClient {
       worker.postMessage({ type: "init", indexURL: this.indexURL } satisfies WorkerIn);
     }
     // El worker atiende los mensajes en orden: estos esperan a que Python esté listo.
-    for (const [name, data] of this.uploads) {
-      worker.postMessage({ type: "fs-write", name, data: data.slice(0) } satisfies WorkerIn);
+    for (const [path, data] of this.uploads) {
+      worker.postMessage({ type: "fs-write", path, data: data.slice(0) } satisfies WorkerIn);
     }
   }
 
