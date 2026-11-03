@@ -5,6 +5,13 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  COMB_PACK,
+  COMB_PROBLEM,
+  countModel,
+  problemAnswer,
+  growthOf,
+  costOf,
+  growthText,
   ALL_SYMBOLS,
   BOOLE_PACK,
   LINALG_PACK,
@@ -253,6 +260,22 @@ describe("LabsRoutes como dependencia", () => {
     expect(r.ok && calcToPlain(derivativeTidy(r.expr))).toBe("2x·sen(x) + x^2·cos(x)");
     expect(CALC_DERIVATIVE.generate(1, "básico").f.length).toBeGreaterThan(0);
     expect(CALC_PACK.descent2.map((d) => d.id)).toContain("rosenbrock");
+  });
+
+  it("abre el laboratorio de combinatoria en su pestaña, entre Conjuntos y Álgebra de Boole", async () => {
+    renderAt("/laboratorios/combinatoria");
+    expect(await screen.findByRole("heading", { level: 1, name: "Combinatoria" }, { timeout: 5000 })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Combinatoria" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tab", { name: "Combinatoria" }).getAttribute("href")).toBe("/laboratorios/combinatoria");
+    expect(screen.getByTestId("header-action").textContent).toBe("Combinatoria");
+    expect(localStorage.length).toBe(0);
+  });
+
+  it("exporta el motor, los ejercicios y el contenido de combinatoria", () => {
+    expect(countModel({ n: 10, k: 3, order: true, repetition: false })).toBe(720n);
+    expect(growthText(growthOf(costOf("(n^5 - 2n + 1)^2")))).toBe("n¹⁰");
+    expect(problemAnswer(COMB_PROBLEM.generate(1, "básico")) > 1n).toBe(true);
+    expect(COMB_PACK.problems.map((p) => p.id)).toContain("bits-equilibrados");
   });
 
   it("abre el laboratorio de conjuntos en su pestaña", async () => {

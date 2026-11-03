@@ -34,6 +34,14 @@ import {
   type RowOp,
   type TensorOp,
   SetsLabPage,
+  CombinatoricsLabPage,
+  COMB_PACK,
+  COMB_COMPLEXITY,
+  countModel,
+  parseExamNumber,
+  type CombComplexityInstance,
+  type CountingModel,
+  type FormulaId,
   SETS_PACK,
   ExercisesPage,
   EXERCISE_TYPES,
@@ -167,6 +175,7 @@ export function HostApp() {
         <Route path="/markov" element={<MarkovLabPage />} />
         <Route path="/boole" element={<BooleLabPage />} />
         <Route path="/conjuntos" element={<SetsLabPage />} />
+        <Route path="/combinatoria" element={<CombinatoricsLabPage />} />
         <Route path="/algebra-lineal" element={<LinearAlgebraLabPage />} />
         <Route path="/calculo" element={<CalculusLabPage />} />
         <Route path="/ejercicios" element={<ExercisesPage />} />
@@ -234,3 +243,8 @@ const saddleAnalysis = saddle.ok ? criticalPoints(saddle.expr) : null;
 export const saddleKind: CriticalKind | null = saddleAnalysis?.ok ? (saddleAnalysis.points[0]?.kind ?? null) : null;
 export const descentEnd: number[] | undefined = calcF ? runDescent(descentObjective(calcF), { alpha: 0.01, start: [1], iterations: 10 }).points.at(-1) : undefined;
 export const descentInstance: CalcDescentInstance = CALC_DESCENT.generate(1, "básico");
+const combModel: CountingModel = COMB_PACK.problems[0]?.model ?? { n: 3, k: 3, order: true, repetition: false };
+export const combCount: bigint = countModel(combModel);
+export const combFormula: FormulaId = "CR";
+export const examNumberOk: boolean = parseExamNumber("12870").ok;
+export const complexityInstance: CombComplexityInstance = COMB_COMPLEXITY.generate(1, "medio");
