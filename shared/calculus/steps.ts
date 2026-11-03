@@ -6,7 +6,7 @@
 import { hasD, toPlain, type Expr, type VarName } from "./expr.ts";
 import { derivativeRaw, expandD, RULE_BY_ID, rulesFor, type RuleId } from "./derive.ts";
 import { equivalent } from "./equivalence.ts";
-import { simplifiedKey, tidy } from "./simplify.ts";
+import { canonKey, simplify, tidy } from "./simplify.ts";
 
 /** Lo que se elige en cada paso: una regla de derivación o solo operar. */
 export type StepRule = RuleId | "simplificar";
@@ -57,7 +57,20 @@ function minus<T>(from: T[], remove: T[], key: (t: T) => string): T[] {
   });
 }
 
-const argKey = (p: { arg: Expr; v: VarName }) => `${p.v}:${simplifiedKey(p.arg)}`;
+/**
+ * Clave de una derivada pendiente sin su signo: −(5x²)′ y (−5x²)′ son la misma derivada hecha de dos
+ * maneras (el signo puede ir dentro o fuera de la prima).
+ */
+const argKey = (p: { arg: Expr; v: VarName }) => {
+  const s = simplify(p.arg);
+  const unsigned: Expr =
+    s.k === "num" && s.v.n < 0n
+      ? { k: "num", v: { n: -s.v.n, d: s.v.d } }
+      : s.k === "mul" && s.args[0]?.k === "num" && s.args[0].v.n < 0n
+        ? { k: "mul", args: [{ k: "num", v: { n: -s.args[0].v.n, d: s.args[0].v.d } }, ...s.args.slice(1)] }
+        : s;
+  return `${p.v}:${canonKey(unsigned)}`;
+};
 
 export type StepCheck =
   | { ok: false; reason: "not-equivalent" | "unknown" }

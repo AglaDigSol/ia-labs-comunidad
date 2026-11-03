@@ -460,3 +460,11 @@ describe("descenso exacto (para corregir las cuentas a mano)", () => {
     expect(exactDescentSteps(P("sen(x)"), [frac(0n)], frac(1n, 10n), 1)).toBeNull();
   });
 });
+
+describe("derivadas paso a paso: el signo dentro o fuera de la prima", () => {
+  it("−(5x²)′ cuenta como la derivada de −5x²", () => {
+    const f = P("4x^3 - 5x^2 + 2x - 7");
+    const r = checkDerivStep(f, { k: "d", a: f, v: "x" }, P("(4x^3)′ − (5x^2)′ + (2x)′ − (7)′"), "suma");
+    expect(r).toMatchObject({ ok: true, ruleFits: true, alsoApplied: [] });
+  });
+});
