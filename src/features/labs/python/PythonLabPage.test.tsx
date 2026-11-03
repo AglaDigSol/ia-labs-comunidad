@@ -704,3 +704,54 @@ describe("PythonLabPage: archivos del anfitrión (ranuras y writeFiles)", () => 
     setItem.mockRestore();
   });
 });
+
+describe("PythonLabPage: paso a paso", () => {
+  const trace = {
+    pasos: [
+      { linea: 1, evento: "line", marcos: [{ nombre: "<module>", linea: 1, variables: [] }], salida: 0 },
+      { linea: 1, evento: "fin", marcos: [{ nombre: "<module>", linea: 1, variables: [{ nombre: "x", valor: "1" }] }], salida: 0 },
+    ],
+    salida: "",
+    limite: null,
+    error: null,
+    sintaxis: null,
+  };
+
+  it("«Ejecutar paso a paso» traza el código del editor y lo muestra hasta que el código cambia", async () => {
+    await renderReady();
+    fireEvent.change(editor(), { target: { value: "x = 1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ejecutar paso a paso" }));
+    await flush();
+    const run = client().runs.at(-1)!;
+    expect(run.code).toContain("def __labs_trace(p):");
+    expect(run.code).toContain(JSON.stringify(JSON.stringify({ codigo: "x = 1" }).slice(1, -1)).slice(1, -1));
+    expect(client().run.mock.calls.at(-1)![4]).toEqual({ capture: true, imports: "x = 1" });
+    expect(runBtn().disabled).toBe(true);
+    await act(async () => run.resolve({ kind: "done", figures: [], ms: 5, files: [], value: JSON.stringify(trace) }));
+    expect(await screen.findByRole("heading", { name: "Paso a paso" })).toBeTruthy();
+    expect(screen.getByTestId("trace-step").textContent).toBe("Paso 1 de 2: se va a ejecutar la línea 1.");
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+    expect(screen.getByText("x")).toBeTruthy();
+    fireEvent.change(editor(), { target: { value: "x = 2" } });
+    expect(screen.queryByRole("heading", { name: "Paso a paso" })).toBeNull();
+  });
+
+  it("no traza código con órdenes mágicas y avisa", async () => {
+    await renderReady();
+    const before = client().runs.length;
+    fireEvent.change(editor(), { target: { value: "%time x = 1" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ejecutar paso a paso" }));
+    await flush();
+    expect(client().runs.length).toBe(before);
+    expect(screen.getByRole("alert").textContent).toMatch(/no admite órdenes mágicas/);
+  });
+
+  it("si la traza supera el tiempo, lo dice", async () => {
+    await renderReady();
+    fireEvent.change(editor(), { target: { value: "while True: pass" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ejecutar paso a paso" }));
+    await flush();
+    await act(async () => client().runs.at(-1)!.resolve({ kind: "timeout", seconds: 20 }));
+    expect(screen.getByRole("alert").textContent).toMatch(/superó 20 s/);
+  });
+});

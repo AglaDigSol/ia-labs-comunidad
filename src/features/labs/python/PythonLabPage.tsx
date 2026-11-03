@@ -1,14 +1,16 @@
 // Pestaña «Python»: editor, salida con gráficos, archivos y entrada para input(). Pyodide solo se pide
 // desde aquí: el PyClient (y su worker) se crea al montar esta ruta perezosa, y la descarga empieza
 // cuando se pulsa «Cargar Python» (o sola, si ya se cargó antes en este dispositivo).
-// Integridad: solo se ejecuta el código del editor al pulsar «Ejecutar código»; un ?borrador= se
-// abre en el editor y nunca se ejecuta solo. Lo que escribe el anfitrión (writeFiles en sus ranuras)
+// Integridad: solo se ejecuta el código del editor al pulsar «Ejecutar código» (o «Ejecutar paso a
+// paso», que lo sigue línea a línea con el trazador de tracer.ts); un ?borrador= se abre en el
+// editor y nunca se ejecuta solo. Lo que escribe el anfitrión (writeFiles en sus ranuras)
 // solo va a la carpeta de trabajo, en memoria: escribir un archivo nunca lo ejecuta.
 import {
   CircleCheck,
   CircleDashed,
   Download,
   FileUp,
+  Footprints,
   HardDriveDownload,
   Info,
   OctagonAlert,
@@ -65,6 +67,7 @@ import {
   type WriteFilesResult,
 } from "./python-config.ts";
 import { templateById, TEMPLATES, type TemplateId } from "./templates.ts";
+import { runTrace, TraceView, type TraceOutcome } from "./Tracer.tsx";
 
 const LIMITS = [10, 30, 60, 120] as const;
 const DEFAULT_LIMIT = 30;
@@ -256,6 +259,8 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
   const [dlAnnounce, setDlAnnounce] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  // Último paso a paso, con el código que se trazó (si el editor cambia, deja de mostrarse).
+  const [traced, setTraced] = useState<{ code: string; outcome: TraceOutcome } | null>(null);
 
   const clientRef = useRef<PyClient | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -491,6 +496,32 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
       if (aliveRef.current) showOutcome(outcome);
     } catch (e) {
       if (aliveRef.current) append({ k: "error", line: null, text: e instanceof Error ? e.message : String(e) });
+    } finally {
+      if (aliveRef.current) {
+        setRunningSince(null);
+        setPkg(null);
+      }
+    }
+  }
+
+  async function traceCode() {
+    const client = clientRef.current;
+    if (!client || !ready || running) return;
+    setAnnounce("");
+    const magics = transformMagics(code);
+    if (!magics.ok || magics.code !== code) {
+      setTraced({ code, outcome: { ok: false, message: "El paso a paso no admite órdenes mágicas (%time, %timeit…): quítalas para seguir el código." } });
+      return;
+    }
+    const started = Date.now();
+    setNow(started);
+    setRunningSince(started);
+    try {
+      const outcome = await runTrace(client, code, stdinLines(stdin));
+      if (!aliveRef.current) return;
+      setTraced({ code, outcome });
+      setAnnounce(outcome.ok ? `Paso a paso listo: ${outcome.trace.pasos.length} pasos` : "No se ha podido hacer el paso a paso");
+      if (!outcome.ok) setFiles(client.uploadedFiles());
     } finally {
       if (aliveRef.current) {
         setRunningSince(null);
@@ -738,6 +769,15 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
               <TooltipContent>Carga Python primero</TooltipContent>
             </Tooltip>
           )}
+          <Button
+            onClick={() => void traceCode()}
+            disabled={!ready || running}
+            aria-describedby={ready ? undefined : "py-run-hint"}
+            className="touch-manipulation"
+          >
+            <Footprints size={16} strokeWidth={1.75} aria-hidden="true" />
+            Ejecutar paso a paso
+          </Button>
           <span id="py-run-hint" className="sr-only">
             Carga Python primero
           </span>
@@ -913,6 +953,17 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
             </div>
           </div>
         </div>
+
+        {traced && traced.code === code ? (
+          traced.outcome.ok ? (
+            <TraceView code={traced.code} trace={traced.outcome.trace} onClose={() => setTraced(null)} />
+          ) : (
+            <p role="alert" className="flex items-start gap-2 text-[14px] text-crit">
+              <OctagonAlert size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
+              <span>{traced.outcome.message}</span>
+            </p>
+          )
+        ) : null}
 
         <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
           <DialogContent>
