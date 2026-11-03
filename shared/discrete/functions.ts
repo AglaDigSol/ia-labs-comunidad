@@ -153,8 +153,8 @@ export function statementReason(st: FnStatement, s: FnSetting): string {
     }
     case "count": {
       const real = countFunctions(a, b, st.what);
-      if (st.what === "todas") return `Cada uno de los ${a} elementos de A elige imagen entre ${b}: VR_{${b},${a}} = ${b}^${a} = ${real}.`;
-      if (st.what === "inyectivas") return a <= b ? `Imágenes distintas y en orden: V_{${b},${a}} = ${real}.` : `Con |A| > |B| no hay ninguna inyectiva: 0.`;
+      if (st.what === "todas") return `Cada uno de los ${a} elementos de A elige imagen entre ${b}: VR(${b}, ${a}) = ${b}^${a} = ${real}.`;
+      if (st.what === "inyectivas") return a <= b ? `Imágenes distintas y en orden: V(${b}, ${a}) = ${real}.` : `Con |A| > |B| no hay ninguna inyectiva: 0.`;
       return a === b ? `Las biyecciones son las ordenaciones de B: ${a}! = ${real}.` : "Con |A| ≠ |B| no hay ninguna biyección: 0.";
     }
   }
