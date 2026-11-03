@@ -6,7 +6,8 @@ import { createRng, type Rng } from "../exercises/random.ts";
 import { frac } from "../rational.ts";
 import { classifyHessian, criticalPoints, isCriticalPoint } from "./critical.ts";
 import { derivative, derivativeRaw, derivativeTidy, gradient, hessian, resolveD, rulesFor } from "./derive.ts";
-import { iterationsTo, objective, oscillates, runDescent } from "./descent.ts";
+import { antiderivative } from "./antiderivative.ts";
+import { exactDescentSteps, iterationsTo, objective, oscillates, runDescent } from "./descent.ts";
 import { differByConstant, equivalent, isEquivalent } from "./equivalence.ts";
 import { evaluate, exprSize, toPlain, toTex, type Expr, type FnName } from "./expr.ts";
 import { checkAntiderivative, definiteIntegral, numberMatches, parseNumberAnswer, riemannSum, simpson } from "./integrals.ts";
@@ -434,5 +435,28 @@ describe("dibujos", () => {
       expect(Math.hypot(...b)).toBeCloseTo(1, 1);
     }
     expect(contourLevels(g, 8).length).toBeGreaterThan(5);
+  });
+});
+
+describe("primitivas inmediatas (para la solución)", () => {
+  it("se comprueban derivando", () => {
+    for (const s of ["6x^2 - 4x + 3", "x^3 + 1/x^2", "3 sqrt(x) - 2/x", "cos(x) + 2 sen(x)", "e^(3x) + 4/(2x + 1)", "sen(2x - 1)", "(2x + 1)^3", "5", "x/4", "-e^(-x)"]) {
+      const f = P(s);
+      const F = antiderivative(f);
+      expect(F, s).not.toBeNull();
+      expect(isEquivalent(derivativeRaw(F!), f), s).toBe(true);
+    }
+    expect(antiderivative(P("x e^x"))).toBeNull();
+    expect(toPlain(antiderivative(P("1/x"))!)).toBe("ln(abs(x))");
+  });
+});
+
+describe("descenso exacto (para corregir las cuentas a mano)", () => {
+  it("x₁ = x₀ − α·f′(x₀) con fracciones", () => {
+    const steps = exactDescentSteps(P("x^2 - 4x"), [frac(0n)], frac(1n, 4n), 2)!;
+    expect(steps.map((s) => `${s[0]!.n}/${s[0]!.d}`)).toEqual(["0/1", "1/1", "3/2"]);
+    const two = exactDescentSteps(P("x^2 + 3y^2", ["x", "y"]), [frac(2n), frac(1n)], frac(1n, 10n), 1)!;
+    expect(two[1]!.map((v) => Number(v.n) / Number(v.d))).toEqual([1.6, 0.4]);
+    expect(exactDescentSteps(P("sen(x)"), [frac(0n)], frac(1n, 10n), 1)).toBeNull();
   });
 });

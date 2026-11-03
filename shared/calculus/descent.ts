@@ -3,8 +3,10 @@
 // gradiente es el simbólico (derive.ts), compilado una vez. Devuelve la trayectoria, f y ‖∇f‖ en cada
 // iteración y cómo acaba: converge (‖∇f‖ muy pequeño), diverge (se va lejos o deja de ser finito) o se
 // queda sin iteraciones. Determinista y con un máximo de iteraciones, para que sea rápido.
+import { mul as fmul, sub as fsub, ZERO, type Frac } from "../rational.ts";
 import { compile, exprVars, type Expr } from "./expr.ts";
 import { derivative } from "./derive.ts";
+import { exprToPoly, polyDerivative, polyEval2 } from "./poly.ts";
 
 export const MAX_ITERATIONS = 500;
 export const METHODS = ["gd", "momentum", "adam"] as const;
@@ -122,4 +124,23 @@ export function oscillates(run: DescentRun, coord = 0, window = 8): boolean {
 export function iterationsTo(run: DescentRun, level: number): number | null {
   const i = run.values.findIndex((v) => v <= level);
   return i < 0 ? null : i;
+}
+
+/**
+ * Los primeros pasos del descenso de gradiente con números exactos, para corregir las cuentas a mano
+ * (f tiene que ser un polinomio): x₁ = x₀ − α·∇f(x₀), x₂ = x₁ − α·∇f(x₁)… Devuelve x₀, x₁, …, xₙ.
+ */
+export function exactDescentSteps(f: Expr, start: readonly Frac[], alpha: Frac, n: number): Frac[][] | null {
+  const p = exprToPoly(f);
+  if (!p) return null;
+  const dim = start.length;
+  const grads = (["x", "y"] as const).slice(0, dim).map((v) => polyDerivative(p, v));
+  const out: Frac[][] = [[...start]];
+  let cur = [...start];
+  for (let k = 0; k < n; k++) {
+    const g = grads.map((q) => polyEval2(q, cur[0]!, cur[1] ?? ZERO));
+    cur = cur.map((c, i) => fsub(c, fmul(alpha, g[i]!)));
+    out.push(cur);
+  }
+  return out;
 }
