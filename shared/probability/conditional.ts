@@ -171,3 +171,38 @@ export function pairFacts(pA: Frac, pB: Frac, inter: Frac): PairFacts {
 export const interFromUnion = (pA: Frac, pB: Frac, union: Frac): Frac => sub(add(pA, pB), union);
 /** P(A ∩ B) a partir de P(A | B): P(A | B)·P(B). */
 export const interFromCond = (aGivenB: Frac, pB: Frac): Frac => mul(aGivenB, pB);
+
+// ---------------------------------------------------------------- ¿Qué casillas faltan?
+
+/** Casillas de la tabla 2×2 con sus márgenes. */
+export const CONTINGENCY_KEYS = ["ab", "aNotB", "pA", "notAB", "notANotB", "pNotA", "pB", "pNotB"] as const;
+export type ContingencyKey = (typeof CONTINGENCY_KEYS)[number];
+
+const RELATIONS: ReadonlyArray<readonly [ContingencyKey, ContingencyKey, ContingencyKey | "one"]> = [
+  ["ab", "aNotB", "pA"],
+  ["notAB", "notANotB", "pNotA"],
+  ["ab", "notAB", "pB"],
+  ["aNotB", "notANotB", "pNotB"],
+  ["pA", "pNotA", "one"],
+  ["pB", "pNotB", "one"],
+];
+
+/**
+ * ¿Se puede completar la tabla con estas casillas dadas, usando solo sumas de filas y columnas (y
+ * que todo suma 1)? Es lo que se pide en la práctica: sin despejar sistemas.
+ */
+export function contingencyDetermined(given: readonly ContingencyKey[]): boolean {
+  const known = new Set<string>([...given, "one"]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const rel of RELATIONS) {
+      const unknown = rel.filter((k) => !known.has(k));
+      if (unknown.length === 1) {
+        known.add(unknown[0]!);
+        changed = true;
+      }
+    }
+  }
+  return CONTINGENCY_KEYS.every((k) => known.has(k));
+}

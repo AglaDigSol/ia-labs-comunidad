@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { add, equals, frac, mul, ONE, sub, sum, toNumber, ZERO, type Frac } from "../rational.ts";
 import { answerMatches, answerState, checkProbAnswer, parseProbAnswer } from "./answer.ts";
-import { contingencyFrom, pairFacts, pairProblem, solveContingency, solveTree, treeProblem } from "./conditional.ts";
+import { contingencyDetermined, contingencyFrom, pairFacts, pairProblem, solveContingency, solveTree, treeProblem } from "./conditional.ts";
 import { erf, normalCdf, normalProb, standardize, uniformProb } from "./continuous.ts";
 import {
   binom,
@@ -39,6 +39,7 @@ import {
 import { probTex, probWithDecimal, decimalComma } from "./format.ts";
 import { checkpoints, simulateFrequency } from "./simulation.ts";
 import {
+  coinGameRows,
   dieGameRows,
   gameVar,
   guessExpectation,
@@ -210,6 +211,9 @@ describe("contingencia e independencia", () => {
     expect(pairFacts(f(1, 4), f(1, 2), ZERO).exclusive).toBe(true);
     expect(pairProblem(f(1, 2), f(1, 2), f(3, 5))).toMatch(/mayor/);
     expect(pairProblem(f(4, 5), f(4, 5), f(1, 2))).toMatch(/pasaría de 1/);
+    expect(contingencyDetermined(["ab", "pA", "pB"])).toBe(true);
+    expect(contingencyDetermined(["pA", "pNotB", "notANotB"])).toBe(true);
+    expect(contingencyDetermined(["ab", "pA", "pNotA"])).toBe(false);
   });
 
   it("todas las parejas de sucesos de un dado: las fórmulas coinciden con la enumeración", () => {
@@ -320,6 +324,9 @@ describe("variables y juegos", () => {
     eq(guessExpectation(4, ONE, f(1, 3)), ZERO);
     eq(penaltyForTarget(5, ONE, f(1, 10)), f(1, 8));
     eq(guessExpectation(5, ONE, f(1, 8)), f(1, 10));
+    const coins = coinGameRows(3, [-3, -1, 1, 3]);
+    eq(coins[1]!.prob, f(3, 8));
+    eq(rvMean(gameVar(coins)), ZERO);
   });
 });
 

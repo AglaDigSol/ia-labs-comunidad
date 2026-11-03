@@ -2,7 +2,7 @@
 // esperanza, varianza, transformaciones lineales, suma y producto de variables independientes;
 // juegos con dados y monedas, y la penalización por fallo en un test de opción múltiple.
 import { add, cmp, div, equals, frac, mul, ONE, sub, sum, ZERO, type Frac } from "../rational.ts";
-import { distSupport, pmfExact, type DistSpec } from "./distributions.ts";
+import { binom, distSupport, pmfExact, type DistSpec } from "./distributions.ts";
 
 export interface RandomVar {
   values: readonly Frac[];
@@ -123,3 +123,10 @@ export function penaltyForTarget(k: number, reward: Frac, target: Frac): Frac {
   return div(sub(reward, mul(frac(BigInt(k)), target)), frac(BigInt(k - 1)));
 }
 
+
+/** Juego con k monedas equilibradas: `payoffs[h]` es lo que se gana con h caras (h = 0, …, k). */
+export function coinGameRows(k: number, payoffs: readonly number[]): GameRow[] {
+  if (!Number.isInteger(k) || k < 1 || k > 6 || payoffs.length !== k + 1) throw new RangeError("de 1 a 6 monedas, una ganancia por número de caras");
+  const total = 2n ** BigInt(k);
+  return payoffs.map((v, h) => ({ label: `${h} ${h === 1 ? "cara" : "caras"}`, value: frac(BigInt(v)), prob: frac(binom(k, h), total) }));
+}
