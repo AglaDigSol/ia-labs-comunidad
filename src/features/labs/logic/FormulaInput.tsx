@@ -25,8 +25,8 @@ export function FormulaField({
   error?: Pick<ParseError, "message" | "start" | "end"> | null;
   inputRef: RefObject<HTMLInputElement | null>;
   placeholder?: string;
-  /** "logica" avisa de que ⊕ se lee como ⊻; en "boole", ⊕ es la suma, y en "predicados" no se usa: no hay aviso. */
-  notation?: "logica" | "boole" | "predicados";
+  /** "logica" avisa de que ⊕ se lee como ⊻; en "boole", ⊕ es la suma, y en "predicados" y "calculo" no se usa: no hay aviso. */
+  notation?: "logica" | "boole" | "predicados" | "calculo";
 }) {
   const mirror = useRef<HTMLDivElement>(null);
   const [undo, setUndo] = useState<string | null>(null);
