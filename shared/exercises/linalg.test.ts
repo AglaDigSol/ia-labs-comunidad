@@ -29,8 +29,9 @@ const each = (fn: (seed: number, level: ExerciseLevel) => void, seeds = SEEDS) =
 };
 
 describe("registro de álgebra lineal", () => {
-  it("ocho tipos en el tema «Álgebra lineal», el penúltimo de los temas (antes de «Cálculo»)", () => {
-    expect(exerciseTopics().at(-2)).toEqual({ id: "algebra-lineal", label: "Álgebra lineal" });
+  it("ocho tipos en el tema «Álgebra lineal», justo antes de «Cálculo»", () => {
+    const ids = exerciseTopics().map((t) => t.id);
+    expect(ids.indexOf("calculo")).toBe(ids.indexOf("algebra-lineal") + 1);
     expect(exercisesOfTopic("algebra-lineal").map((t) => t.id)).toEqual(LINALG_EXERCISES.map((t) => t.id));
     expect(LINALG_EXERCISES).toHaveLength(8);
     const mixed = new Set(SEEDS.slice(0, 80).map((s) => mixedType("algebra-lineal", "medio", s).id));
