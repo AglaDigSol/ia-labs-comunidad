@@ -99,7 +99,7 @@ describe("registro", () => {
       expect(exerciseType(t.id, { python: true })).toBe(t);
     }
     expect(exerciseType("no-existe")).toBeNull();
-    expect(exerciseTopics().map((t) => t.id)).toEqual(["logica", "predicados", "conjuntos", "boole", "algebra-lineal"]);
+    expect(exerciseTopics().map((t) => t.id)).toEqual(["logica", "predicados", "conjuntos", "boole", "algebra-lineal", "calculo"]);
   });
 
   it("cada tipo es determinista: misma semilla y nivel, misma instancia", () => {
