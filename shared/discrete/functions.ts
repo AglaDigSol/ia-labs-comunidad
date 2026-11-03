@@ -106,8 +106,8 @@ export function statementText(st: FnStatement): string {
     case "modal":
       if (st.mode === "puede") return `f puede ${PROP_TEXT[st.prop].ser}.`;
       if (st.mode === "no-puede") return `f no puede ${PROP_TEXT[st.prop].ser}.`;
-      if (st.mode === "no-necesariamente") return st.prop === "inversa" ? "f no tiene inversa necesariamente." : `f no es necesariamente ${st.prop}.`;
-      return st.prop === "inversa" ? "f tiene inversa necesariamente." : `f ${PROP_TEXT[st.prop].adj} necesariamente.`;
+      if (st.mode === "no-necesariamente") return st.prop === "inversa" ? "No necesariamente f tiene inversa." : `f no es necesariamente ${st.prop}.`;
+      return st.prop === "inversa" ? "Necesariamente f tiene inversa." : `f ${PROP_TEXT[st.prop].adj} necesariamente.`;
     case "fixed":
       return `f ${PROP_TEXT[st.prop].adj}.`;
     case "onto-image":
