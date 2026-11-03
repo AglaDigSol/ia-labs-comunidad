@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { COMB_PACK } from "../content/combinatoria/practica.ts";
 import { algorithmGrowth, algorithmLines } from "../shared/discrete/algorithms.ts";
 import { costOf, growthOf, growthText } from "../shared/discrete/bigo.ts";
-import { classify, countModel, FORMULA_IDS } from "../shared/discrete/count.ts";
+import { countingFormula, countModel, FORMULA_IDS } from "../shared/discrete/count.ts";
 import { statementTrue } from "../shared/discrete/functions.ts";
 import { CombPackSchema } from "../shared/discrete/schema.ts";
 
@@ -30,7 +30,7 @@ describe("content/combinatoria", () => {
   });
 
   it("los problemas cubren las seis fórmulas, con respuestas de examen (entre 10 y 10¹⁰)", () => {
-    expect(new Set(COMB_PACK.problems.map((p) => classify(p.model)))).toEqual(new Set(FORMULA_IDS));
+    expect(new Set(COMB_PACK.problems.map((p) => countingFormula(p.model)))).toEqual(new Set(FORMULA_IDS));
     for (const p of COMB_PACK.problems) {
       const v = countModel(p.model);
       expect(v > 10n && v < 10n ** 10n, p.id).toBe(true);

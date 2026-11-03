@@ -104,7 +104,7 @@ export const sameGrowth = (x: Growth, y: Growth): boolean => {
 };
 
 /** Sustituye una variable por otra (c(k) llamado con k = n). */
-export function substitute(c: Cost, from: CostVar, to: CostVar): Cost {
+export function substituteCost(c: Cost, from: CostVar, to: CostVar): Cost {
   switch (c.k) {
     case "num":
       return c;
@@ -116,9 +116,9 @@ export function substitute(c: Cost, from: CostVar, to: CostVar): Cost {
       return c.v === from ? { k: "log", v: to } : c;
     case "add":
     case "mul":
-      return { k: c.k, a: c.a.map((x) => substitute(x, from, to)) };
+      return { k: c.k, a: c.a.map((x) => substituteCost(x, from, to)) };
     case "pow":
-      return { k: "pow", a: substitute(c.a, from, to), e: c.e };
+      return { k: "pow", a: substituteCost(c.a, from, to), e: c.e };
   }
 }
 

@@ -8,7 +8,7 @@ import { useState } from "react";
 import { equalsInteger, integerText, parseExamNumber } from "../../../../shared/discrete/answer.ts";
 import {
   acceptedFormulas,
-  classify,
+  countingFormula,
   countModel,
   FORMULA_IDS,
   FORMULAS,
@@ -45,8 +45,8 @@ function problemHints(p: CombProblemInstance): string[] {
   if (p.terms.length === 1) return modelHints(p.terms[0]!.model);
   return [
     "«Al menos uno» se cuenta mejor por el complementario: todos los casos posibles menos los que no tienen ninguno.",
-    `Para todos los casos: ${FORMULAS[classify(p.terms[0]!.model)].name.toLowerCase()}. ${FORMULAS[classify(p.terms[0]!.model)].when}`,
-    `Para los que no cumplen la condición: ${FORMULAS[classify(p.terms[1]!.model)].name.toLowerCase()}. ${FORMULAS[classify(p.terms[1]!.model)].when}`,
+    `Para todos los casos: ${FORMULAS[countingFormula(p.terms[0]!.model)].name.toLowerCase()}. ${FORMULAS[countingFormula(p.terms[0]!.model)].when}`,
+    `Para los que no cumplen la condición: ${FORMULAS[countingFormula(p.terms[1]!.model)].name.toLowerCase()}. ${FORMULAS[countingFormula(p.terms[1]!.model)].when}`,
     "Resta los dos recuentos.",
   ];
 }
@@ -58,7 +58,7 @@ export function CountingSolution({ problem }: { problem: CombProblemInstance }) 
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-raised p-3">
       {problem.terms.map((t, i) => (
         <div key={i} className="flex flex-col gap-1">
-          <p className="text-[14px] text-muted">{`${problem.terms.length > 1 ? (i === 0 ? "Todos los casos: " : "Menos los que no cumplen: ") : ""}${FORMULAS[classify(t.model)].name}.`}</p>
+          <p className="text-[14px] text-muted">{`${problem.terms.length > 1 ? (i === 0 ? "Todos los casos: " : "Menos los que no cumplen: ") : ""}${FORMULAS[countingFormula(t.model)].name}.`}</p>
           <Tex display tex={`${substitutedTex(t.model)} = ${countModel(t.model).toString()}`} label={`${substitutedText(t.model)} = ${integerText(countModel(t.model))}`} className="text-[18px]" />
         </div>
       ))}

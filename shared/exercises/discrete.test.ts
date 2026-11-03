@@ -3,7 +3,7 @@
 // de la O), funciones con una sola verdadera (o varias, en avanzado) y P y NP con verdaderas y falsas.
 import { describe, expect, it } from "vitest";
 import { isConstantTrap, optionIsCorrect } from "../discrete/bigo.ts";
-import { acceptedFormulas, classify, countModel, FORMULA_IDS } from "../discrete/count.ts";
+import { acceptedFormulas, countingFormula, countModel, FORMULA_IDS } from "../discrete/count.ts";
 import { statementText, statementTrue } from "../discrete/functions.ts";
 import { pnpStatement } from "../discrete/pnp.ts";
 import {
@@ -63,7 +63,7 @@ describe("generadores", () => {
         expect(countModel(p.terms[1]!.model) > 0n).toBe(true);
       }
       const set = formulas.get(level) ?? new Set();
-      for (const t of p.terms) set.add(classify(t.model));
+      for (const t of p.terms) set.add(countingFormula(t.model));
       formulas.set(level, set);
     });
     expect([...formulas.get("medio")!].sort()).toEqual([...FORMULA_IDS].sort());

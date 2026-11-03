@@ -7,7 +7,7 @@ import { commaWarning, equalsInteger, parseExamNumber } from "./answer.ts";
 import { bigOText, costOf, costTex, distractors, growthOf, growthTex, growthText, optionIsCorrect, parseCost, prune, sameGrowth, type Growth } from "./bigo.ts";
 import {
   acceptedFormulas,
-  classify,
+  countingFormula,
   combinations,
   combinationsRep,
   countModel,
@@ -98,7 +98,7 @@ describe("clasificador y guía", () => {
 
   it("cada modelo tiene su fórmula y la guía lleva a ella", () => {
     for (const [m, id] of cases) {
-      expect(classify(m)).toBe(id);
+      expect(countingFormula(m)).toBe(id);
       expect(modelProblem(m)).toBeNull();
       const g = guideFor(m);
       expect(thirdQuestion(g.order, g.repetition) === null).toBe(g.third === null);

@@ -152,7 +152,7 @@ export interface CountingModel {
 }
 
 /** La fórmula que corresponde a un modelo. */
-export function classify(m: CountingModel): FormulaId {
+export function countingFormula(m: CountingModel): FormulaId {
   if (m.groups && m.groups.length > 0) return "PR";
   if (m.order) {
     if (m.repetition) return "VR";
@@ -178,7 +178,7 @@ export function modelProblem(m: CountingModel): string | null {
 
 /** Valor exacto del modelo. */
 export function countModel(m: CountingModel): bigint {
-  switch (classify(m)) {
+  switch (countingFormula(m)) {
     case "P":
       return permutations(m.n);
     case "PR":
@@ -200,7 +200,7 @@ export function countModel(m: CountingModel): bigint {
  * primer tipo, C_{n,k}. La primera es la de clase.
  */
 export function acceptedFormulas(m: CountingModel): FormulaId[] {
-  const id = classify(m);
+  const id = countingFormula(m);
   if (id === "P") return ["P", "V"];
   if (id === "PR" && m.groups!.length === 2) return ["PR", "C"];
   return [id];
@@ -209,7 +209,7 @@ export function acceptedFormulas(m: CountingModel): FormulaId[] {
 /** La fórmula con los datos del modelo sustituidos, en TeX: «V_{8,3} = \frac{8!}{5!}». */
 export function substitutedTex(m: CountingModel): string {
   const { n, k } = m;
-  switch (classify(m)) {
+  switch (countingFormula(m)) {
     case "P":
       return `P_{${n}} = ${n}!`;
     case "PR": {
@@ -230,7 +230,7 @@ export function substitutedTex(m: CountingModel): string {
 /** Lo mismo en texto, para lectores de pantalla y listas: «V(8, 3) = 8!/5!». */
 export function substitutedText(m: CountingModel): string {
   const { n, k } = m;
-  switch (classify(m)) {
+  switch (countingFormula(m)) {
     case "P":
       return `P(${n}) = ${n}!`;
     case "PR":
@@ -276,7 +276,7 @@ export function guideFormula(a: GuideAnswers): FormulaId | null {
 
 /** Las respuestas correctas de la guía para un modelo. */
 export function guideFor(m: CountingModel): { order: boolean; repetition: boolean; third: boolean | null } {
-  const id = classify(m);
+  const id = countingFormula(m);
   switch (id) {
     case "P":
       return { order: true, repetition: false, third: true };
@@ -295,7 +295,7 @@ export function guideFor(m: CountingModel): { order: boolean; repetition: boolea
 
 /** Pistas para un modelo: primero las preguntas, después qué fórmula encaja y por qué. Nunca el número. */
 export function modelHints(m: CountingModel): string[] {
-  const id = classify(m);
+  const id = countingFormula(m);
   const g = guideFor(m);
   const out = [
     "Imagina dos resultados con los mismos elementos en distinto orden: si el enunciado los cuenta como distintos, el orden importa.",

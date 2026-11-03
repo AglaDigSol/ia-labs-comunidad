@@ -5,7 +5,7 @@
 //
 // Un bucle hasta la variable de otro (para j ← 1 hasta i) se acota por el tamaño del de fuera: la suma
 // 1 + 2 + ··· + n = n(n+1)/2 es del mismo orden que n·n. Un bucle que divide por dos da log n vueltas.
-import { costOf, costSpoken, costTex, growthOf, substitute, type Cost, type CostVar, type Growth } from "./bigo.ts";
+import { costOf, costSpoken, costTex, growthOf, substituteCost, type Cost, type CostVar, type Growth } from "./bigo.ts";
 
 export type SizeVar = "n" | "m";
 export type LoopVar = "i" | "j" | "l" | "p";
@@ -42,7 +42,7 @@ export function algorithmCost(a: Algorithm): Cost {
         return ONE;
       case "call": {
         if (!a.sub) return fail("llamada sin coste");
-        return substitute(costOf(a.sub, ["k"]), "k", sizeOf(s.arg));
+        return substituteCost(costOf(a.sub, ["k"]), "k", sizeOf(s.arg));
       }
       case "for": {
         const N = sizeOf(s.to);
