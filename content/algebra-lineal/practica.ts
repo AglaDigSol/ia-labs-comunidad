@@ -1,0 +1,87 @@
+// Laboratorio de álgebra lineal: sistemas para Gauss-Jordan, matrices para operar (producto,
+// determinante, rango e inversa), conjuntos de vectores, matrices con autovalores enteros,
+// transformaciones del plano y preguntas de formas de tensores. Contenido CC BY 4.0. Se valida con
+// LinalgPackSchema (tests/content-algebra-lineal.test.ts). Las matrices se escriben como en el
+// laboratorio: una fila por línea y los números separados por espacios. Nada de esto sale de
+// actividades evaluables: son ejercicios de elaboración propia para entrenar.
+import type { LinalgPack } from "../../shared/linalg/schema.ts";
+
+export const LINALG_PACK: LinalgPack = {
+  meta: {
+    subject: "02MIAR · Matemáticas para la Inteligencia Artificial",
+    topic: "Álgebra lineal y tensores",
+    level: "máster",
+    language: "es",
+    author: "Comunidad IA Labs",
+    license: "CC-BY-4.0",
+    source: "Elaboración propia",
+    updated: "2026-11-03",
+  },
+  systems: [
+    { id: "dos-determinado", title: "Dos ecuaciones, solución única", level: "básico", matrix: "1 1 5\n2 -1 1" },
+    { id: "dos-cambio-fila", title: "Hay que cambiar de fila el pivote", level: "básico", matrix: "0 2 4\n3 1 7" },
+    { id: "dos-incompatible", title: "Dos rectas paralelas", level: "básico", matrix: "1 -2 3\n-2 4 1" },
+    { id: "tres-determinado", title: "Tres ecuaciones, solución única", level: "medio", matrix: "1 1 1 6\n2 -1 1 3\n1 2 -1 2" },
+    { id: "tres-fracciones", title: "Con un pivote que no es 1", level: "medio", matrix: "2 1 -1 3\n1 -1 2 3\n3 2 1 10" },
+    { id: "tres-indeterminado", title: "Una ecuación sobra", level: "medio", matrix: "1 2 -1 1\n2 4 -2 2\n1 -1 1 4" },
+    { id: "tres-incompatible", title: "Tres planos sin punto común", level: "avanzado", matrix: "1 1 2 3\n2 -1 1 1\n3 0 3 5" },
+    { id: "tres-cuatro-incognitas", title: "Cuatro incógnitas, dos parámetros", level: "avanzado", matrix: "1 2 0 1 4\n0 1 1 -1 1\n1 3 1 0 5" },
+  ],
+  products: [
+    { id: "dos-por-dos", level: "básico", a: "1 2\n3 -1", b: "0 1\n2 4" },
+    { id: "rectangulares", level: "medio", a: "1 0 2\n-1 3 1", b: "2 1\n0 -1\n1 3" },
+    { id: "fila-por-columna", level: "medio", a: "2 -1 3", b: "1\n4\n-2" },
+    { id: "tres-por-tres", level: "avanzado", a: "1 -1 0\n2 0 1\n-1 3 2", b: "0 2 1\n1 1 -1\n3 0 2" },
+  ],
+  square: [
+    { id: "dos-invertible", level: "básico", matrix: "3 1\n5 2" },
+    { id: "dos-singular", level: "básico", matrix: "2 -4\n-1 2" },
+    { id: "tres-invertible", level: "medio", matrix: "1 2 0\n0 1 -1\n2 3 2" },
+    { id: "tres-rango-dos", level: "medio", matrix: "1 2 3\n2 4 7\n3 6 10" },
+    { id: "tres-fracciones", level: "avanzado", matrix: "2 0 1\n1 1 0\n0 1 1" },
+    { id: "cuatro-ceros", level: "avanzado", matrix: "1 0 2 0\n0 3 0 1\n2 0 5 0\n0 1 0 1" },
+  ],
+  vectors: [
+    { id: "r3-dos", level: "básico", vectors: "1 2 0\n0 1 3" },
+    { id: "r3-dependientes", level: "básico", vectors: "1 0 2\n2 1 1\n3 1 3" },
+    { id: "r3-base", level: "medio", vectors: "1 1 0\n0 1 1\n1 0 1" },
+    { id: "r3-cuatro", level: "medio", vectors: "1 -1 2\n0 2 1\n2 0 5\n1 1 3" },
+    { id: "r4-tres", level: "avanzado", vectors: "1 0 1 2\n0 1 -1 1\n2 1 1 5" },
+  ],
+  eigen: [
+    { id: "dos-distintos", level: "básico", matrix: "4 1\n2 3" },
+    { id: "dos-simetrica", level: "básico", matrix: "2 1\n1 2" },
+    { id: "dos-negativo", level: "medio", matrix: "1 2\n4 -1" },
+    { id: "tres-distintos", level: "medio", matrix: "2 0 0\n1 3 0\n4 -2 1" },
+    { id: "tres-doble", level: "avanzado", matrix: "3 1 1\n1 3 1\n1 1 3" },
+  ],
+  transforms: [
+    { id: "giro-90", spec: { kind: "rotacion", degrees: 90 } },
+    { id: "giro-180", spec: { kind: "rotacion", degrees: 180 } },
+    { id: "giro-horario", spec: { kind: "rotacion", degrees: 270 } },
+    { id: "simetria-x", spec: { kind: "reflexion", axis: "x" } },
+    { id: "simetria-y", spec: { kind: "reflexion", axis: "y" } },
+    { id: "simetria-diagonal", spec: { kind: "reflexion", axis: "y=x" } },
+    { id: "simetria-antidiagonal", spec: { kind: "reflexion", axis: "y=-x" } },
+    { id: "cizalla-horizontal", spec: { kind: "cizalla", direction: "horizontal", k: 2 } },
+    { id: "cizalla-vertical", spec: { kind: "cizalla", direction: "vertical", k: -1 } },
+    { id: "escala", spec: { kind: "escala", a: 3, b: 2 } },
+    { id: "proyeccion-x", spec: { kind: "proyeccion", axis: "x" } },
+  ],
+  tensors: [
+    { id: "matriz-mas-fila", level: "básico", q: { op: "suma", a: [4, 3], b: [3] } },
+    { id: "matriz-mas-columna", level: "básico", q: { op: "suma", a: [4, 3], b: [4, 1] } },
+    { id: "producto-matrices", level: "básico", q: { op: "matmul", a: [2, 3], b: [3, 5] } },
+    { id: "traspuesta", level: "básico", q: { op: "T", a: [2, 5] } },
+    { id: "suma-filas", level: "básico", q: { op: "sum", a: [4, 3], axis: 0 } },
+    { id: "imagenes", level: "medio", q: { op: "suma", a: [32, 32, 3], b: [3] } },
+    { id: "mal-alineadas", level: "medio", q: { op: "suma", a: [4, 3], b: [4] } },
+    { id: "matriz-por-vector", level: "medio", q: { op: "matmul", a: [3, 4], b: [4] } },
+    { id: "aplanar", level: "medio", q: { op: "reshape", a: [2, 3, 4], target: [2, -1] } },
+    { id: "lote", level: "avanzado", q: { op: "matmul", a: [8, 2, 3], b: [3, 4] } },
+    { id: "lotes-emitidos", level: "avanzado", q: { op: "matmul", a: [5, 1, 2, 3], b: [4, 3, 6] } },
+    { id: "eje-negativo", level: "avanzado", q: { op: "sum", a: [2, 3, 4], axis: -2, keepdims: true } },
+    { id: "reshape-imposible", level: "avanzado", q: { op: "reshape", a: [3, 5], target: [4, -1] } },
+    { id: "tres-ejes", level: "avanzado", q: { op: "suma", a: [6, 1, 4], b: [5, 1] } },
+  ],
+};
