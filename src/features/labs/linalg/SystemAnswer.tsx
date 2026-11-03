@@ -4,7 +4,7 @@
 // parametrización que describa el mismo conjunto de soluciones.
 import { Check } from "lucide-react";
 import { useMemo, useState } from "react";
-import { fracText, parseEntry, type Matrix, type Vector } from "../../../../shared/linalg/matrix.ts";
+import { fracTex, fracText, parseEntry, type Matrix, type Vector } from "../../../../shared/linalg/matrix.ts";
 import {
   affineText,
   analyzeSystem,
@@ -31,6 +31,30 @@ const HINTS = [
   "En la forma escalonada, rg A es el número de filas no nulas de la parte de A, y rg (A|b) el de filas no nulas de toda la matriz ampliada.",
   "Si es indeterminado, las incógnitas sin pivote son libres: dales un parámetro (t, s…) y despeja las demás de abajo arriba.",
 ];
+
+/**
+ * El sistema en TeX, una ecuación por línea alineada en el «=»: «2x_{1} - x_{2} = 3». Solo enteros y
+ * fracciones formateadas: seguro para KaTeX.
+ */
+export function equationsTex(A: Matrix, b: Vector): string {
+  const rows = A.map((row, i) => {
+    const terms = row.flatMap((c, j) => {
+      if (equals(c, ZERO)) return [];
+      const negative = c.n < 0n;
+      const abs = negative ? { n: -c.n, d: c.d } : c;
+      const coef = abs.n === 1n && abs.d === 1n ? "" : fracTex(abs);
+      return [{ negative, body: `${coef}x_{${j + 1}}` }];
+    });
+    const lhs = terms.length === 0 ? "0" : terms.map((t, k) => (k === 0 ? (t.negative ? "-" : "") : t.negative ? " - " : " + ") + t.body).join("");
+    return `${lhs} &= ${fracTex(b[i]!)}`;
+  });
+  return `\\left\\{\\begin{aligned} ${rows.join(" \\\\ ")} \\end{aligned}\\right.`;
+}
+
+/** El sistema como texto, para lectores de pantalla. */
+export function equationsLabel(A: Matrix, b: Vector): string {
+  return A.map((row, i) => `${row.map((c, j) => `${fracText(c)}·${unknownName(j)}`).join(" + ")} = ${fracText(b[i]!)}`).join("; ");
+}
 
 /** La solución general como texto: «x₁ = 2 − t, x₂ = t». Para la solución completa. */
 export function solutionLines(a: SystemAnalysis): string[] {
