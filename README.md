@@ -1,7 +1,7 @@
 # IA Labs · Comunidad
 
 Laboratorios interactivos para estudiar el Máster en Inteligencia Artificial: simbología matemática, lógica
-proposicional y de predicados, cadenas de Markov, álgebras de Boole, álgebra lineal y tensores, cálculo y descenso de gradiente, calendario de clases con tu zona horaria, flashcards con repaso espaciado y una
+proposicional y de predicados, cadenas de Markov, álgebras de Boole, álgebra lineal y tensores, cálculo y descenso de gradiente, probabilidad y distribuciones, calendario de clases con tu zona horaria, flashcards con repaso espaciado y una
 calculadora de notas.
 
 > **Proyecto comunitario de estudiantes del Máster en IA. No oficial ni afiliado a la Universidad Internacional de Valencia (VIU).**
@@ -21,8 +21,9 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Álgebra de Boole | ¿Es un álgebra de Boole? (axiomas B1–B5 sobre estructuras finitas, tablas y diagrama de Hasse), simplificación paso a paso con leyes, comprobada en cada línea, puertas y circuitos (circuito → función, función → circuito con solo NAND o solo NOR, y las siete puertas) los espacios F₁ y F₂, y mapas de Karnaugh de 2 a 4 variables con las formas Σm y ΠM. ⊕ es la suma, no el XOR (que se escribe ⊻). | siempre activo |
 | Álgebra lineal | Gauss-Jordan paso a paso (eliges cada operación elemental o escribes la matriz siguiente, y se comprueba antes de seguir; luego clasificas el sistema con Rouché–Frobenius y escribes su solución, también paramétrica), producto, determinante, rango e inversa celda a celda, independencia lineal y bases, autovalores y autovectores (comprobados con Av = λv), transformaciones del plano dibujadas con sus direcciones propias y formas de tensores con las reglas de NumPy (emisión, `@`, `sum(axis)`, `reshape`, `.T`). Con fracciones exactas. | siempre activo |
 | Cálculo | Derivadas paso a paso (escribes cada línea y eliges la regla: suma, factor constante, producto, cociente, potencia, cadena o derivadas elementales; cada línea se comprueba en muchos puntos y se avisa si la regla no encaja), o solo el resultado; recta tangente con f y f′ dibujadas y tu recta encima; primitivas (comprobadas derivándolas, con + C) e integrales definidas con sumas de Riemann; derivadas parciales, gradiente y curvas de nivel con flechas, y puntos críticos clasificados con la hessiana; descenso de gradiente en una y dos variables (α, punto de partida, iteraciones, momento y Adam; Rosenbrock, valle alargado, varios mínimos y punto de silla) y los primeros pasos a mano. | siempre activo |
+| Probabilidad | Árbol de probabilidad total y Bayes que rellenas casilla a casilla (ramas que faltan, productos, P(C) y P(Aᵢ \| C)), tabla de contingencia 2×2 con P(A \| B), P(B \| A) e independencia, condicionada con un dado (opciones a–d), independencia con P(A), P(B) y un dato más (selecciona la o las correctas), distribuciones discretas (Bernoulli, binomial, geométrica, Poisson y uniforme: diagrama de barras con la función de distribución, tabla, media y varianza, y práctica con historias: qué distribución es, P(X = k), P(X ≥ k), E[X] y Var(X)), tabla de un juego con dados o monedas (equilibrados o trucados) y su esperanza, penalización justa por fallo en un test, E[XY] con independientes y simulación con semilla de la frecuencia relativa. Fracciones exactas; las respuestas se aceptan como fracción o redondeadas a dos decimales con coma, como en el examen. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
-| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias y FND/FNC; evaluar y negar con cuantificadores; Venn, igualdades, inclusión–exclusión, partes y producto; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 5) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)). | siempre activo |
+| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias y FND/FNC; evaluar y negar con cuantificadores; Venn, igualdades, inclusión–exclusión, partes y producto; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente; probabilidad total y Bayes (también contada con porcentajes), condicionada con un dado, condicionada e independencia, binomial, geométrica, esperanza de un juego con un dado trucado, penalización en un test y E[XY] con independientes. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 5) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)). | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
 | Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
 | Calculadora de notas | Nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
@@ -318,7 +319,7 @@ subdominio (gratis hasta 50 usuarios):
 
 ## Usar como dependencia
 
-Los laboratorios (Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole, Álgebra lineal, Cálculo y Markov), el banco de ejercicios, la pestaña Python opcional y sus motores se pueden integrar en otra app de React. No hay paquete
+Los laboratorios (Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole, Álgebra lineal, Cálculo, Probabilidad y Markov), el banco de ejercicios, la pestaña Python opcional y sus motores se pueden integrar en otra app de React. No hay paquete
 en npm: se instala el tarball de una etiqueta publicada y el paquete trae el código TypeScript, que compilan el Vite y
 el `tsc` de la app anfitriona.
 
@@ -369,7 +370,7 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
 </Routes>;
 ```
 
-- `extraTabs`: pestañas propias, en ese orden, después de los ocho laboratorios, de «Ejercicios» y de «Python» (si está
+- `extraTabs`: pestañas propias, en ese orden, después de los nueve laboratorios, de «Ejercicios» y de «Python» (si está
   encendida). `element` puede ser perezoso: hay un `Suspense` alrededor. Una pestaña con el id o la ruta de un
   laboratorio se ignora; con `python`, también una con el id o la ruta `python`.
 - `python`: enciende la pestaña Python (por defecto, apagada). Ver «Pestaña Python en una app anfitriona», abajo.
@@ -378,7 +379,7 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
 - `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el
   almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises, python })` guarda en localStorage con las
   claves que elijas, por ejemplo las que ya usaba tu app; las que no pases usan `DEFAULT_LABS_KEYS`.
-- También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `SetsLabPage`, `MarkovLabPage`, `BooleLabPage`, `LinearAlgebraLabPage`, `CalculusLabPage`,
+- También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `SetsLabPage`, `MarkovLabPage`, `BooleLabPage`, `LinearAlgebraLabPage`, `CalculusLabPage`, `ProbabilityLabPage`,
   `ExercisesPage` y `PythonLabPage` por separado, y los motores: banco de ejercicios (`EXERCISE_TYPES`, `exerciseType`, cada tipo con
   `generate(semilla, nivel)`, `createRng`, `seedToText`/`seedFromText`), símbolos (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador,
   tabla de verdad, formas canónicas, comparación, F₁, notación), lógica de predicados (`parsePredicate`,
@@ -392,6 +393,9 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
   `derivative`, `derivativeTidy`, `gradient`, `hessian`, `checkDerivStep`, `derivationSteps`, `calcEquivalent`,
   `checkAntiderivative`, `definiteIntegral`, `riemannSum`, `criticalPoints`, `classifyHessian`, `runDescent`,
   `exactDescentSteps` y `CALC_PACK`; los nombres que chocarían con otros motores llevan el prefijo `calc`),
+  probabilidad (`parseProbAnswer`, `gradeAnswer`, `checkProbAnswer`, espacios y sucesos con `dieSpace`, `spanishDeck`,
+  `probOf` y `condProbOf`, `solveTree`, `solveContingency`, `pairFacts`, `pmf`, `cdf`, `probAtLeast`, `distMean`,
+  `distVariance`, `rvMean`, `rvVariance`, `penaltyForTarget`, `normalCdf`, `simulateFrequency` y `PROB_PACK`),
   Markov (matrices, evolución, sistemas, validación), racionales exactos y
   repaso espaciado SM-2 (`review`, barajas, `dueSummary`, esquemas). Con `"sideEffects"` declarado, lo que no se usa
   no entra en el bundle.
@@ -504,7 +508,7 @@ el uso completo.
 ## Contenido y licencias
 
 - Código: [MIT](LICENSE).
-- Contenido de [`content/`](content) (símbolos, notación, ejercicios y circuitos de Boole, dominios y ejercicios de predicados, ejemplos de álgebra lineal, funciones de cálculo, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
+- Contenido de [`content/`](content) (símbolos, notación, ejercicios y circuitos de Boole, dominios y ejercicios de predicados, ejemplos de álgebra lineal, funciones de cálculo, problemas de probabilidad, pesos de evaluación, calendario): [CC BY 4.0](content/LICENSE).
 - Cada paquete de contenido declara materia, tema, nivel, idioma, autoría, licencia y fuente, y se valida con zod en los
   tests. Los pesos y las fechas se citan de las guías docentes como dato, sin copiar texto.
 - No se incluye material docente de la VIU (diapositivas, guías, enunciados ni soluciones).
