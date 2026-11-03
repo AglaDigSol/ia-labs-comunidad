@@ -15,6 +15,9 @@ import { DescentPracticeBlock, DescentSimulator } from "./DescentSection.tsx";
 import { AntiderivativePractice, DefiniteIntegralPractice } from "./IntegralPractice.tsx";
 import { CriticalPractice, GradientPractice } from "./MultivarPractice.tsx";
 import { TangentPractice } from "./TangentPractice.tsx";
+import { BasinPractice, ChainPractice, CriticalChoicePractice, PartsPractice } from "./TheoryPractice.tsx";
+import { GeneratedPractice } from "../exercises/GeneratedPractice.tsx";
+import { CALC_BASIN, CALC_CHAIN, CALC_CRITICAL_CHOICE, CALC_PARTS } from "../../../../shared/exercises/calculus.ts";
 
 type Preset = { id: string; level: string; label: string };
 
@@ -165,7 +168,7 @@ export function TangentSection() {
 // ---------------------------------------------------------------- Integrales
 
 export function IntegralsSection() {
-  const [kind, setKind] = useState<"primitiva" | "definida">("primitiva");
+  const [kind, setKind] = useState<"primitiva" | "definida" | "partes">("primitiva");
   const prims = CALC_PACK.antiderivatives;
   const defs = CALC_PACK.definite;
   const [pChoice, setPChoice] = useState(prims[0]!.id);
@@ -182,15 +185,18 @@ export function IntegralsSection() {
         type="single"
         value={kind}
         aria-label="Tipo de integral"
-        className="grid max-w-full grid-cols-2 self-start sm:inline-flex"
+        className="grid max-w-full grid-cols-3 self-start sm:inline-flex"
         onValueChange={(v) => {
-          if (v === "primitiva" || v === "definida") setKind(v);
+          if (v === "primitiva" || v === "definida" || v === "partes") setKind(v);
         }}
       >
         <ToggleGroupItem value="primitiva">Primitiva</ToggleGroupItem>
         <ToggleGroupItem value="definida">Integral definida</ToggleGroupItem>
+        <ToggleGroupItem value="partes">Por partes</ToggleGroupItem>
       </ToggleGroup>
-      {kind === "primitiva" ? (
+      {kind === "partes" ? (
+        <GeneratedPractice type={CALC_PARTS} View={PartsPractice} />
+      ) : kind === "primitiva" ? (
         <Layout
           side={
             <SourcePicker
@@ -239,7 +245,7 @@ export function IntegralsSection() {
 const XY = ["x", "y"] as const;
 
 export function MultivarSection() {
-  const [kind, setKind] = useState<"gradiente" | "criticos">("gradiente");
+  const [kind, setKind] = useState<"gradiente" | "criticos" | "test" | "cadena">("gradiente");
   const grads = CALC_PACK.multivariable;
   const crits = CALC_PACK.critical;
   const [gChoice, setGChoice] = useState(grads[0]!.id);
@@ -258,13 +264,31 @@ export function MultivarSection() {
         aria-label="Práctica"
         className="grid max-w-full grid-cols-2 self-start sm:inline-flex"
         onValueChange={(v) => {
-          if (v === "gradiente" || v === "criticos") setKind(v);
+          if (v === "gradiente" || v === "criticos" || v === "test" || v === "cadena") setKind(v);
         }}
       >
         <ToggleGroupItem value="gradiente">Parciales y gradiente</ToggleGroupItem>
         <ToggleGroupItem value="criticos">Puntos críticos</ToggleGroupItem>
+        <ToggleGroupItem value="test">Críticos tipo test</ToggleGroupItem>
+        <ToggleGroupItem value="cadena">Regla de la cadena</ToggleGroupItem>
       </ToggleGroup>
-      {kind === "gradiente" ? (
+      {kind === "cadena" ? (
+        <div className="grid items-start gap-6 lg:grid-cols-12">
+          <section aria-label="Regla de la cadena" className="flex min-w-0 flex-col gap-2 rounded-lg border border-border bg-sunken p-3 text-[14px] lg:col-span-4">
+            <h2 className="font-display text-[18px] font-semibold">Reglas</h2>
+            <ul className="flex list-disc flex-col gap-1 pl-5">
+              <li>Si f: ℝ → ℝ² y g: ℝ² → ℝ, la que tiene sentido es g∘f: ℝ → ℝ, y [g∘f]′(t) = ∇g(f(t)) · f′(t).</li>
+              <li>El gradiente de g se evalúa en el punto f(t), no en t: ∂g/∂x(f(t))·f₁′(t) + ∂g/∂y(f(t))·f₂′(t).</li>
+              <li>Con f: ℝ² → ℝ², ∇(g∘f)(p) = ∇g(f(p)) · J_f(p), donde J_f es la matriz jacobiana (en cada fila, las parciales de una componente).</li>
+            </ul>
+          </section>
+          <div className="min-w-0 lg:col-span-8">
+            <GeneratedPractice type={CALC_CHAIN} View={ChainPractice} />
+          </div>
+        </div>
+      ) : kind === "test" ? (
+        <GeneratedPractice type={CALC_CRITICAL_CHOICE} View={CriticalChoicePractice} />
+      ) : kind === "gradiente" ? (
         <Layout
           side={
             <SourcePicker
@@ -317,6 +341,10 @@ export function DescentSection() {
     <div className="flex flex-col gap-6">
       <DescentSimulator />
       <DescentPracticeBlock />
+      <div className="flex flex-col gap-3">
+        <p className="text-[14px] text-muted">Con α pequeño, el descenso cae en el mínimo del valle en el que empieza. Mira la gráfica y decide.</p>
+        <GeneratedPractice type={CALC_BASIN} View={BasinPractice} />
+      </div>
     </div>
   );
 }
