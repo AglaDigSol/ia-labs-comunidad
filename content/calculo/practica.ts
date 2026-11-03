@@ -73,7 +73,7 @@ export const CALC_PACK: CalcPack = {
   ],
   descent2: [
     { id: "cuadratica", title: "Cuadrática convexa: x² + y²", f: "x^2 + y^2", x: [-3, 3], y: [-3, 3], start: [2.5, -2], alpha: 0.1, iterations: 40 },
-    { id: "valle", title: "Valle alargado: x²/20 + 5y²", f: "x^2/20 + 5y^2", x: [-10, 10], y: [-2.5, 2.5], start: [-8, 1], alpha: 0.18, iterations: 200 },
+    { id: "valle", title: "Valle alargado: x²/20 + 5y²", f: "x^2/20 + 5y^2", x: [-10, 10], y: [-2.5, 2.5], start: [-8, 1], alpha: 0.18, iterations: 300 },
     { id: "rosenbrock", title: "Rosenbrock: (1 − x)² + 100(y − x²)²", f: "(1 - x)^2 + 100(y - x^2)^2", x: [-2, 2], y: [-1, 3], start: [-1.2, 1], alpha: 0.001, iterations: 500 },
     { id: "dos-minimos", title: "Dos mínimos: x⁴ − 3x² + x + y²", f: "x^4 - 3x^2 + x + y^2", x: [-2.3, 2.3], y: [-2, 2], start: [0.4, 1.5], alpha: 0.02, iterations: 150 },
     { id: "silla", title: "Punto de silla: x² − y²", f: "x^2 - y^2", x: [-2, 2], y: [-2, 2], start: [1.8, 0.05], alpha: 0.1, iterations: 60 },

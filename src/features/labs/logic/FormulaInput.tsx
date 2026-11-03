@@ -16,6 +16,7 @@ export function FormulaField({
   inputRef,
   placeholder = "p → q",
   notation = "logica",
+  invalid = false,
 }: {
   id: string;
   label: string;
@@ -27,6 +28,8 @@ export function FormulaField({
   placeholder?: string;
   /** "logica" avisa de que ⊕ se lee como ⊻; en "boole", ⊕ es la suma, y en "predicados" y "calculo" no se usa: no hay aviso. */
   notation?: "logica" | "boole" | "predicados" | "calculo";
+  /** Marcado como incorrecto tras comprobar (sin error de lectura): borde y aria-invalid. */
+  invalid?: boolean;
 }) {
   const mirror = useRef<HTMLDivElement>(null);
   const [undo, setUndo] = useState<string | null>(null);
@@ -75,7 +78,7 @@ export function FormulaField({
             autoCorrect="off"
             autoComplete="off"
             spellCheck={false}
-            aria-invalid={error ? true : undefined}
+            aria-invalid={error || invalid ? true : undefined}
             aria-describedby={error ? msgId : undefined}
             onChange={(e) => onChange(e.target.value)}
             onScroll={(e) => {
@@ -83,7 +86,7 @@ export function FormulaField({
             }}
             className={cn(
               "relative h-12 w-full rounded-md border bg-transparent px-3 font-mono text-[16px] text-fg placeholder:text-muted",
-              error ? "border-crit" : "border-border",
+              error ? "border-crit" : invalid ? "border-2 border-crit" : "border-border",
             )}
             placeholder={placeholder}
           />

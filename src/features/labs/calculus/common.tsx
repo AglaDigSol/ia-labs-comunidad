@@ -61,7 +61,7 @@ export function FunctionField({
   const parsed = value.trim() === "" ? null : readFunction(value, { vars, allowPrime });
   const error = parsed && !parsed.ok ? parsed.error : null;
   return (
-    <div className={cn("flex min-w-0 flex-col gap-1", invalid && "[&_input]:border-2 [&_input]:border-crit")}>
+    <div className="flex min-w-0 flex-col gap-1">
       <FormulaField
         id={id}
         label={label}
@@ -71,6 +71,7 @@ export function FunctionField({
         inputRef={ref}
         placeholder={placeholder}
         notation="calculo"
+        invalid={invalid}
       />
       {showPreview && parsed?.ok ? (
         <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-[14px] text-muted" aria-live="polite">
