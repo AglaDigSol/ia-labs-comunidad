@@ -158,7 +158,7 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
           <Route path="conjuntos" element={<SetsLabPage />} />
           <Route path="markov" element={<MarkovLabPage />} />
           <Route path="boole" element={<BooleLabPage />} />
-          <Route path="ejercicios" element={<ExercisesPage />} />
+          <Route path="ejercicios" element={<ExercisesPage python={withPython} />} />
           {withPython && PythonLabPage && <Route path={PYTHON_LAB.path} element={<PythonLabPage />} />}
           {extras.map((t) => (
             <Route key={t.id} path={`${t.path}/*`} element={t.element} />

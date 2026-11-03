@@ -15,6 +15,7 @@ import {
   LEVEL_SLUGS,
   levelFromSlug,
   type ExerciseLevel,
+  type ExerciseModules,
   type ExerciseTopic,
 } from "../../../../shared/exercises/types.ts";
 import { Button } from "../../../components/ui/button.tsx";
@@ -23,6 +24,7 @@ import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-grou
 import { cn } from "../../../lib/cn.ts";
 import { selectClass } from "../boole/AxiomPractice.tsx";
 import { loadProgress, recordSolved, solvedOfType, type ExercisesProgress } from "./progress.ts";
+import { PYTHON_EXERCISE_VIEWS } from "./python-views.tsx";
 import { EXERCISE_VIEWS } from "./views.tsx";
 
 const levelLabel = (l: ExerciseLevel) => l[0]!.toUpperCase() + l.slice(1);
@@ -35,8 +37,11 @@ const dayText = (iso: string) => iso.split("-").reverse().join("/");
 type Current = { type: AnyExerciseType; level: ExerciseLevel; seed: number; mix: ExerciseTopic | null };
 
 /** Lo que dice la URL, si es un ejercicio válido (nivel y semilla pueden faltar: se completan). */
-function readParams(params: URLSearchParams): { type: AnyExerciseType; level: ExerciseLevel | null; seed: number | null; mix: ExerciseTopic | null } | null {
-  const type = exerciseType(params.get("t"));
+function readParams(
+  params: URLSearchParams,
+  modules: ExerciseModules,
+): { type: AnyExerciseType; level: ExerciseLevel | null; seed: number | null; mix: ExerciseTopic | null } | null {
+  const type = exerciseType(params.get("t"), modules);
   if (!type) return null;
   const level = levelFromSlug(params.get("n"));
   const mixRaw = params.get("m");
@@ -54,12 +59,16 @@ function paramsOf(c: Current): URLSearchParams {
   return p;
 }
 
-export function ExercisesPage() {
+/** Módulos opcionales de LabsRoutes: con `python`, el tema «Python (01MIAR)» y sus ejercicios. */
+export type ExercisesPageProps = { python?: boolean };
+
+export function ExercisesPage({ python = false }: ExercisesPageProps = {}) {
   const [params, setParams] = useSearchParams();
   const [progress, setProgress] = useState<ExercisesProgress>(loadProgress);
   // Ejercicios resueltos desde que se abrió la página.
   const [session, setSession] = useState(0);
-  const read = readParams(params);
+  const modules = useMemo<ExerciseModules>(() => ({ python }), [python]);
+  const read = readParams(params, modules);
 
   // Tipo válido sin nivel o sin semilla: se completan (sustituyendo la entrada del historial).
   useEffect(() => {
@@ -73,7 +82,7 @@ export function ExercisesPage() {
   const start = (type: AnyExerciseType, level: ExerciseLevel) => open({ type, level, seed: randomSeed(), mix: null });
   const mix = (topic: ExerciseTopic, level: ExerciseLevel) => {
     const seed = randomSeed();
-    open({ type: mixedType(topic, level, seed), level, seed, mix: topic });
+    open({ type: mixedType(topic, level, seed, modules), level, seed, mix: topic });
   };
 
   return (
@@ -90,6 +99,7 @@ export function ExercisesPage() {
       {read && read.level !== null && read.seed !== null ? (
         <PracticeView
           current={{ type: read.type, level: read.level, seed: read.seed, mix: read.mix }}
+          modules={modules}
           progress={progress}
           session={session}
           onOpen={open}
@@ -100,7 +110,7 @@ export function ExercisesPage() {
           }}
         />
       ) : read ? null : (
-        <ExerciseList progress={progress} session={session} onStart={start} onMix={mix} />
+        <ExerciseList progress={progress} session={session} modules={modules} onStart={start} onMix={mix} />
       )}
     </section>
   );
@@ -131,19 +141,21 @@ function LevelSelect({ id, value, onChange, levels }: { id: string; value: Exerc
 function ExerciseList({
   progress,
   session,
+  modules,
   onStart,
   onMix,
 }: {
   progress: ExercisesProgress;
   session: number;
+  modules: ExerciseModules;
   onStart: (t: AnyExerciseType, l: ExerciseLevel) => void;
   onMix: (topic: ExerciseTopic, l: ExerciseLevel) => void;
 }) {
   return (
     <div className="flex flex-col gap-8">
       {session > 0 ? <SessionCounter session={session} /> : null}
-      {exerciseTopics().map((topic) => (
-        <TopicBlock key={topic.id} topic={topic.id} progress={progress} onStart={onStart} onMix={onMix} />
+      {exerciseTopics(modules).map((topic) => (
+        <TopicBlock key={topic.id} topic={topic.id} progress={progress} modules={modules} onStart={onStart} onMix={onMix} />
       ))}
     </div>
   );
@@ -152,17 +164,19 @@ function ExerciseList({
 function TopicBlock({
   topic,
   progress,
+  modules,
   onStart,
   onMix,
 }: {
   topic: ExerciseTopic;
   progress: ExercisesProgress;
+  modules: ExerciseModules;
   onStart: (t: AnyExerciseType, l: ExerciseLevel) => void;
   onMix: (topic: ExerciseTopic, l: ExerciseLevel) => void;
 }) {
   const id = useId();
   const [mixLevel, setMixLevel] = useState<ExerciseLevel>("básico");
-  const types = exercisesOfTopic(topic);
+  const types = exercisesOfTopic(topic, modules);
   return (
     <section aria-labelledby={`${id}-title`} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -246,6 +260,7 @@ function SessionCounter({ session }: { session: number }) {
 
 function PracticeView({
   current,
+  modules,
   progress,
   session,
   onOpen,
@@ -253,6 +268,7 @@ function PracticeView({
   onSolved,
 }: {
   current: Current;
+  modules: ExerciseModules;
   progress: ExercisesProgress;
   session: number;
   onOpen: (c: Current) => void;
@@ -262,7 +278,7 @@ function PracticeView({
   const { type, level, seed, mix } = current;
   const key = `${type.id}|${level}|${seed}`;
   const instance = useInstance(type, level, seed);
-  const View = EXERCISE_VIEWS[type.id];
+  const View = EXERCISE_VIEWS[type.id] ?? PYTHON_EXERCISE_VIEWS[type.id];
   // Cada instancia cuenta una sola vez, aunque se compruebe de nuevo.
   const [solvedKey, setSolvedKey] = useState<string | null>(null);
   const [number, setNumber] = useState(1);
@@ -280,7 +296,7 @@ function PracticeView({
     moved.current = true;
     setNumber((n) => n + 1);
     const s = randomSeed();
-    onOpen({ type: mix ? mixedType(mix, lv, s) : type, level: lv, seed: s, mix });
+    onOpen({ type: mix ? mixedType(mix, lv, s, modules) : type, level: lv, seed: s, mix });
   };
 
   const solved = solvedKey === key;
