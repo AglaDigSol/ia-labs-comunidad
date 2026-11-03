@@ -20,6 +20,16 @@ describe("backup", () => {
     expect(backupFileName(new Date("2026-10-23T10:00:00Z"))).toBe("ia-labs-datos-2026-10-23.json");
   });
 
+  it("includes the exam simulator attempts and restores them", () => {
+    localStorage.setItem("ia-labs.exam.v1", '{"v":1,"active":null,"history":[]}');
+    const text = JSON.stringify(buildBackup());
+    expect(JSON.parse(text).extras["ia-labs.exam.v1"]).toBe('{"v":1,"active":null,"history":[]}');
+    localStorage.clear();
+    expect(restoreBackup(text, "merge").ok).toBe(true);
+    expect(localStorage.getItem("ia-labs.exam.v1")).toBe('{"v":1,"active":null,"history":[]}');
+    localStorage.clear();
+  });
+
   it("round-trips through JSON", () => {
     setKv("grade/01MIAR/ev1", 650);
     setKv("pref/theme", "dark");
