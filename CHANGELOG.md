@@ -13,6 +13,37 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
 
+## [0.8.1] - 2026-11-03
+
+### Añadido
+
+- Python: una app anfitriona puede escribir archivos en la carpeta de trabajo, con carpetas (`res/datos.csv`,
+  `img/tema/x.png`) y de cualquier tipo (`.py`, `.txt`, modelos binarios…), para que `pd.read_csv("res/datos.csv")`,
+  `open(…)` o `exec(open("res/programa.py").read())` funcionen. Viven solo en memoria, se vuelven a escribir tras un
+  reinicio de Python y «Vaciar archivos» los borra; escribir un archivo nunca lo ejecuta.
+  - Ranuras: `renderDraftActions` (en la banda del borrador abierto, también en los de archivo) y
+    `renderFilesActions` (en la cabecera de «Archivos», con o sin borrador), por `configureLabs({ python })` o como
+    props de `PythonLabPage`, que mandan. Reciben `{ draft, files: { writeFiles, limits, list } }`.
+  - `writeFiles([{ path, data }])` devuelve `{ written, skipped }`; cada descartado lleva su motivo (`name`, `size`,
+    `total` o `count`) y un mensaje en español. Las rutas se rechazan, sin arreglarlas, si son absolutas, salen de la
+    carpeta (`..`), tienen partes vacías, `.`, barras invertidas, caracteres de control, punto inicial o son
+    demasiado largas o profundas (`safeFilePath`).
+  - Límites configurables: `configureLabs({ python: { maxTotalBytes, maxFileBytes, maxFiles } })`, por defecto
+    50 MB, 20 MB y 30 archivos (`MAX_TOTAL_BYTES`, `MAX_FILE_BYTES`, `MAX_FILES`) y como mucho 200 MB, 50 MB y 500
+    (`CAP_*`); `fileLimits()` da los efectivos. Cuentan los archivos subidos y los del anfitrión juntos.
+- Borradores: `origin.source` opcional (`{ kind, path }`, por ejemplo `{ kind: "repo", path: "notebooks/tema1.ipynb" }`)
+  para que la app anfitriona sepa de qué archivo viene; llega a las ranuras. Los borradores anteriores siguen valiendo.
+- «Archivos»: la lista muestra también lo que hay en carpetas (`res/datos.csv`), descarga los archivos anidados con
+  su nombre y tiene «Borrar» en cada uno. El texto dice los límites efectivos.
+- `scripts/e2e-python.ts` prueba además una app anfitriona mínima (`tests/e2e-host/`) que escribe archivos desde la
+  ranura del borrador y los lee con pandas, también tras reiniciar Python.
+
+### Cambiado
+
+- `PYODIDE_VERSION` y `PYODIDE_PYTHON` viven en `version.ts`: la configuración, que entra con `configureLabs` en el
+  chunk de entrada de la app anfitriona, ya no arrastra la lista de wheels extra (unos 2 KB), que se queda en el chunk
+  perezoso de la pestaña. `scripts/check-python.ts` falla si un wheel extra aparece en el grafo de entrada.
+
 ## [0.8.0] - 2026-11-02
 
 ### Añadido
@@ -289,7 +320,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.8.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.8.1
 [0.8.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.8.0
 [0.7.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.7.0
 [0.6.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.6.0
