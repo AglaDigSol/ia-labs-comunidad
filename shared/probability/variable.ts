@@ -81,11 +81,13 @@ export const gameVar = (rows: readonly GameRow[]): RandomVar => ({ values: rows.
  * - «cara»: cobras `mult`·(número de la cara) y pagas `cost` por jugar.
  * - «paridad»: si sale impar ganas `odd`; si sale par, `even` (negativo: pierdes).
  * - «umbral»: si sale `t` o más ganas `win`; si no, `lose` (negativo).
+ * - «caras»: la ganancia de cada cara, de la 1 a la 6 (negativa si se pierde).
  */
 export type DieRule =
   | { kind: "cara"; mult: number; cost: number }
   | { kind: "paridad"; odd: number; even: number }
-  | { kind: "umbral"; t: number; win: number; lose: number };
+  | { kind: "umbral"; t: number; win: number; lose: number }
+  | { kind: "caras"; payoffs: readonly number[] };
 
 export function dieRulePayoff(rule: DieRule, face: number): number {
   switch (rule.kind) {
@@ -95,6 +97,33 @@ export function dieRulePayoff(rule: DieRule, face: number): number {
       return face % 2 === 1 ? rule.odd : rule.even;
     case "umbral":
       return face >= rule.t ? rule.win : rule.lose;
+    case "caras":
+      return rule.payoffs[face - 1] ?? 0;
+  }
+}
+
+const euros = (v: number) => `${Math.abs(v)} €`;
+const facesText = (faces: number[]) =>
+  faces.length === 1 ? `un ${faces[0]}` : `un ${faces.slice(0, -1).join(", un ")} o un ${faces.at(-1)}`;
+const gainText = (v: number) => (v > 0 ? `ganas ${euros(v)}` : v < 0 ? `pierdes ${euros(v)}` : "ni ganas ni pierdes");
+
+/** La regla en palabras: «Si sale impar ganas 3 €; si sale par, pierdes 4 €.». */
+export function dieRuleText(rule: DieRule): string {
+  switch (rule.kind) {
+    case "cara":
+      return `Pagas ${euros(rule.cost)} por tirar y cobras ${rule.mult === 1 ? "tantos euros como puntos salgan" : `${rule.mult} € por cada punto que salga`}.`;
+    case "paridad":
+      return `Si sale impar, ${gainText(rule.odd)}; si sale par, ${gainText(rule.even)}.`;
+    case "umbral":
+      return `Si sale ${rule.t === 6 ? "un 6" : `${rule.t} o más`}, ${gainText(rule.win)}; si no, ${gainText(rule.lose)}.`;
+    case "caras": {
+      // Agrupa las caras con la misma ganancia, en el orden en que aparecen.
+      const groups = new Map<number, number[]>();
+      rule.payoffs.forEach((v, i) => groups.set(v, [...(groups.get(v) ?? []), i + 1]));
+      const parts = [...groups.entries()].map(([v, faces]) => `si sale ${facesText(faces)}, ${gainText(v)}`);
+      const text = parts.join("; ");
+      return `${text[0]!.toUpperCase()}${text.slice(1)}.`;
+    }
   }
 }
 

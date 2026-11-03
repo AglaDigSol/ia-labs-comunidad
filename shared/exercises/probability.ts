@@ -1,13 +1,14 @@
-// Ejercicios de probabilidad: probabilidad total y Bayes con un árbol, condicionada e independencia
-// (selecciona la o las correctas), binomial, geométrica, esperanza de un juego con un dado trucado,
+// Ejercicios de probabilidad: probabilidad total y Bayes con un árbol (también contado con
+// porcentajes), condicionada con un dado (cuatro opciones, a–d), condicionada e independencia (una
+// correcta entre a–d o, en avanzado, la o las correctas), binomial, geométrica, esperanza de un juego con un dado trucado,
 // penalización por fallo en un test y E[XY] con variables independientes. Las instancias guardan solo
 // los datos (fracciones como pares de enteros, para que se puedan escribir en JSON); lo que se corrige
 // lo calcula el motor de shared/probability al resolver, con fracciones exactas.
-import { add, cmp, equals, frac, isZero, mul, ONE, sub, ZERO, type Frac } from "../rational.ts";
+import { add, cmp, div, equals, frac, isZero, mul, ONE, sub, ZERO, type Frac } from "../rational.ts";
 import { interFromCond, interFromUnion, pairFacts, solveTree, type PairFacts } from "../probability/conditional.ts";
 import { probAtLeast, pmfExact, type DistSpec } from "../probability/distributions.ts";
 import type { DistQuestion } from "../probability/schema.ts";
-import { loadedDieWeights } from "../probability/events.ts";
+import { condProbOf, dieEvent, dieSpace, eventInter, loadedDieWeights, probOf, type DieEventSpec } from "../probability/events.ts";
 import { dieGameRows, penaltyForTarget, type DieRule } from "../probability/variable.ts";
 import { generateUntil, rngFor, type Rng } from "./random.ts";
 import type { ExerciseLevel, ExerciseType } from "./types.ts";
@@ -35,6 +36,38 @@ export const TREE_STORIES = [
   { context: "Un laboratorio analiza muestras de varios hospitales.", branch: "H", event: "la muestra hay que repetirla" },
 ] as const;
 
+/**
+ * Historias de Bayes contadas con porcentajes, como en el examen: un x % tiene la característica
+ * (rama A₁); de ellos, un y % NO presenta la señal (así que P(C | A₁) = 1 − y); de los demás (A₂), un
+ * z % SÍ la presenta (P(C | A₂) = z).
+ */
+export const PERCENT_STORIES = [
+  {
+    text: "Un {x} % de los portátiles de un lote tiene la batería defectuosa. De éstos, un {y} % no muestra ningún aviso; de los que la tienen bien, un {z} % muestra un aviso igualmente.",
+    branches: ["Defectuosa", "Bien"],
+    event: "el portátil muestra un aviso",
+    question: "Si un portátil muestra un aviso, ¿qué probabilidad hay de que su batería sea defectuosa?",
+  },
+  {
+    text: "Un {x} % de las operaciones de una tienda en línea son fraudulentas. De éstas, un {y} % no activa la alerta del sistema; de las legítimas, un {z} % sí la activa.",
+    branches: ["Fraude", "Legítima"],
+    event: "se activa la alerta",
+    question: "Si se activa la alerta, ¿qué probabilidad hay de que la operación sea fraudulenta?",
+  },
+  {
+    text: "Un {x} % de las plantas de un invernadero tiene una plaga. De las que la tienen, un {y} % no presenta manchas en las hojas; de las sanas, un {z} % sí las presenta.",
+    branches: ["Plaga", "Sana"],
+    event: "la planta presenta manchas",
+    question: "Si una planta presenta manchas, ¿qué probabilidad hay de que tenga la plaga?",
+  },
+  {
+    text: "Un {x} % de los correos de una empresa son de phishing. De ellos, un {y} % no tiene ningún enlace sospechoso; de los legítimos, un {z} % sí tiene alguno.",
+    branches: ["Phishing", "Legítimo"],
+    event: "el correo tiene un enlace sospechoso",
+    question: "Si un correo tiene un enlace sospechoso, ¿qué probabilidad hay de que sea de phishing?",
+  },
+] as const;
+
 const SUB = ["₁", "₂", "₃"];
 /** Nombre de la rama i de un contexto: «L₁». */
 export const branchName = (story: number, i: number) => `${TREE_STORIES[story]!.branch}${SUB[i]}`;
@@ -47,6 +80,8 @@ export type ProbTreeInstance = {
   hiddenPrior: number;
   /** Rama por la que se pregunta P(Aᵢ | C), o null si solo se pide P(C). */
   ask: number | null;
+  /** Historia con porcentajes (PERCENT_STORIES), o null si los datos se dan en notación. */
+  percent: number | null;
 };
 
 const PARTITIONS_3: Q[][] = [
@@ -65,13 +100,20 @@ function makeTree(rng: Rng, level: ExerciseLevel): ProbTreeInstance {
   if (level === "avanzado") {
     const priors = rng.shuffle(rng.pick(PARTITIONS_3));
     const likelihoods = priors.map(() => q(rng.int(1, 20), 100));
-    return { story, priors, likelihoods, hiddenPrior: rng.int(0, 2), ask: rng.int(0, 2) };
+    return { story, priors, likelihoods, hiddenPrior: rng.int(0, 2), ask: rng.int(0, 2), percent: null };
+  }
+  if (level !== "básico" && rng.chance(0.5)) {
+    // Historia con porcentajes: x % de A₁, y % de A₁ sin la señal y z % de A₂ con ella.
+    const x = rng.pick([2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30]);
+    const y = rng.pick([5, 8, 10, 12, 15, 20, 25, 30]);
+    const z = rng.pick([2, 3, 4, 5, 6, 8, 10, 12, 15]);
+    return { story, priors: [q(x, 100), q(100 - x, 100)], likelihoods: [q(100 - y, 100), q(z, 100)], hiddenPrior: 1, ask: 0, percent: rng.int(0, PERCENT_STORIES.length - 1) };
   }
   const p = level === "básico" ? rng.pick(tenths(2, 8)) : rng.pick([...tenths(1, 9), q(1, 4), q(3, 4), q(1, 3), q(2, 3)]);
   const priors = [p, fracQ(sub(ONE, qFrac(p)))];
   const likes = level === "básico" ? [...tenths(), q(1, 4), q(3, 4), q(1, 2)] : [...SIMPLE, ...Array.from({ length: 10 }, (_, i) => q(5 * (i + 1), 100))];
   const likelihoods = [rng.pick(likes), rng.pick(likes)];
-  return { story, priors, likelihoods, hiddenPrior: 1, ask: level === "básico" ? null : rng.int(0, 1) };
+  return { story, priors, likelihoods, hiddenPrior: 1, ask: level === "básico" ? null : rng.int(0, 1), percent: null };
 }
 
 export const toProbTree = (t: ProbTreeInstance) => ({ priors: t.priors.map(qFrac), likelihoods: t.likelihoods.map(qFrac) });
@@ -91,7 +133,7 @@ export const PROB_TOTAL: ExerciseType<ProbTreeInstance> = {
         if (isZero(s.total) || equals(s.total, ONE)) return false;
         // Las ramas distintas entre sí (si no, Bayes no dice nada).
         if (equals(qFrac(t.likelihoods[0]!), qFrac(t.likelihoods[1]!))) return false;
-        return s.total.d <= 2000n;
+        return s.total.d <= 10000n;
       },
     );
   },
@@ -124,7 +166,10 @@ export type ProbPairInstance = {
   /** El tercer dato: P(A ∩ B), P(A ∪ B) o P(A | B). */
   given: "inter" | "union" | "cond";
   value: Q;
+  /** Cuatro afirmaciones, a) a d). */
   statements: PairStatement[];
+  /** «Selecciona la o las correctas» (puede haber varias); si no, exactamente una es correcta. */
+  multi: boolean;
 };
 
 export const pairInstanceFacts = (p: ProbPairInstance): PairFacts => {
@@ -191,8 +236,8 @@ function makePair(rng: Rng, level: ExerciseLevel): ProbPairInstance | null {
     { kind: "ninguno", value: fracQ(rng.chance(0.5) ? facts.neither : sub(ONE, facts.inter)) },
     { kind: "b-dado-a", value: fracQ(rng.chance(0.5) || facts.bGivenA === null ? (facts.aGivenB ?? B) : facts.bGivenA) },
   ];
-  const statements = [pool[0]!, ...rng.shuffle(pool.slice(1)).slice(0, level === "básico" ? 3 : 4)];
-  return { story: rng.int(0, PAIR_STORIES.length - 1), pA, pB, given, value, statements: rng.shuffle(statements) };
+  const statements = [pool[0]!, ...rng.shuffle(pool.slice(1)).slice(0, 3)];
+  return { story: rng.int(0, PAIR_STORIES.length - 1), pA, pB, given, value, statements: rng.shuffle(statements), multi: level === "avanzado" };
 }
 
 /** El error típico «P(A ∪ B) = P(A) + P(B)», sin pasar de 1. */
@@ -205,7 +250,7 @@ export const PROB_INDEPENDENCE: ExerciseType<ProbPairInstance> = {
   id: "probabilidad-independencia",
   topic: "probabilidad",
   title: "Condicionada e independencia",
-  description: "Con P(A), P(B) y un dato más, calcula P(A ∪ B) o P(A ∩ B) y P(A | B), y selecciona la o las afirmaciones correctas.",
+  description: "Con P(A), P(B) y un dato más, calcula P(A ∪ B) o P(A ∩ B) y P(A | B), y elige la afirmación correcta entre a) y d) (en el nivel avanzado, la o las correctas).",
   levels: ALL_LEVELS,
   generate(seed, level) {
     return generateUntil(
@@ -214,8 +259,10 @@ export const PROB_INDEPENDENCE: ExerciseType<ProbPairInstance> = {
       (p) => {
         const f = pairInstanceFacts(p);
         const truth = p.statements.map((s) => statementTrue(s, f));
-        // Al menos una correcta y al menos una falsa; ningún dato trivial (0 o 1).
-        if (!truth.includes(true) || !truth.includes(false)) return false;
+        // Una sola correcta (opción múltiple) o, con «la o las correctas», al menos una y alguna falsa.
+        const right = truth.filter(Boolean).length;
+        if (p.multi ? right === 0 || right === truth.length : right !== 1) return false;
+        // Ningún dato trivial (0 o 1).
         if ([f.pA, f.pB].some((x) => isZero(x) || equals(x, ONE))) return false;
         // Afirmaciones distintas entre sí.
         return new Set(p.statements.map((s) => JSON.stringify(s))).size === p.statements.length;
@@ -308,14 +355,24 @@ export type ProbGameInstance = { odd: number; even: number; rule: DieRule; ask: 
 
 function makeGame(rng: Rng, level: ExerciseLevel): ProbGameInstance {
   const [odd, even] = level === "básico" ? [1, 1] : level === "medio" ? rng.pick([[2, 1], [1, 2]] as const) : rng.pick([[3, 1], [1, 3], [3, 2], [2, 3], [2, 1], [1, 2]] as const);
-  const kind = rng.pick(["cara", "paridad", "umbral"] as const);
+  const kind = rng.pick(["cara", "paridad", "umbral", "caras"] as const);
   const rule: DieRule =
     kind === "cara"
       ? { kind, mult: rng.int(1, 3), cost: rng.int(2, 9) }
       : kind === "paridad"
         ? { kind, odd: rng.pick([-1, 1]) * rng.int(1, 6), even: rng.pick([-1, 1]) * rng.int(1, 6) }
-        : { kind, t: rng.int(3, 6), win: rng.int(2, 10), lose: -rng.int(1, 5) };
+        : kind === "umbral"
+          ? { kind, t: rng.int(3, 6), win: rng.int(2, 10), lose: -rng.int(1, 5) }
+          : { kind, payoffs: cutsPayoffs(rng) };
   return { odd, even, rule, ask: level === "avanzado" ? ["media", "varianza"] : ["media"] };
+}
+
+/** Ganancias por cara en dos o tres tramos (1–2 pierdes, 3–5 ganas poco, 6 ganas mucho…). */
+function cutsPayoffs(rng: Rng): number[] {
+  const c1 = rng.int(1, 4);
+  const c2 = rng.int(c1 + 1, 6);
+  const v = [-rng.int(1, 6), rng.pick([-1, 0, 1, 2]), rng.int(3, 12)];
+  return [1, 2, 3, 4, 5, 6].map((f) => (f <= c1 ? v[0]! : f <= c2 ? v[1]! : v[2]!));
 }
 
 export const gameInstanceRows = (g: ProbGameInstance) => dieGameRows(g.rule, loadedDieWeights(g.odd, g.even));
@@ -406,4 +463,64 @@ export const PROB_PRODUCT: ExerciseType<ProbProductInstance> = {
   },
 };
 
-export const PROB_EXERCISES = [PROB_TOTAL, PROB_INDEPENDENCE, PROB_BINOMIAL, PROB_GEOMETRIC, PROB_GAME, PROB_PENALTY, PROB_PRODUCT] as const;
+// ---------------------------------------------------------------- Condicionada con un dado (a–d)
+
+export type ProbDieCondInstance = { odd: number; even: number; a: DieEventSpec; b: DieEventSpec; options: Q[] };
+
+const DIE_EVENTS = (rng: Rng): DieEventSpec =>
+  rng.pick<DieEventSpec>([
+    { kind: "par" },
+    { kind: "impar" },
+    { kind: "primo" },
+    { kind: "multiplo3" },
+    { kind: "menor", k: rng.int(2, 6) },
+    { kind: "mayor", k: rng.int(1, 5) },
+    { kind: "distinto", k: rng.int(1, 6) },
+  ]);
+
+export function dieCondFacts(i: Pick<ProbDieCondInstance, "odd" | "even" | "a" | "b">) {
+  const die = dieSpace([1, 2, 3, 4, 5, 6].map((f) => (f % 2 ? i.odd : i.even)));
+  const A = dieEvent(die, i.a);
+  const B = dieEvent(die, i.b);
+  return { die, A, B, pA: probOf(die, A), pB: probOf(die, B), pAB: probOf(die, eventInter(A, B)), answer: condProbOf(die, A, B) };
+}
+
+function makeDieCond(rng: Rng, level: ExerciseLevel): ProbDieCondInstance | null {
+  const [odd, even] = level === "avanzado" ? rng.pick([[2, 1], [1, 2], [3, 1], [1, 3]] as const) : [1, 1];
+  const a = DIE_EVENTS(rng);
+  const b = level === "básico" ? rng.pick<DieEventSpec>([{ kind: "par" }, { kind: "impar" }]) : DIE_EVENTS(rng);
+  const f = dieCondFacts({ odd, even, a, b });
+  if (f.answer === null || isZero(f.answer) || equals(f.answer, ONE)) return null;
+  // Distractores: los errores típicos (no condicionar, condicionar al revés, P(A)) y, si hacen falta,
+  // fracciones cercanas.
+  const condBA = isZero(f.pA) ? null : div(f.pAB, f.pA);
+  const raw = [f.pAB, condBA, f.pA, mul(f.pA, f.pB), add(f.answer, frac(1n, 6n)), sub(f.answer, frac(1n, 6n)), frac(1n, 2n), frac(1n, 3n)];
+  const seen = new Set([`${f.answer.n}/${f.answer.d}`]);
+  const wrong: Frac[] = [];
+  for (const x of raw) {
+    if (!x || cmp(x, ZERO) <= 0 || cmp(x, ONE) >= 0) continue;
+    const key = `${x.n}/${x.d}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    wrong.push(x);
+  }
+  if (wrong.length < 3) return null;
+  return { odd, even, a, b, options: rng.shuffle([f.answer, ...wrong.slice(0, 3)]).map(fracQ) };
+}
+
+export const PROB_DIE_COND: ExerciseType<ProbDieCondInstance> = {
+  id: "probabilidad-dado",
+  topic: "probabilidad",
+  title: "Condicionada con un dado",
+  description: "Al tirar un dado (equilibrado o, en el nivel avanzado, trucado), probabilidad de un suceso sabiendo que ha ocurrido otro, con cuatro opciones de a) a d).",
+  levels: ALL_LEVELS,
+  generate(seed, level) {
+    return generateUntil(
+      rngFor("probabilidad-dado", seed),
+      (r) => makeDieCond(r, level),
+      (i) => JSON.stringify(i.a) !== JSON.stringify(i.b),
+    );
+  },
+};
+
+export const PROB_EXERCISES = [PROB_TOTAL, PROB_DIE_COND, PROB_INDEPENDENCE, PROB_BINOMIAL, PROB_GEOMETRIC, PROB_GAME, PROB_PENALTY, PROB_PRODUCT] as const;

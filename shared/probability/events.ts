@@ -129,3 +129,56 @@ export const eventsIndependent = <T>(space: SampleSpace<T>, a: ProbEvent, b: Pro
 
 /** P(Aᶜ) = 1 − P(A). */
 export const complementProb = (p: Frac): Frac => sub(ONE, p);
+
+// ---------------------------------------------------------------- Sucesos de un dado, con nombre
+
+/** Sucesos de una tirada de un dado que se pueden nombrar en un enunciado. */
+export type DieEventSpec =
+  | { kind: "par" }
+  | { kind: "impar" }
+  | { kind: "primo" }
+  | { kind: "multiplo3" }
+  | { kind: "menor"; k: number }
+  | { kind: "mayor"; k: number }
+  | { kind: "distinto"; k: number };
+
+export function dieEventHolds(e: DieEventSpec, face: number): boolean {
+  switch (e.kind) {
+    case "par":
+      return face % 2 === 0;
+    case "impar":
+      return face % 2 === 1;
+    case "primo":
+      return face === 2 || face === 3 || face === 5;
+    case "multiplo3":
+      return face % 3 === 0;
+    case "menor":
+      return face < e.k;
+    case "mayor":
+      return face > e.k;
+    case "distinto":
+      return face !== e.k;
+  }
+}
+
+/** «es par», «es menor que 4»… */
+export function dieEventText(e: DieEventSpec): string {
+  switch (e.kind) {
+    case "par":
+      return "es par";
+    case "impar":
+      return "es impar";
+    case "primo":
+      return "es un número primo";
+    case "multiplo3":
+      return "es múltiplo de 3";
+    case "menor":
+      return `es menor que ${e.k}`;
+    case "mayor":
+      return `es mayor que ${e.k}`;
+    case "distinto":
+      return `no es un ${e.k}`;
+  }
+}
+
+export const dieEvent = (space: SampleSpace<number>, e: DieEventSpec): ProbEvent => eventWhere(space, (x) => dieEventHolds(e, x));

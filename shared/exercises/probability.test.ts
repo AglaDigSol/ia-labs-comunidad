@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { add, cmp, equals, frac, mul, ONE, sub, sum, ZERO, type Frac } from "../rational.ts";
 import { solveTree } from "../probability/conditional.ts";
 import { distMean, distVariance, pmfExact, probAtLeast } from "../probability/distributions.ts";
-import { dieSpace, eventWhere, loadedDieWeights, probOf, repeatSpace } from "../probability/events.ts";
+import { dieEventHolds, dieSpace, eventWhere, loadedDieWeights, probOf, repeatSpace } from "../probability/events.ts";
 import { gameVar, guessExpectation, rvCombineIndependent, rvFromDist, rvMean, rvProductIndependent } from "../probability/variable.ts";
 import {
   binomialSpec,
@@ -13,7 +13,9 @@ import {
   geometricSpec,
   pairInstanceFacts,
   penaltyAnswer,
+  dieCondFacts,
   PROB_BINOMIAL,
+  PROB_DIE_COND,
   PROB_EXERCISES,
   PROB_GAME,
   PROB_GEOMETRIC,
@@ -35,13 +37,13 @@ const each = (fn: (seed: number, level: ExerciseLevel) => void, seeds = SEEDS) =
 const inUnit = (x: Frac) => cmp(x, ZERO) >= 0 && cmp(x, ONE) <= 0;
 
 describe("registro de probabilidad", () => {
-  it("siete tipos en el tema «Probabilidad», tras «Cálculo»", () => {
+  it("ocho tipos en el tema «Probabilidad», tras «Cálculo»", () => {
     const ids = exerciseTopics().map((t) => t.id);
     expect(ids.indexOf("probabilidad")).toBe(ids.indexOf("calculo") + 1);
     expect(exercisesOfTopic("probabilidad").map((t) => t.id)).toEqual(PROB_EXERCISES.map((t) => t.id));
-    expect(PROB_EXERCISES).toHaveLength(7);
+    expect(PROB_EXERCISES).toHaveLength(8);
     const mixed = new Set(SEEDS.slice(0, 80).map((s) => mixedType("probabilidad", "medio", s).id));
-    expect(mixed.size).toBe(7);
+    expect(mixed.size).toBe(8);
   });
 
   it("deterministas, variados y serializables en JSON", () => {
@@ -76,8 +78,11 @@ describe("generadores", () => {
       const f = pairInstanceFacts(p);
       expect([f.pA, f.pB, f.inter, f.union].every(inUnit)).toBe(true);
       const truth = p.statements.map((x) => statementTrue(x, f));
+      expect(p.statements).toHaveLength(4);
       expect(truth).toContain(true);
       expect(truth).toContain(false);
+      if (!p.multi) expect(truth.filter(Boolean)).toHaveLength(1);
+      expect(p.multi).toBe(level === "avanzado");
       expect(p.statements.some((x) => x.kind === "independientes")).toBe(true);
       if (f.independent) independent++;
       if (level === "básico") expect(p.given).toBe("inter");
@@ -85,6 +90,40 @@ describe("generadores", () => {
     // Más o menos la mitad son independientes.
     expect(independent).toBeGreaterThan(SEEDS.length * 0.6);
     expect(independent).toBeLessThan(SEEDS.length * 2.4);
+  });
+
+  it("condicionada con un dado: cuatro opciones distintas, una sola correcta (contra la enumeración)", () => {
+    each((s, level) => {
+      const i = PROB_DIE_COND.generate(s, level);
+      expect(i.options).toHaveLength(4);
+      expect(new Set(i.options.map((o) => o.join("/"))).size).toBe(4);
+      const { answer } = dieCondFacts(i);
+      const weights = [1, 2, 3, 4, 5, 6].map((x) => (x % 2 ? i.odd : i.even));
+      let num = 0;
+      let den = 0;
+      for (let x = 1; x <= 6; x++) {
+        if (dieEventHolds(i.b, x)) {
+          den += weights[x - 1]!;
+          if (dieEventHolds(i.a, x)) num += weights[x - 1]!;
+        }
+      }
+      expect(equals(answer!, frac(BigInt(num), BigInt(den)))).toBe(true);
+      expect(i.options.filter((o) => equals(qFrac(o), answer!))).toHaveLength(1);
+      if (level !== "avanzado") expect(i.odd).toBe(i.even);
+    });
+  });
+
+  it("probabilidad total con porcentajes: P(C | A₁) = 1 − y y se pregunta P(A₁ | C)", () => {
+    let percent = 0;
+    each((s, level) => {
+      const t = PROB_TOTAL.generate(s, level);
+      if (t.percent === null) return;
+      percent++;
+      expect(level).not.toBe("básico");
+      expect(t.priors.every((p) => 100 % p[1] === 0)).toBe(true);
+      expect(t.ask).toBe(0);
+    });
+    expect(percent).toBeGreaterThan(SEEDS.length * 0.3);
   });
 
   it("binomial: las probabilidades pedidas, contra la enumeración en los casos pequeños", () => {

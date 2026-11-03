@@ -3,7 +3,7 @@
 // sumas directas), árbol de Bayes, independencia, lectura de respuestas y simulación.
 import { describe, expect, it } from "vitest";
 import { add, equals, frac, mul, ONE, sub, sum, toNumber, ZERO, type Frac } from "../rational.ts";
-import { answerMatches, answerState, checkProbAnswer, parseProbAnswer } from "./answer.ts";
+import { answerFeedback, answerMatches, answerState, checkProbAnswer, NOTE_DOT, NOTE_MORE_DIGITS, NOTE_ROUNDING, parseProbAnswer } from "./answer.ts";
 import { contingencyDetermined, contingencyFrom, pairFacts, pairProblem, solveContingency, solveTree, treeProblem } from "./conditional.ts";
 import { erf, normalCdf, normalProb, standardize, uniformProb } from "./continuous.ts";
 import {
@@ -22,6 +22,8 @@ import {
 import {
   condProbOf,
   coinSpace,
+  dieEvent,
+  dieEventText,
   dieSpace,
   eventComplement,
   eventInter,
@@ -41,6 +43,7 @@ import { checkpoints, simulateFrequency } from "./simulation.ts";
 import {
   coinGameRows,
   dieGameRows,
+  dieRuleText,
   gameVar,
   guessExpectation,
   penaltyForTarget,
@@ -81,33 +84,51 @@ describe("respuestas", () => {
     for (const bad of ["", "abc", "1/0", "0,3,3", "3 / 8 / 2"]) expect(parseProbAnswer(bad).ok).toBe(false);
   });
 
-  it("exacto para fracciones; decimales redondeados o truncados con al menos 4 cifras", () => {
+  it("exacto para fracciones; decimales bien redondeados a dos cifras (como en el examen)", () => {
     expect(checkProbAnswer("6/16", f(3, 8))).toBe(true);
     expect(checkProbAnswer("0,375", f(3, 8))).toBe(true);
-    expect(checkProbAnswer("0,38", f(3, 8))).toBe(false);
+    expect(checkProbAnswer("0,38", f(3, 8))).toBe(true);
+    expect(checkProbAnswer("0,37", f(3, 8))).toBe(false);
+    expect(checkProbAnswer("0,4", f(3, 8))).toBe(false);
     expect(checkProbAnswer("1/3", f(1, 3))).toBe(true);
+    expect(checkProbAnswer("0,33", f(1, 3))).toBe(true);
     expect(checkProbAnswer("0,3333", f(1, 3))).toBe(true);
-    expect(checkProbAnswer("0,33333", f(1, 3))).toBe(true);
-    expect(checkProbAnswer("0,333", f(1, 3))).toBe(false);
+    expect(checkProbAnswer("0,3", f(1, 3))).toBe(false);
+    expect(checkProbAnswer("0,34", f(1, 3))).toBe(false);
     expect(checkProbAnswer("0,3334", f(1, 3))).toBe(false);
-    expect(checkProbAnswer("0,6667", f(2, 3))).toBe(true);
+    expect(checkProbAnswer("0,67", f(2, 3))).toBe(true);
+    expect(checkProbAnswer("0,66", f(2, 3))).toBe(false);
     expect(checkProbAnswer("0,6666", f(2, 3))).toBe(true);
-    expect(checkProbAnswer("0,6665", f(2, 3))).toBe(false);
     expect(checkProbAnswer("33,33 %", f(1, 3))).toBe(true);
-    expect(checkProbAnswer("−0,1667", f(-1, 6))).toBe(true);
+    expect(checkProbAnswer("−0,17", f(-1, 6))).toBe(true);
     expect(checkProbAnswer("1/4", f(1, 3))).toBe(false);
     expect(checkProbAnswer("1,5", f(3, 2))).toBe(true);
     expect(checkProbAnswer("2", f(2))).toBe(true);
+    // Con cuatro cifras pedidas.
+    expect(checkProbAnswer("0,33", f(1, 3), 4)).toBe(false);
+    expect(checkProbAnswer("0,3333", f(1, 3), 4)).toBe(true);
   });
 
-  it("valores no racionales: decimales redondeados o truncados, fracciones cercanas", () => {
+  it("avisos: más cifras de las pedidas, punto en vez de coma y redondeo", () => {
+    expect(answerFeedback("0,3333", f(1, 3))).toEqual({ state: "bien", notes: [NOTE_MORE_DIGITS(2)] });
+    expect(answerFeedback("0.33", f(1, 3))).toEqual({ state: "bien", notes: [NOTE_DOT] });
+    expect(answerFeedback("0,66", f(2, 3))).toEqual({ state: "mal", notes: [NOTE_ROUNDING] });
+    expect(answerFeedback("0,33", f(1, 3))).toEqual({ state: "bien", notes: [] });
+    expect(answerFeedback("1/3", f(1, 3))).toEqual({ state: "bien", notes: [] });
+    expect(answerFeedback("0,9", f(1, 3))).toEqual({ state: "mal", notes: [] });
+  });
+
+  it("valores no racionales: con las mismas reglas", () => {
     const v = Math.exp(-1); // 0,36787944…
+    expect(checkProbAnswer("0,37", v)).toBe(true);
+    expect(checkProbAnswer("0,36", v)).toBe(false);
     expect(checkProbAnswer("0,3679", v)).toBe(true);
     expect(checkProbAnswer("0,3678", v)).toBe(true);
     expect(checkProbAnswer("0,3677", v)).toBe(false);
-    expect(checkProbAnswer("0,368", v)).toBe(false);
-    expect(checkProbAnswer("0,36788", v)).toBe(true);
-    const a = parseProbAnswer("0,3679");
+    expect(checkProbAnswer("0,3679", v, 4)).toBe(true);
+    expect(checkProbAnswer("0,368", v, 4)).toBe(false);
+    expect(checkProbAnswer("0,36788", v, 4)).toBe(true);
+    const a = parseProbAnswer("0,368");
     expect(a.ok && answerMatches(a, v, 3)).toBe(true);
     expect(answerState("", v)).toBe("vacío");
     expect(answerState("x", v)).toBe("ilegible");
@@ -349,8 +370,10 @@ describe("normal y uniforme continua", () => {
 describe("formato y simulación", () => {
   it("formato", () => {
     expect(probTex(f(3, 8))).toBe("\\frac{3}{8}");
-    expect(probWithDecimal(f(1, 3))).toBe("1/3 ≈ 0,3333");
-    expect(probWithDecimal(f(3, 8))).toBe("3/8 = 0,375");
+    expect(probWithDecimal(f(1, 3))).toBe("1/3 ≈ 0,33");
+    expect(probWithDecimal(f(1, 3), 4)).toBe("1/3 ≈ 0,3333");
+    expect(probWithDecimal(f(3, 8))).toBe("3/8 ≈ 0,38");
+    expect(probWithDecimal(f(3, 8), 4)).toBe("3/8 = 0,375");
     expect(decimalComma(-0.25)).toBe("−0,25");
   });
 
@@ -362,5 +385,16 @@ describe("formato y simulación", () => {
     expect(Math.abs(a.at(-1)!.freq - 1 / 6)).toBeLessThan(0.02);
     expect(a.at(-1)!.n).toBe(20000);
     expect(checkpoints(5)).toEqual([1, 2, 3, 4, 5]);
+  });
+});
+
+describe("juegos y sucesos con nombre", () => {
+  it("la regla en palabras y los sucesos de un dado", () => {
+    expect(dieRuleText({ kind: "paridad", odd: 3, even: -4 })).toBe("Si sale impar, ganas 3 €; si sale par, pierdes 4 €.");
+    expect(dieRuleText({ kind: "caras", payoffs: [-2, -2, 1, 1, 1, 6] })).toBe("Si sale un 1 o un 2, pierdes 2 €; si sale un 3, un 4 o un 5, ganas 1 €; si sale un 6, ganas 6 €.");
+    expect(dieRuleText({ kind: "umbral", t: 5, win: 5, lose: -2 })).toBe("Si sale 5 o más, ganas 5 €; si no, pierdes 2 €.");
+    const die = dieSpace();
+    eq(condProbOf(die, dieEvent(die, { kind: "menor", k: 4 }), dieEvent(die, { kind: "par" }))!, f(1, 3));
+    expect(dieEventText({ kind: "multiplo3" })).toBe("es múltiplo de 3");
   });
 });
