@@ -102,28 +102,30 @@ export function zerosOf(g: Expr, R = 40): number[] {
 
 const defined = (f: Expr, x: number) => Number.isFinite(evaluate(f, { x }));
 
-/** Dominio de f (funciones de x) dentro de [−R, R] y, fuera, como siga a los lados. */
-export function domainOf(f: Expr, R = 40): IntervalSet {
-  const cuts = [...new Set(conditions(f).flatMap((g) => zerosOf(g, R)))].sort((a, b) => a - b);
-  if (cuts.length === 0) return defined(f, 0.5) ? REALS : [];
-  // Trozos: (−∞, c₁), {c₁}, (c₁, c₂), …, {cₘ}, (cₘ, +∞).
+/**
+ * Conjunto a partir de unos puntos de corte y de quién pertenece: se mira un punto de cada trozo
+ * (−∞, c₁), {c₁}, (c₁, c₂)… y se juntan los trozos seguidos que pertenecen.
+ */
+export function setFromCuts(cuts: readonly number[], member: (x: number) => boolean): IntervalSet {
+  const cs = [...new Set(cuts)].filter(Number.isFinite).sort((a, b) => a - b);
+  if (cs.length === 0) return member(0.5) ? REALS.map((i) => ({ ...i })) : [];
   type Piece = { lo: number; hi: number; point: boolean; ok: boolean };
   const pieces: Piece[] = [];
   const at = (lo: number, hi: number) => (lo === -Infinity ? hi - 1 : hi === Infinity ? lo + 1 : (lo + hi) / 2);
   let prev = -Infinity;
-  for (const c of cuts) {
-    pieces.push({ lo: prev, hi: c, point: false, ok: defined(f, at(prev, c)) });
-    pieces.push({ lo: c, hi: c, point: true, ok: defined(f, c) });
+  for (const c of cs) {
+    pieces.push({ lo: prev, hi: c, point: false, ok: member(at(prev, c)) });
+    pieces.push({ lo: c, hi: c, point: true, ok: member(c) });
     prev = c;
   }
-  pieces.push({ lo: prev, hi: Infinity, point: false, ok: defined(f, at(prev, Infinity)) });
+  pieces.push({ lo: prev, hi: Infinity, point: false, ok: member(at(prev, Infinity)) });
   const out: IntervalSet = [];
   for (const p of pieces) {
     if (!p.ok) continue;
     const last = out[out.length - 1];
+    // Se pega al anterior si el punto de corte lo cierra o si este trozo es el punto. Dos trozos
+    // abiertos separados por un punto que no está siguen siendo dos intervalos.
     if (last && last.hi === p.lo && (last.hiClosed || p.point)) {
-      // Se pega al anterior: el punto de corte lo cierra o el trozo abierto sigue al punto. Dos trozos
-      // abiertos separados por un punto que no está siguen siendo dos intervalos.
       last.hi = p.hi;
       last.hiClosed = p.point;
       continue;
@@ -132,6 +134,14 @@ export function domainOf(f: Expr, R = 40): IntervalSet {
   }
   return out;
 }
+
+/** Dominio de f (funciones de x): los ceros de lo que pone condiciones, en [−R, R], parten la recta. */
+export function domainOf(f: Expr, R = 40): IntervalSet {
+  const cuts = conditions(f).flatMap((g) => zerosOf(g, R));
+  return setFromCuts(cuts, (x) => defined(f, x));
+}
+
+const endpoints = (s: IntervalSet) => s.flatMap((i) => [i.lo, i.hi]);
 
 const close = (a: number, b: number) => a === b || Math.abs(a - b) < 1e-9;
 
@@ -167,6 +177,7 @@ function writeSet(s: IntervalSet, num: (v: number) => string, sym: { reals: stri
   if (s.length === 0) return sym.empty;
   const pts = missingPoints(s);
   if (pts) return pts.length === 0 ? sym.reals : sym.minus(pts.map(num).join(", "));
+  if (s.every((i) => i.lo === i.hi)) return sym.point(s.map((i) => num(i.lo)).join(", "));
   return s
     .map((i) => {
       if (i.lo === i.hi) return sym.point(num(i.lo));
@@ -207,3 +218,22 @@ export function intervalSetSpoken(s: IntervalSet, num: (v: number) => string): s
     )
     .join(" unión ");
 }
+
+// ---------------------------------------------------------------- Operaciones (para los distractores)
+
+/** Complementario en ℝ: los extremos cambian de abierto a cerrado y al revés. */
+export const complementSet = (s: IntervalSet): IntervalSet => setFromCuts(endpoints(s), (x) => !inSet(s, x));
+
+/** Une solapes y deja el conjunto en su forma normal. */
+export const normalizeSet = (s: IntervalSet): IntervalSet => setFromCuts(endpoints(s), (x) => inSet(s, x));
+
+/** Cambia todos los extremos finitos de abierto a cerrado y al revés (sin tocar ±∞). */
+export const toggleEndpoints = (s: IntervalSet): IntervalSet =>
+  normalizeSet(s.filter((i) => i.lo !== i.hi).map((i) => ({ ...i, loClosed: i.lo !== -Infinity && !i.loClosed, hiClosed: i.hi !== Infinity && !i.hiClosed })));
+
+/** Cierra o abre todos los extremos finitos. */
+export const withEndpoints = (s: IntervalSet, closed: boolean): IntervalSet =>
+  normalizeSet(s.filter((i) => i.lo !== i.hi).map((i) => ({ ...i, loClosed: closed && i.lo !== -Infinity, hiClosed: closed && i.hi !== Infinity })));
+
+/** El conjunto reflejado (x ↦ −x). */
+export const mirrorSet = (s: IntervalSet): IntervalSet => normalizeSet(s.map((i) => ({ lo: -i.hi, hi: -i.lo, loClosed: i.hiClosed, hiClosed: i.loClosed })));

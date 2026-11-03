@@ -8,8 +8,29 @@ import { frac, toNumber } from "../rational.ts";
 import { basinOf, criticalPoints1D, descentLimit1D } from "./basins.ts";
 import { bisection, bisectionInterval, bisectionIterations, bisectionLength } from "./bisection.ts";
 import { chainRule, chainRuleAt } from "./chain.ts";
+
 import { objective, runDescent } from "./descent.ts";
-import { domainOf, inSet, intervalSetEquals, intervalSetTex, intervalSetText, REALS, zerosOf } from "./domain.ts";
+import { boundValue, closedTex, closedText, closedValue, PARTS_FAMILIES, partsAntiderivative, partsChoice, partsDefinite, partsIntegrand, type Bound, type PartsFamily } from "./byparts.ts";
+import { chainRuleJacobian, jacobianAt } from "./chain.ts";
+import { derivative } from "./derive.ts";
+import {
+  complementSet,
+  domainOf,
+  inSet,
+  intervalSetEquals,
+  intervalSetTex,
+  intervalSetText,
+  mirrorSet,
+  normalizeSet,
+  REALS,
+  setFromCuts,
+  toggleEndpoints,
+  withEndpoints,
+  zerosOf,
+} from "./domain.ts";
+import { isEquivalent } from "./equivalence.ts";
+import { definiteIntegral, numberMatchesRounded, parseNumberAnswer } from "./integrals.ts";
+import { classifyPoint, hasNoCriticalPoints } from "./points.ts";
 import { evaluate, type Expr } from "./expr.ts";
 import { analyzePiecewise, lhopitalSteps, limitAt, oneSidedLimit, piecewiseValue, sameLimit, type Piecewise, snapNice, type LimitValue } from "./limits.ts";
 import { parseExpr } from "./parser.ts";
@@ -280,5 +301,89 @@ describe("cuencas del descenso de gradiente", () => {
     expect(basinOf(P("x^4 - 2x^2"), frac(1n))).toEqual({ lo: 0, hi: Infinity, loClosed: false, hiClosed: false });
     expect(basinOf(P("-x^4 + 2x^2"), frac(0n))).toEqual({ lo: -1, hi: 1, loClosed: false, hiClosed: false });
     expect(basinOf(P("x^4 - 2x^2"), frac(0n))).toBeNull();
+  });
+});
+
+describe("integración por partes", () => {
+  it("la primitiva se deriva al integrando y los valores exactos salen como en clase", () => {
+    for (const fam of PARTS_FAMILIES) {
+      for (const k of [1, -2, 3]) {
+        for (const a of fam.endsWith("ln") ? [1] : [1, 2]) {
+          const F = partsAntiderivative(fam, k, a);
+          expect(isEquivalent(derivative(F), P(partsIntegrand(fam, k, a))), `${fam} ${k} ${a}`).toBe(true);
+        }
+      }
+    }
+    const e = (m: number): Bound => ({ k: "e", m });
+    const pi = (n: number, d: number): Bound => ({ k: "pi", n, d });
+    expect(closedText(partsDefinite("x-ln", -2, 1, e(0), e(1))!)).toBe("−(e² + 1)/2");
+    // Con los límites al revés, cambia el signo.
+    expect(closedText(partsDefinite("x-ln", -2, 1, e(1), e(0))!)).toBe("(e² + 1)/2");
+    expect(closedText(partsDefinite("x-sin", 1, 1, pi(0, 1), pi(1, 1))!)).toBe("π");
+    expect(closedTex(partsDefinite("x-cos", 3, 1, pi(0, 1), pi(1, 2))!)).toBe("\\frac{3\\left(\\pi - 2\\right)}{2}");
+    expect(closedText(partsDefinite("x-exp", 2, 1, { k: "num", v: -1 }, { k: "num", v: 0 })!)).toBe("2(2/e − 1)");
+    expect(partsDefinite("x-ln", 1, 1, { k: "num", v: 0 }, e(1))).toBeNull();
+    for (const [fam, lo, hi] of [
+      ["x2-ln", e(0), e(1)],
+      ["x-exp", { k: "num", v: 0 }, { k: "num", v: 2 }],
+      ["x-cos", pi(0, 1), pi(1, 1)],
+    ] as Array<[PartsFamily, Bound, Bound]>) {
+      expect(closedValue(partsDefinite(fam, 1, 1, lo, hi)!)).toBeCloseTo(definiteIntegral(P(partsIntegrand(fam, 1, 1)), boundValue(lo), boundValue(hi)), 9);
+    }
+    expect(partsChoice("x-ln").u).toBe("ln x");
+  });
+});
+
+describe("regla de la cadena con jacobiana y puntos críticos tipo test", () => {
+  it("∇h(m(p))·J_m(p) frente a la derivada numérica de h∘m", () => {
+    const map: [Expr, Expr] = [P("x^2 y + 1", ["x", "y"]), P("3x - y^2", ["x", "y"])];
+    const p: [number, number] = [1, 2];
+    const J = jacobianAt(map, p);
+    expect(J).toEqual([
+      [4, 1],
+      [3, -4],
+    ]);
+    const [dx, dy] = chainRuleJacobian([2, 5], J);
+    expect([dx, dy]).toEqual([23, -18]);
+  });
+
+  it("clasifica puntos y reconoce funciones sin puntos críticos", () => {
+    const f = P("x^2 (y - 1) - (y + 1)^2", ["x", "y"]);
+    expect(classifyPoint(f, [0, -1])).toBe("maximo");
+    expect(classifyPoint(f, [1, 1])).toBe("no-critico");
+    expect(classifyPoint(P("x^2 - y^2", ["x", "y"]), [0, 0])).toBe("silla");
+    expect(classifyPoint(P("x^2 + y^2", ["x", "y"]), [0, 0])).toBe("minimo");
+    expect(hasNoCriticalPoints(P("2e^x + y^4 + 1", ["x", "y"]))).toBe(true);
+    expect(hasNoCriticalPoints(P("x^2 + e^y", ["x", "y"]))).toBe(true);
+    expect(hasNoCriticalPoints(P("x^2 + y^2", ["x", "y"]))).toBe(false);
+  });
+});
+
+describe("respuestas redondeadas a dos decimales y operaciones con conjuntos", () => {
+  it("como en el examen: redondeando a dos decimales con coma", () => {
+    const ans = (t: string) => {
+      const r = parseNumberAnswer(t);
+      if (!r.ok) throw new Error(t);
+      return r;
+    };
+    expect(numberMatchesRounded(ans("3,14"), Math.PI)).toBe(true);
+    expect(numberMatchesRounded(ans("3,1416"), Math.PI)).toBe(true);
+    expect(numberMatchesRounded(ans("3,15"), Math.PI)).toBe(false);
+    expect(numberMatchesRounded(ans("2,72"), Math.E)).toBe(true);
+    expect(numberMatchesRounded(ans("2,71"), Math.E)).toBe(false);
+    expect(numberMatchesRounded(ans("e"), Math.E)).toBe(true);
+    expect(numberMatchesRounded(ans("−4,19"), -4.1945)).toBe(true);
+  });
+
+  it("complementario, extremos cambiados y reflejado", () => {
+    const num = (v: number) => String(v).replace("-", "−");
+    const D = domainOf(P("sqrt(x + 2)/(x - 1)"));
+    expect(intervalSetText(complementSet(D), num)).toBe("(−∞, −2) ∪ {1}");
+    expect(intervalSetText(complementSet(domainOf(P("1/(x^2 - 9)"))), num)).toBe("{−3, 3}");
+    expect(intervalSetText(toggleEndpoints(domainOf(P("sqrt(4 - x^2)"))), num)).toBe("(−2, 2)");
+    expect(intervalSetText(mirrorSet(domainOf(P("ln(x - 1)"))), num)).toBe("(−∞, −1)");
+    expect(intervalSetText(withEndpoints(domainOf(P("ln(9 - x^2)")), true), num)).toBe("[−3, 3]");
+    expect(intervalSetText(normalizeSet([...domainOf(P("sqrt(x)")), { lo: -1, hi: 1, loClosed: true, hiClosed: false }]), num)).toBe("[−1, +∞)");
+    expect(intervalSetText(setFromCuts([2], (x) => x !== 2), num)).toBe("ℝ ∖ {2}");
   });
 });

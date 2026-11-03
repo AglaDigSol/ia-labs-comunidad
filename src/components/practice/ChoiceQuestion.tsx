@@ -1,5 +1,6 @@
-// Preguntas de opción múltiple como las del examen: «opción única» (A–E, con «Ninguna de las otras» si
-// la pregunta la lleva) y «selecciona la o las correctas». Dos piezas:
+// Preguntas de opción múltiple como las del examen (Blackboard Ultra): «opción múltiple» con cuatro
+// opciones a)–d) y una correcta (lo normal) y, como variantes, cinco con «Ninguna de las otras» o
+// «selecciona la o las correctas». Dos piezas:
 //
 // - ChoiceOptions: solo las opciones (radios o casillas), controladas desde fuera. Es lo que usará el
 //   simulador de examen, que recoge las respuestas y corrige al final.
@@ -84,8 +85,7 @@ export function ChoiceOptions({
               disabled={disabled}
               onChange={() => onChange(toggleChoice(mode, value, o.id))}
             />
-            <span className="w-7 shrink-0 font-semibold" aria-hidden="true">{`${o.letter})`}</span>
-            <span className="sr-only">{`${o.letter}:`}</span>{" "}
+            <span className="w-7 shrink-0 font-semibold">{`${o.letter})`}</span>{" "}
             <span className="min-w-0 max-w-full overflow-x-auto">
               <OptionContent option={o} />
             </span>

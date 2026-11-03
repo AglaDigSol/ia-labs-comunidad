@@ -14,7 +14,7 @@ describe("arrangeChoices", () => {
     const question = q([true, false, false, false]);
     const a = arrangeChoices(question, 7);
     expect(arrangeChoices(question, 7)).toEqual(a);
-    expect(a.map((o) => o.letter)).toEqual(["A", "B", "C", "D"]);
+    expect(a.map((o) => o.letter)).toEqual(["a", "b", "c", "d"]);
     const orders = new Set(Array.from({ length: 40 }, (_, s) => arrangeChoices(question, s).map((o) => o.id).join()));
     expect(orders.size).toBeGreaterThan(10);
     // Un texto también sirve de semilla.
@@ -25,10 +25,10 @@ describe("arrangeChoices", () => {
     for (let s = 0; s < 30; s++) {
       const withAnswer = arrangeChoices(q([false, true, false, false], { noneOfOthers: true }), s);
       expect(withAnswer).toHaveLength(5);
-      expect(withAnswer[4]).toMatchObject({ id: NONE_ID, text: NONE_TEXT, letter: "E", correct: false });
+      expect(withAnswer[4]).toMatchObject({ id: NONE_ID, text: NONE_TEXT, letter: "e", correct: false });
       const without = arrangeChoices(q([false, false, false, false], { noneOfOthers: true }), s);
       expect(without[4]).toMatchObject({ id: NONE_ID, correct: true });
-      expect(correctLetters(without)).toBe("E");
+      expect(correctLetters(without)).toBe("e");
     }
   });
 

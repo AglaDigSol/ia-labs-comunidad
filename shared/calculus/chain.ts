@@ -30,3 +30,18 @@ export function chainRuleAt(h: Expr, curve: readonly [Expr, Expr], t0: number): 
   const grad: Vec2 = [evaluate(derivative(h, "x"), at), evaluate(derivative(h, "y"), at)];
   return { point, velocity, grad, value: chainRule(grad, velocity) };
 }
+
+/** Matriz jacobiana 2×2 de m = (m₁, m₂): filas = componentes, columnas = ∂/∂x, ∂/∂y. */
+export type Jacobian2 = [[number, number], [number, number]];
+
+export function jacobianAt(map: readonly [Expr, Expr], p: Vec2): Jacobian2 {
+  const at = { x: p[0], y: p[1] };
+  const row = (m: Expr): [number, number] => [evaluate(derivative(m, "x"), at), evaluate(derivative(m, "y"), at)];
+  return [row(map[0]), row(map[1])];
+}
+
+/**
+ * Regla de la cadena con jacobiana: ∇[h∘m](p) = ∇h(m(p)) · J_m(p) (vector fila por matriz):
+ * ∂[h∘m]/∂x = h_x·∂m₁/∂x + h_y·∂m₂/∂x y lo mismo con y.
+ */
+export const chainRuleJacobian = (grad: Vec2, J: Jacobian2): Vec2 => [grad[0] * J[0][0] + grad[1] * J[1][0], grad[0] * J[0][1] + grad[1] * J[1][1]];

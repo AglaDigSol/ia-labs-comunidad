@@ -25,13 +25,13 @@ describe("ChoicePractice", () => {
     render(<ChoicePractice legend="¿Cuánto vale?" question={single} seedKey={5} onSolved={onSolved} />);
     const radios = screen.getAllByRole("radio");
     expect(radios).toHaveLength(5);
-    expect(screen.getByRole("radio", { name: /^E: Ninguna de las otras/ })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: /^e\) Ninguna de las otras/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
     expect(status()).toMatch(/Elige una opción/);
     fireEvent.click(screen.getByRole("radio", { name: /Dos/ }));
     fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
     expect(status()).toMatch(/No es esa/);
-    expect(status()).not.toMatch(/Tres|[A-E]\)/);
+    expect(status()).not.toMatch(/Tres|[a-e]\)/);
     expect(onSolved).not.toHaveBeenCalled();
     expect(screen.queryByTestId("solution")).toBeNull();
     fireEvent.click(screen.getByRole("radio", { name: /Tres/ }));

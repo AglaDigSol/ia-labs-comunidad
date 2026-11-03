@@ -1,5 +1,6 @@
-// Preguntas de opción múltiple como las del examen: «opción única» (A–E, a menudo con «Ninguna de las
-// otras») y «selecciona la o las correctas». Aquí solo hay datos y corrección, sin React: la vista
+// Preguntas de opción múltiple como las del examen (Blackboard Ultra): «opción múltiple» con cuatro
+// opciones a)–d) y una sola correcta (lo normal); como variantes, cinco con «Ninguna de las otras» al
+// final y «selecciona la o las correctas». Aquí solo hay datos y corrección, sin React: la vista
 // (src/components/practice/ChoiceQuestion.tsx) y el futuro simulador de examen usan lo mismo.
 //
 // Las opciones se escriben en un orden fijo (el del generador) y se barajan con una semilla: la misma
@@ -32,10 +33,13 @@ export interface ChoiceQuestion {
 
 export const NONE_ID = "ninguna";
 export const NONE_TEXT = "Ninguna de las otras";
-export const LETTERS = "ABCDEFGH";
+/** Letras como en Blackboard Ultra: a), b), c), d). */
+export const LETTERS = "abcdefgh";
+/** Opciones por defecto en el examen: cuatro (a–d), una sola correcta. */
+export const DEFAULT_OPTION_COUNT = 4;
 
 export interface ArrangedOption extends ChoiceOption {
-  /** «A», «B»… según el orden barajado. */
+  /** «a», «b»… según el orden barajado. */
   letter: string;
 }
 
@@ -101,7 +105,7 @@ export function toggleChoice(mode: ChoiceMode, selected: readonly string[], id: 
   return [...selected.filter((x) => x !== NONE_ID), id];
 }
 
-/** Letras de las opciones correctas, en orden: «B, D». */
+/** Letras de las opciones correctas, en orden: «b, d». */
 export const correctLetters = (options: readonly ArrangedOption[]) =>
   options
     .filter((o) => o.correct)
