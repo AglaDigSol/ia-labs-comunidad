@@ -99,9 +99,9 @@ function renderAt(url: string, mount = "/laboratorios", onHeader?: (a: LabsActiv
 const tabNames = () => screen.getAllByRole("tab").map((t) => t.textContent);
 
 describe("LabsRoutes como dependencia", () => {
-  it("muestra los ocho laboratorios, «Ejercicios» y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
+  it("muestra los nueve laboratorios, «Ejercicios» y la pestaña extra, con el elemento del anfitrión en su ruta", async () => {
     renderAt("/laboratorios/python");
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Combinatoria", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
     expect(await screen.findByText("Zona de Python del anfitrión")).toBeTruthy();
     const tab = screen.getByRole("tab", { name: "Python" });
     expect(tab.getAttribute("aria-selected")).toBe("true");
@@ -129,7 +129,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Combinatoria", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Boole", () => {
@@ -143,7 +143,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Combinatoria", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
   });
 
   it("una pestaña extra tampoco puede ocupar la ruta de Predicados", () => {
@@ -157,7 +157,7 @@ describe("LabsRoutes como dependencia", () => {
         </Routes>
       </MemoryRouter>,
     );
-    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
+    expect(tabNames()).toEqual(["Simbología", "Lógica", "Predicados", "Conjuntos", "Combinatoria", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios", "Python"]);
   });
 
   it("abre el laboratorio de predicados sin guardar nada en localStorage", async () => {

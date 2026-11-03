@@ -4,14 +4,15 @@ import { cn } from "../../lib/cn.ts";
 
 /** Pestañas del área, en orden. «Ejercicios» (el banco de ejercicios de todos los temas) va la última. */
 export const LABS: Array<{
-  id: "simbolos" | "logica" | "predicados" | "conjuntos" | "markov" | "boole" | "algebra-lineal" | "calculo" | "ejercicios";
+  id: "simbolos" | "logica" | "predicados" | "conjuntos" | "combinatoria" | "markov" | "boole" | "algebra-lineal" | "calculo" | "ejercicios";
   path: string;
-  label: "Simbología" | "Lógica" | "Predicados" | "Conjuntos" | "Markov" | "Álgebra de Boole" | "Álgebra lineal" | "Cálculo" | "Ejercicios";
+  label: "Simbología" | "Lógica" | "Predicados" | "Conjuntos" | "Combinatoria" | "Markov" | "Álgebra de Boole" | "Álgebra lineal" | "Cálculo" | "Ejercicios";
 }> = [
   { id: "simbolos", path: "simbolos", label: "Simbología" },
   { id: "logica", path: "logica", label: "Lógica" },
   { id: "predicados", path: "predicados", label: "Predicados" },
   { id: "conjuntos", path: "conjuntos", label: "Conjuntos" },
+  { id: "combinatoria", path: "combinatoria", label: "Combinatoria" },
   { id: "boole", path: "boole", label: "Álgebra de Boole" },
   { id: "algebra-lineal", path: "algebra-lineal", label: "Álgebra lineal" },
   { id: "calculo", path: "calculo", label: "Cálculo" },
@@ -29,7 +30,7 @@ export const PYTHON_LAB = { id: "python", path: "python", label: "Python" } as c
 
 /** Pestaña adicional que una app anfitriona añade después de los laboratorios. */
 export interface LabsExtraTab {
-  /** Identificador único (no puede coincidir con simbolos, logica, predicados, conjuntos, boole, algebra-lineal, calculo, markov ni ejercicios). */
+  /** Identificador único (no puede coincidir con simbolos, logica, predicados, conjuntos, combinatoria, boole, algebra-lineal, calculo, markov ni ejercicios). */
   id: string;
   /** Texto de la pestaña. */
   label: string;
@@ -43,7 +44,7 @@ export interface LabsExtraTab {
 export type LabsActiveTab = { id: string; label: string };
 
 export interface LabsRoutesProps {
-  /** Pestañas propias de la app anfitriona, en este orden, tras Simbología, Lógica, Predicados, Conjuntos, Álgebra de Boole, Álgebra lineal, Cálculo, Markov y Ejercicios (y Python, si está encendida). */
+  /** Pestañas propias de la app anfitriona, en este orden, tras Simbología, Lógica, Predicados, Conjuntos, Combinatoria, Álgebra de Boole, Álgebra lineal, Cálculo, Markov y Ejercicios (y Python, si está encendida). */
   extraTabs?: LabsExtraTab[];
   /**
    * Enciende la pestaña «Python» (por defecto, apagada). Apagada no hay pestaña ni ruta, y su código
@@ -66,6 +67,9 @@ const PredicatesLabPage = lazy(() =>
 );
 const MarkovLabPage = lazy(() => import("./markov/MarkovLabPage.tsx").then((m) => ({ default: m.MarkovLabPage })));
 const SetsLabPage = lazy(() => import("./sets/SetsLabPage.tsx").then((m) => ({ default: m.SetsLabPage })));
+const CombinatoricsLabPage = lazy(() =>
+  import("./combinatorics/CombinatoricsLabPage.tsx").then((m) => ({ default: m.CombinatoricsLabPage })),
+);
 const BooleLabPage = lazy(() => import("./boole/BooleLabPage.tsx").then((m) => ({ default: m.BooleLabPage })));
 const LinearAlgebraLabPage = lazy(() =>
   import("./linalg/LinearAlgebraLabPage.tsx").then((m) => ({ default: m.LinearAlgebraLabPage })),
@@ -162,6 +166,7 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
           <Route path="logica" element={<LogicLabPage />} />
           <Route path="predicados" element={<PredicatesLabPage />} />
           <Route path="conjuntos" element={<SetsLabPage />} />
+          <Route path="combinatoria" element={<CombinatoricsLabPage />} />
           <Route path="markov" element={<MarkovLabPage />} />
           <Route path="boole" element={<BooleLabPage />} />
           <Route path="algebra-lineal" element={<LinearAlgebraLabPage />} />

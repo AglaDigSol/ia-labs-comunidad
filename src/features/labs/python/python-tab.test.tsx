@@ -29,7 +29,7 @@ function renderLabs(url: string, props: { python?: boolean; extraTabs?: LabsExtr
 }
 
 const tabNames = () => screen.getAllByRole("tab").map((t) => t.textContent);
-const BASE_TABS = ["Simbología", "Lógica", "Predicados", "Conjuntos", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios"];
+const BASE_TABS = ["Simbología", "Lógica", "Predicados", "Conjuntos", "Combinatoria", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Markov", "Ejercicios"];
 
 describe("pestaña Python: interruptor", () => {
   it("config.modules.python viene apagado y, sin build, PYTHON_TAB lo sigue", () => {
