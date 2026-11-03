@@ -62,6 +62,7 @@ import { PartsPractice } from "../sets/PartsSection.tsx";
 import { ShadePractice } from "../sets/VennSection.tsx";
 import { CALC_EXERCISE_VIEWS } from "./calculus-views.tsx";
 import { LINALG_EXERCISE_VIEWS } from "./linalg-views.tsx";
+import { PROB_EXERCISE_VIEWS } from "./probability-views.tsx";
 
 export type ExerciseViewProps<I> = { instance: I; onSolved: () => void };
 type View = ComponentType<ExerciseViewProps<unknown>>;
@@ -388,4 +389,5 @@ export const EXERCISE_VIEWS: Readonly<Record<string, View>> = Object.fromEntries
   entry(BOOLE_SIMPLIFY, BooleSimplifyExercise),
   ...LINALG_EXERCISE_VIEWS,
   ...CALC_EXERCISE_VIEWS,
+  ...PROB_EXERCISE_VIEWS,
 ]);
