@@ -102,6 +102,8 @@ export * from "../../shared/exercises/types.ts";
 export * from "../../shared/exercises/random.ts";
 export * from "../../shared/exercises/logic.ts";
 export * from "../../shared/exercises/predicates.ts";
+export * from "../../shared/exercises/logic-extra.ts";
+export { isNegation, NEGATION_DOMAINS, type NegationDraft, type NegationOption } from "../../shared/exercises/logic-extra-negation.ts";
 export * from "../../shared/exercises/sets.ts";
 export * from "../../shared/exercises/discrete.ts";
 export * from "../../shared/exercises/boole.ts";

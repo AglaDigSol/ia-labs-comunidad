@@ -5,6 +5,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  LOGIC_FORMALIZE,
+  formalizeMatches,
+  PRED_NUMBERS,
   COMB_PACK,
   COMB_PROBLEM,
   countModel,
@@ -276,6 +279,9 @@ describe("LabsRoutes como dependencia", () => {
     expect(growthText(growthOf(costOf("(n^5 - 2n + 1)^2")))).toBe("n¹⁰");
     expect(problemAnswer(COMB_PROBLEM.generate(1, "básico")) > 1n).toBe(true);
     expect(COMB_PACK.problems.map((p) => p.id)).toContain("bits-equilibrados");
+    const f = LOGIC_FORMALIZE.generate(1, "básico");
+    expect(f.options.filter((o) => formalizeMatches(o, f) === true)).toHaveLength(1);
+    expect(PRED_NUMBERS.generate(1, "medio").kind).toMatch(/conjuntos|divide/);
   });
 
   it("abre el laboratorio de conjuntos en su pestaña", async () => {
