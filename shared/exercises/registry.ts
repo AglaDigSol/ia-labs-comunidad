@@ -2,6 +2,7 @@
 // orden de las pestañas). Para añadir un tipo: créalo en el módulo de su tema (logic.ts, sets.ts…),
 // añádelo a su lista y, en la página, dale una vista (src/features/labs/exercises/views.tsx).
 import { BOOLE_EXERCISES } from "./boole.ts";
+import { LINALG_EXERCISES } from "./linalg.ts";
 import { LOGIC_EXERCISES } from "./logic.ts";
 import { PREDICATE_EXERCISES } from "./predicates.ts";
 import { createRng, randomSeed } from "./random.ts";
@@ -15,6 +16,7 @@ export const EXERCISE_TYPES: readonly AnyExerciseType[] = [
   ...PREDICATE_EXERCISES,
   ...SET_EXERCISES,
   ...BOOLE_EXERCISES,
+  ...LINALG_EXERCISES,
 ];
 
 const BY_ID = new Map(EXERCISE_TYPES.map((t) => [t.id, t]));
