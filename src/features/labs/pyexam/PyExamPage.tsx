@@ -379,7 +379,7 @@ function ExamView({ attempt, heading, onChange, onFinish }: { attempt: PyExamAtt
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div className="sticky top-[93px] z-10 flex flex-col gap-2 border-b border-border bg-base py-2 lg:top-0">
+      <div className="sticky top-12 z-10 flex flex-col gap-2 border-b border-border bg-base py-2 lg:top-0">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 ref={heading} tabIndex={-1} className="font-display text-[20px] font-semibold">
             {`${PYEXAM_PAGE_TITLE} · ${seedToText(attempt.seed)}`}
