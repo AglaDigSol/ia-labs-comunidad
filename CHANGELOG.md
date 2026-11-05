@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.12)
+## [Próximamente] (0.13)
 
 - i18n completo: mover a `src/i18n/` los textos internos de los laboratorios, las flashcards, la calculadora y el
   calendario (hoy están en sus componentes) y añadir inglés.
@@ -12,6 +12,45 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.12.0] - 2026-11-05
+
+### Añadido
+
+- **Simulacro de examen (01MIAR)** en `…/python/simulacro` (con el módulo Python; botón en la pestaña Python y tarjeta
+  en «Ejercicios → Python (01MIAR)»): el final de «Python para la IA» como cuaderno.
+  - Cuatro ejercicios cortos de 1,25 puntos y un proyecto de datos de 5 puntos por pasos (ventas o incidencias,
+    alternados con la semilla), con celdas «Tu solución AQUÍ» y «Test Use Case» a la vista.
+  - Kernel compartido como en Jupyter («Ejecutar celda», «Ejecutar todo», «Reiniciar kernel»), tablas de pandas como
+    tabla de texto, figuras y reloj de 2 h que sobrevive a recargar, con entrega automática a 0.
+  - Al entregar se corrige con pruebas ocultas: proporcional y redondeado a 0,25, y un error arrastrado no cuenta dos
+    veces. Se ve lo que hizo tu código, tus figuras, la solución tras «Ver la solución completa» y «Practicar este
+    tipo».
+  - «Descargar como .ipynb» (nbformat 4.5, en blanco o con tus respuestas) y «Descargar los datos (.csv)».
+- **Ejercicios de Python de 01MIAR, temas 6 a 13** (y dos de examen de los temas 3 y 4): Encuentra el bug, En una
+  línea, Clases y objetos, Python avanzado, NumPy: matrices y máscaras, Sistemas con NumPy, pandas (fechas y cadenas,
+  agrupar y pivotar, combinar, valores perdidos, limpiar y convertir), Gráficos con requisitos y Generadores, con tres
+  niveles y el chip de su tema.
+- Conjuntos de datos sintéticos y deterministas (`shared/pydata`): ventas sucias, incidencias con su tabla de países,
+  sensores con huecos y tablas pequeñas, con los hechos de cada paso de la limpieza.
+- El banco de pruebas compara tablas de pandas, series y arrays con tolerancia y dice por qué no coinciden (siempre con
+  lo tuyo); comprueba generadores, «en una línea», firmas y clases; y mira la figura de matplotlib y seaborn (número de
+  gráficos, figsize, tipo, alturas de las barras para `estimator="sum"`, puntos, líneas, leyenda, títulos y ejes), que
+  además se enseña.
+- Clave nueva de los laboratorios `pyexam` (`ia-labs.pyexam.v1` por defecto), incluida en «Exportar mis datos».
+- API: `PyExamPage` y `shared/pyexam` (`buildPyExam`, `pyExamNotebookJson`, `scoreShort`, `scoreStep`…), los tipos
+  `PyCheck` y `PyCompareOptions`; props `examPath` en `PythonLabPage` y `pyExamPath` en `ExercisesPage`.
+
+### Cambiado
+
+- El banco de pruebas de Python ya no sigue línea a línea el código de las bibliotecas (pandas va mucho más rápido) y
+  carga los paquetes del ejercicio antes de comprobar.
+- CI: Python 3.12 con numpy 2.0.2, pandas 2.2.3, matplotlib 3.8.4 y seaborn 0.13.2 antes de vitest; las pruebas con
+  python3 ya no se saltan.
+
+### Corregido
+
+- La cabecera fija del simulacro de 02MIAR queda pegada a la de la app en el móvil.
 
 ## [0.11.0] - 2026-11-04
 
@@ -434,7 +473,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.11.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.12.0
 [0.11.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.11.0
 [0.10.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.10.0
 [0.9.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.9.0
