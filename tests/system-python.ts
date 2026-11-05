@@ -1,6 +1,7 @@
 // Ejecuta el código Python de los ejercicios y del paso a paso con el python3 del sistema, para
 // probar la lógica que en la app corre en Pyodide (es Python puro). Si no hay python3, las pruebas
-// que lo usan se saltan (hasPython3).
+// que lo usan se saltan (hasPython3), y las que necesitan pandas, numpy, matplotlib o seaborn, si no
+// están instalados (hasPandas, hasPlots). Para probarlas: pip install pandas matplotlib seaborn.
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -13,6 +14,22 @@ export const hasPython3 = (() => {
     return false;
   }
 })();
+
+/** ¿Tiene el python3 del sistema estos módulos? (pandas, numpy, matplotlib, seaborn…). Sin python3, false. */
+export function hasPyModules(...modules: string[]): boolean {
+  if (!hasPython3) return false;
+  const code = modules.map((m) => `import ${m}`).join("\n");
+  try {
+    return spawnSync("python3", ["-I", "-c", code], { encoding: "utf8", env: { ...process.env, MPLBACKEND: "Agg" } }).status === 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Datos científicos: pandas y numpy (los ejercicios de los temas 8 a 13). */
+export const hasPandas = hasPyModules("numpy", "pandas");
+/** Gráficos: matplotlib y seaborn (los ejercicios del tema 11 y la inspección de figuras). */
+export const hasPlots = hasPandas && hasPyModules("matplotlib", "seaborn");
 
 export type Job = { fn: string; payload: unknown; files?: Array<{ path: string; text: string }> };
 
@@ -48,7 +65,13 @@ export function runJobs<T = unknown>(source: string, jobs: Job[], timeoutMs = 12
     writeFileSync(list, JSON.stringify(meta));
     const driver = join(root, "driver.py");
     writeFileSync(driver, DRIVER);
-    const r = spawnSync("python3", ["-I", driver, src, list], { encoding: "utf8", timeout: timeoutMs, maxBuffer: 256 * 1024 * 1024 });
+    const r = spawnSync("python3", ["-I", driver, src, list], {
+      encoding: "utf8",
+      timeout: timeoutMs,
+      maxBuffer: 256 * 1024 * 1024,
+      // Gráficos sin pantalla, como en el worker (-I no lee las PYTHON*, pero MPLBACKEND sí cuenta).
+      env: { ...process.env, MPLBACKEND: "Agg" },
+    });
     if (r.status !== 0) throw new Error(`python3 falló (${r.status}): ${r.stderr.slice(0, 2000)}`);
     return JSON.parse(r.stdout) as T[];
   } finally {
