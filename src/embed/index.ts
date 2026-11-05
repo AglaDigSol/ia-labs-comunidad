@@ -46,6 +46,9 @@ export { ProbabilityLabPage } from "../features/labs/probability/ProbabilityLabP
 // Las ranuras (renderDraftActions, renderFilesActions) dan al anfitrión writeFiles para escribir
 // archivos en la carpeta de trabajo de Python (en memoria; nunca se ejecutan solos).
 export { PythonLabPage, type PythonLabPageProps } from "../features/labs/python/PythonLabPage.tsx";
+// Simulacro de 01MIAR (con el módulo Python). En LabsRoutes va en «python/simulacro»; montado aparte,
+// `exercisesPath` dice dónde está el banco de ejercicios para «Practicar este tipo».
+export { PYEXAM_GRADING_RULES, PYEXAM_PAGE_TITLE, PyExamPage, type PyExamPageProps } from "../features/labs/pyexam/PyExamPage.tsx";
 export {
   createDraft,
   draftLabel,
@@ -142,6 +145,8 @@ export * from "../../shared/exam/items.ts";
 export * from "../../shared/exam/blueprint.ts";
 export * from "../../shared/exam/grading.ts";
 export * from "../../shared/exam/attempt.ts";
+// Simulacro de 01MIAR: generación, cuaderno y .ipynb, nota e intentos (con nombres PyExam / PYEXAM).
+export * from "../../shared/pyexam/index.ts";
 // Ejercicios de Python (solo se muestran con <LabsRoutes python /> o <ExercisesPage python />). Los
 // conjuntos de datos sintéticos de los temas 8 a 13 se importan de "ia-labs-comunidad/shared/pydata/index.ts".
 export {

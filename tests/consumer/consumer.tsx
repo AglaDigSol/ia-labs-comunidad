@@ -117,6 +117,13 @@ import {
   PYODIDE_VERSION,
   PYTHON_LAB,
   PythonLabPage,
+  PyExamPage,
+  buildPyExam,
+  pyExamNotebookJson,
+  parsePyExamStore,
+  type PyExam,
+  type PyExamPageProps,
+  type PyExamStore,
   ExamSimulatorPage,
   buildExam,
   QUICK_BLUEPRINT,
@@ -206,6 +213,9 @@ export function HostApp() {
         <Route path="/ejercicios-python" element={<ExercisesPage python />} />
         <Route path="/ejercicios/simulacro" element={<ExamSimulatorPage />} />
         <Route path="/simulacro" element={<ExamSimulatorPage {...simulatorProps} />} />
+        <Route path="/python/simulacro" element={<PyExamPage {...pyExamProps} />} />
+        <Route path="/python-sin-simulacro" element={<PythonLabPage examPath={null} />} />
+        <Route path="/ejercicios-python-sin-simulacro" element={<ExercisesPage python pyExamPath={null} />} />
         <Route path="/ejercicios-sin-simulacro" element={<ExercisesPage examPath={null} />} />
         <Route
           path="/una-pregunta"
@@ -288,6 +298,10 @@ export const atLeast = probAtLeast(binomial, 2);
 export const treeAsk = (i: ProbTreeInstance) => i.ask;
 
 const simulatorProps: ExamSimulatorPageProps = { exercisesPath: "/ejercicios" };
+const pyExamProps: PyExamPageProps = { exercisesPath: "/ejercicios-python" };
+export const pyExam: PyExam = buildPyExam(1);
+export const pyExamIpynb: string = pyExamNotebookJson(pyExam);
+export const pyExamStore: PyExamStore | null = parsePyExamStore('{"v":1,"active":null,"history":[]}');
 const oneChoice: ChoiceQuestion = { mode: "single", options: [{ id: "a", text: "Sí", correct: true }, { id: "b", text: "No", correct: false }] };
 const quick: ExamQuestion[] = buildExam(1, QUICK_BLUEPRINT);
 export const quickScore: number = scoreExam(quick, [], true).score;

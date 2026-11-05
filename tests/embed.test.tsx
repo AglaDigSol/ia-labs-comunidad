@@ -69,6 +69,13 @@ import {
   safeFilePath,
   type DraftActionsContext,
   ExamSimulatorPage,
+  PyExamPage,
+  buildPyExam,
+  pyExamMaxScore,
+  pyExamNotebookJson,
+  parsePyExamStore,
+  serializePyExamStore,
+  EMPTY_PYEXAM_STORE,
   buildExam,
   FULL_BLUEPRINT,
   examItem,
@@ -276,6 +283,16 @@ describe("LabsRoutes como dependencia", () => {
     const options = arrangeChoices({ mode: "single", options: [{ id: "x", text: "X", correct: true }, { id: "y", text: "Y", correct: false }] }, 1);
     expect(gradeChoice(options, ["x"]).correct).toBe(true);
     expect(DEFAULT_LABS_KEYS.exam).toBe("ia-labs.exam.v1");
+  });
+
+  it("exporta el simulacro de 01MIAR y sus piezas, con su propia clave", () => {
+    expect(typeof PyExamPage).toBe("function");
+    const exam = buildPyExam(4);
+    expect(exam.shorts).toHaveLength(4);
+    expect(pyExamMaxScore(exam)).toBe(10);
+    expect(JSON.parse(pyExamNotebookJson(exam)).nbformat_minor).toBe(5);
+    expect(parsePyExamStore(serializePyExamStore(EMPTY_PYEXAM_STORE))).toEqual(EMPTY_PYEXAM_STORE);
+    expect(DEFAULT_LABS_KEYS.pyexam).toBe("ia-labs.pyexam.v1");
   });
 
   it("abre el laboratorio de álgebra lineal en su pestaña, entre Boole y Markov", async () => {
