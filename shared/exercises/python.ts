@@ -1,9 +1,10 @@
-// Ejercicios de Python (01MIAR, temas 1 a 5). Cada plantilla genera, con semilla y nivel, un enunciado
-// en español, el código inicial, los casos de prueba (llamadas con datos generados y, en el tema 5,
-// archivos de entrada) y una solución de referencia en Python. La corrección la hace el banco de
-// pruebas en el worker de Pyodide (src/features/labs/exercises/python/harness.ts): ejecuta la
-// referencia y el código de la persona en cada caso y compara, sin mostrar nunca el valor esperado.
-// La solución solo se enseña detrás de «Ver la solución completa». Las pistas no llevan código.
+// Ejercicios de Python (01MIAR, temas 1 a 5; los de 6 a 13 están en python-datos.ts y se suman aquí).
+// Cada plantilla genera, con semilla y nivel, un enunciado en español, el código inicial, los casos
+// de prueba (llamadas con datos generados y, en el tema 5, archivos de entrada) y una solución de
+// referencia en Python. La corrección la hace el banco de pruebas en el worker de Pyodide
+// (src/features/labs/exercises/python/harness.ts): ejecuta la referencia y el código de la persona en
+// cada caso y compara, sin mostrar nunca el valor esperado. La solución solo se enseña detrás de «Ver
+// la solución completa». Las pistas no llevan código.
 // «¿Qué imprime?» genera un fragmento corto; su salida la calcula Python al comprobar.
 // Contenido original (no procede de los cuadernos de la asignatura). Solo existe con el módulo Python.
 import { rngFor, type Rng } from "./random.ts";
@@ -13,6 +14,7 @@ import {
   USA_COMP, USA_CSV, USA_DICTCOMP, USA_FOR, USA_LAMBDA, USA_WHILE, USA_WITH, USA_ZIP,
   type PyCase, type PyCodeInstance, type PyCompare, type PyInstance, type PyOutputInstance, type PyRule, type PyTema, type PyVal, type Tpl,
 } from "./python-common.ts";
+import { DATA_TYPES } from "./python-datos.ts";
 
 export { dedent, lit, PY_TEMAS, Tup } from "./python-common.ts";
 export type { PyCase, PyCheck, PyCheckKind, PyCompare, PyCompareOptions, PyCodeInstance, PyInstance, PyOutputInstance, PyRule, PyTema, PyVal } from "./python-common.ts";
@@ -2224,7 +2226,13 @@ const CODE_TYPES: PyTypeDef[] = [
   { id: "py-funciones", title: "Parámetros y valores devueltos", description: "Tema 4: valores por defecto, *args, **kwargs y return múltiple.", templates: [POR_DEFECTO, ARGS_KWARGS, VARIOS_VALORES] },
   { id: "py-recursion", title: "Recursión, lambdas y sorted", description: "Tema 4: funciones recursivas, funciones como valores y ordenar con key.", templates: [RECURSION, ORDENAR, LAMBDAS] },
   { id: "py-ficheros", title: "Ficheros de texto y CSV", description: "Tema 5: with open, leer líneas, contar palabras, escribir archivos y el módulo csv.", templates: [LINEAS, PALABRAS_FICHERO, CSV, ESCRIBIR] },
+  // Temas 6 a 13 y los tipos de examen de los temas 3 y 4 (python-datos.ts).
+  ...DATA_TYPES,
 ];
+
+/** Los tipos y las plantillas de los temas 6 a 13 y de examen (python-datos.ts), para las pruebas. */
+export const PY_DATA_TYPE_IDS: ReadonlySet<string> = new Set(DATA_TYPES.map((t) => t.id));
+export const PY_DATA_TEMPLATE_IDS: ReadonlySet<string> = new Set(DATA_TYPES.flatMap((t) => t.templates.map((x) => x.id)));
 
 /** Todas las plantillas de código, por id (para las pruebas). */
 export const PY_CODE_TEMPLATES: ReadonlyMap<string, Tpl> = new Map(CODE_TYPES.flatMap((t) => t.templates).map((t) => [t.id, t]));

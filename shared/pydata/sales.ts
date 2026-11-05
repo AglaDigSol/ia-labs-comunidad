@@ -53,6 +53,8 @@ export interface SalesFacts {
   firstSeenPrice: Record<string, number>;
   /** 5. Precios que se rellenan con la moda. */
   pricesFilled: number;
+  /** 5. De ellos, los de un artículo cuyo primer precio no es la moda: los que delatan el «primero visto». */
+  trapRows: number;
   /** 6. Totales rellenados con precio × cantidad, cantidades con round(total / precio) y filas sin ninguno de los dos. */
   totalsFilled: number;
   quantitiesFilled: number;
@@ -177,6 +179,7 @@ export function salesFacts(rows: readonly Row[]): SalesFacts {
     pricePerItem[it] = mode(ps)!;
     firstSeenPrice[it] = ps[0]!;
   }
+  const trapRows = kept.filter((r) => r.price === null && pricePerItem[r.item!] !== undefined && firstSeenPrice[r.item!] !== pricePerItem[r.item!]).length;
   let pricesFilled = 0;
   let totalsFilled = 0;
   let quantitiesFilled = 0;
@@ -217,6 +220,7 @@ export function salesFacts(rows: readonly Row[]): SalesFacts {
     pricePerItem: sortedRecord(pricePerItem),
     firstSeenPrice: sortedRecord(firstSeenPrice),
     pricesFilled,
+    trapRows,
     totalsFilled,
     quantitiesFilled,
     droppedBoth,

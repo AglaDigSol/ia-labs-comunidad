@@ -209,7 +209,7 @@ def _dif(e, t, op):
             if d is not None:
                 return d
         return None
-    if isinstance(e, dict) and isinstance(t, dict) and list(e.keys()) == list(t.keys()):
+    if isinstance(e, dict) and isinstance(t, dict) and e.keys() == t.keys():
         for k in e:
             d = _dif(e[k], t[k], op)
             if d is not None:

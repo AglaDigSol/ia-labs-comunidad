@@ -153,6 +153,8 @@ def __ventas(p):
     f["pricePerItem"] = _rec(precios)
     f["firstSeenPrice"] = _rec(validos.drop_duplicates("articulo").set_index("articulo")["precio"].sort_index())
     f["pricesFilled"] = int(df["precio"].isna().sum())
+    trampa = [a for a in precios.index if f["firstSeenPrice"][a] != f["pricePerItem"][a]]
+    f["trapRows"] = int((df["precio"].isna() & df["articulo"].isin(trampa)).sum())
     df["precio"] = df["precio"].fillna(df["articulo"].map(precios))
     faltan_t = df["total"].isna() & df["cantidad"].notna()
     df.loc[faltan_t, "total"] = df["precio"] * df["cantidad"]

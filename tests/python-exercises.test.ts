@@ -9,6 +9,8 @@ import {
   makeCodeTemplate,
   PY_CODE_TEMPLATES,
   PY_CODE_TYPES,
+  PY_DATA_TEMPLATE_IDS,
+  PY_DATA_TYPE_IDS,
   PY_OUTPUT,
   PY_OUTPUT_TEMPLATES,
   PYTHON_EXERCISES,
@@ -53,10 +55,10 @@ describe("ejercicios de Python: registro", () => {
     for (const level of EXERCISE_LEVELS) expect(mixedType("python", level, 7, { python: true }).topic).toBe("python");
   });
 
-  it("al menos 25 plantillas de código, de los cinco temas, y «¿Qué imprime?» en los tres niveles", () => {
+  it("al menos 25 plantillas de código, de los trece temas, y «¿Qué imprime?» en los tres niveles", () => {
     expect(PY_CODE_TEMPLATES.size).toBeGreaterThanOrEqual(25);
     const temas = new Set([...PY_CODE_TEMPLATES.values()].map((t) => t.tema));
-    expect([...temas].sort()).toEqual([1, 2, 3, 4, 5]);
+    expect([...temas].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
     for (const level of EXERCISE_LEVELS) expect(PY_OUTPUT_TEMPLATES[level].length).toBeGreaterThanOrEqual(5);
   });
 
@@ -69,9 +71,12 @@ describe("ejercicios de Python: registro", () => {
           expect(inst.template).toBe(id);
           expect(inst.statement.length).toBeGreaterThan(0);
           expect(inst.statement.join(" ")).toContain(`\`${inst.fn}`);
-          expect(inst.starter).toContain(`def ${inst.fn}(`);
-          expect(inst.solution).toContain(`def ${inst.fn}(`);
-          expect(inst.cases.length, `${id} ${level}`).toBeGreaterThanOrEqual(3);
+          // Una función o, en el tema 6, una clase.
+          const head = inst.tema === 6 ? `class ${inst.fn}` : `def ${inst.fn}(`;
+          expect(inst.starter).toContain(head);
+          expect(inst.solution).toContain(head);
+          // Los gráficos tardan más: dos casos.
+          expect(inst.cases.length, `${id} ${level}`).toBeGreaterThanOrEqual(inst.tema === 11 ? 2 : 3);
           expect(inst.hints.length).toBeGreaterThanOrEqual(2);
           // Las llamadas son distintas (si no, el caso no aporta nada).
           const shown = inst.cases.map((c) => `${c.code}|${JSON.stringify(c.files ?? {})}`);
@@ -119,11 +124,12 @@ describe("ejercicios de Python: registro", () => {
   });
 });
 
+// Los temas 6 a 13 (y los de examen) tienen sus propias pruebas: tests/python-datos.test.ts.
 describe.skipIf(!hasPython3)("ejercicios de Python: banco de pruebas con python3", () => {
   const all: Array<{ inst: PyCodeInstance; label: string }> = [];
-  for (const t of PY_CODE_TYPES) for (const level of EXERCISE_LEVELS) for (const s of SEEDS) all.push({ inst: t.generate(s, level), label: `${t.id} ${level} ${s}` });
+  for (const t of PY_CODE_TYPES.filter((x) => !PY_DATA_TYPE_IDS.has(x.id))) for (const level of EXERCISE_LEVELS) for (const s of SEEDS) all.push({ inst: t.generate(s, level), label: `${t.id} ${level} ${s}` });
   // Y cada plantilla al menos una vez en cada nivel, aunque el azar no la elija.
-  for (const id of PY_CODE_TEMPLATES.keys()) for (const level of EXERCISE_LEVELS) for (const s of SEEDS.slice(0, 4)) all.push({ inst: makeCodeTemplate(id, s, level), label: `${id} ${level} ${s}` });
+  for (const id of [...PY_CODE_TEMPLATES.keys()].filter((x) => !PY_DATA_TEMPLATE_IDS.has(x))) for (const level of EXERCISE_LEVELS) for (const s of SEEDS.slice(0, 4)) all.push({ inst: makeCodeTemplate(id, s, level), label: `${id} ${level} ${s}` });
 
   it("la solución de referencia pasa todos los casos generados y cumple los requisitos", () => {
     const results = check(all.map(({ inst }) => checkJob(inst, inst.solution)));
@@ -326,6 +332,6 @@ describe.skipIf(!hasPython3)("ejercicios de Python: la referencia cumple el enun
     expect(Object.fromEntries(labels.map((l, i) => [l, failed[i]]).filter(([, f]) => (f as string[]).length > 0))).toEqual({});
     // Todas las plantillas tienen al menos una respuesta conocida.
     const covered = new Set([...Object.keys(KNOWN), ...FILE_KNOWN.map((k) => k.id)]);
-    expect([...PY_CODE_TEMPLATES.keys()].filter((id) => !covered.has(id))).toEqual(["precio", "dibujos"]);
+    expect([...PY_CODE_TEMPLATES.keys()].filter((id) => !covered.has(id) && !PY_DATA_TEMPLATE_IDS.has(id))).toEqual(["precio", "dibujos"]);
   });
 });
