@@ -450,7 +450,7 @@ function ExamView({
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div className="sticky top-[93px] z-10 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-base py-2 lg:top-0">
+      <div className="sticky top-12 z-10 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-base py-2 lg:top-0">
         <h1 ref={heading} tabIndex={-1} className="font-display text-[20px] font-semibold">
           {`Simulacro: ${modeText(attempt.config)}`}
         </h1>
