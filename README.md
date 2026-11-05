@@ -24,7 +24,7 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Cálculo | Derivadas paso a paso (escribes cada línea y eliges la regla: suma, factor constante, producto, cociente, potencia, cadena o derivadas elementales; cada línea se comprueba en muchos puntos y se avisa si la regla no encaja), o solo el resultado; recta tangente con f y f′ dibujadas y tu recta encima; primitivas (comprobadas derivándolas, con + C) e integrales definidas con sumas de Riemann; derivadas parciales, gradiente y curvas de nivel con flechas, y puntos críticos clasificados con la hessiana; descenso de gradiente en una y dos variables (α, punto de partida, iteraciones, momento y Adam; Rosenbrock, valle alargado, varios mínimos y punto de silla) y los primeros pasos a mano, y adónde converge desde cada punto; «Límites y continuidad»: funciones a trozos, L'Hôpital, dominio y bisección; regla de la cadena en varias variables (también con la jacobiana), puntos críticos tipo test e integración por partes. | siempre activo |
 | Probabilidad | Árbol de probabilidad total y Bayes que rellenas casilla a casilla (ramas que faltan, productos, P(C) y P(Aᵢ \| C)), tabla de contingencia 2×2 con P(A \| B), P(B \| A) e independencia, condicionada con un dado (opciones a–d), independencia con P(A), P(B) y un dato más (selecciona la o las correctas), distribuciones discretas (Bernoulli, binomial, geométrica, Poisson y uniforme: diagrama de barras con la función de distribución, tabla, media y varianza, y práctica con historias: qué distribución es, P(X = k), P(X ≥ k), E[X] y Var(X)), tabla de un juego con dados o monedas (equilibrados o trucados) y su esperanza, penalización justa por fallo en un test, E[XY] con independientes y simulación con semilla de la frecuencia relativa. Fracciones exactas; las respuestas se aceptan como fracción o redondeadas a dos decimales con coma, como en el examen. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
-| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias, FND/FNC y formalizar frases («es suficiente», «solo si», «a menos que», «ni… ni…»); evaluar y negar con cuantificadores, negar frases en lenguaje natural y predicados sobre ℕ, ℤ, ℚ y ℝ; Venn, igualdades, inclusión–exclusión, partes y producto; problemas de combinatoria, ¿qué modelo es?, funciones por cardinal, complejidad de un algoritmo y P y NP; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente; probabilidad total y Bayes (también contada con porcentajes), condicionada con un dado, condicionada e independencia, binomial, geométrica, esperanza de un juego con un dado trucado, penalización en un test y E[XY] con independientes; y teoría con el formato del examen: funciones a trozos, L'Hôpital, dominio, bisección, regla de la cadena (también con la jacobiana), cuencas del descenso, críticos tipo test, integración por partes, propiedades del determinante, verdadero o falso sobre matrices, normas, rango y dimensión de tensores y sistemas tipo test. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. Arriba, el **Simulacro de examen (02MIAR)**: ver [Simulacro de examen](#simulacro-de-examen-02miar). Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 13: de los tipos de datos a NumPy, pandas, gráficos y generadores) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)). | siempre activo |
+| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias, FND/FNC y formalizar frases («es suficiente», «solo si», «a menos que», «ni… ni…»); evaluar y negar con cuantificadores, negar frases en lenguaje natural y predicados sobre ℕ, ℤ, ℚ y ℝ; Venn, igualdades, inclusión–exclusión, partes y producto; problemas de combinatoria, ¿qué modelo es?, funciones por cardinal, complejidad de un algoritmo y P y NP; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente; probabilidad total y Bayes (también contada con porcentajes), condicionada con un dado, condicionada e independencia, binomial, geométrica, esperanza de un juego con un dado trucado, penalización en un test y E[XY] con independientes; y teoría con el formato del examen: funciones a trozos, L'Hôpital, dominio, bisección, regla de la cadena (también con la jacobiana), cuencas del descenso, críticos tipo test, integración por partes, propiedades del determinante, verdadero o falso sobre matrices, normas, rango y dimensión de tensores y sistemas tipo test. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. Arriba, el **Simulacro de examen (02MIAR)**: ver [Simulacro de examen](#simulacro-de-examen-02miar). Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 13: de los tipos de datos a NumPy, pandas, gráficos y generadores) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)), y el [Simulacro de examen (01MIAR)](#simulacro-de-examen-01miar). | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
 | Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
 | Calculadora de notas | Nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
@@ -103,7 +103,9 @@ npm run build        # genera dist/
 Las pruebas de los ejercicios de Python ejecutan el código con el `python3` del sistema (3.12 o superior) y se saltan
 si no lo hay. Las de los temas 8 a 13 necesitan además numpy y pandas, y las de gráficos, matplotlib y seaborn (con
 `pip install numpy pandas matplotlib seaborn` en un entorno virtual): sin ellos se saltan solas. Con las mismas
-versiones que Pyodide 0.27.7 (numpy 2.0.2, pandas 2.2.3, matplotlib 3.8.4 y seaborn 0.13.2) la prueba es la más fiel.
+versiones que Pyodide 0.27.7 (numpy 2.0.2, pandas 2.2.3, matplotlib 3.8.4 y seaborn 0.13.2) la prueba es la más fiel;
+son las que instala la CI (con Python 3.12), así que allí no se salta ninguna. Las del simulacro de 01MIAR también
+usan ese `python3`: las soluciones de referencia de cada examen generado sacan un 10 y pasan los `assert` a la vista.
 
 ## Generar `dist/`
 
@@ -241,6 +243,44 @@ en el dispositivo):
   no, la primera línea distinta y el botón «Ver paso a paso».
 - Los enunciados son originales (no proceden de los cuadernos de la asignatura) y entrenan los temas, no resuelven la
   práctica ni el examen.
+
+### Simulacro de examen (01MIAR)
+
+Con la pestaña encendida, el botón **Simulacro de examen (01MIAR)** de la pestaña Python (y una tarjeta al principio
+del tema «Python (01MIAR)» de «Ejercicios») abre `…/python/simulacro`, sin pestaña propia: el final de «Python para la
+IA» como un cuaderno de Jupyter, con ejercicios nuevos generados con una semilla. **Es un simulacro para practicar; no
+es el examen oficial ni lo sustituye**, y su contenido es original (ni enunciados ni datos salen de exámenes reales).
+
+- **Qué entra.** Cinco ejercicios en 2 horas: cuatro cortos de 1,25 puntos, de familias distintas (encuentra el bug, en
+  una línea, un algoritmo sin bibliotecas, un generador sobre las filas de una tabla, valores perdidos, cadenas a una
+  tabla, matrices de NumPy con máscaras y sistemas con `np.linalg.solve`; nivel medio o avanzado), y un proyecto de
+  datos de 5 puntos en 9 o 10 pasos (A, B, C…) sobre las ventas sucias o las incidencias de [`shared/pydata/`](shared/pydata/index.ts),
+  que se alternan con la semilla: tokens a NaN, `to_numeric`, `dropna(subset=…)`, el precio por moda, total = precio
+  × cantidad, fechas, rangos, `merge` por la izquierda y lo que no casa, `pivot_table` y figuras con requisitos (`figsize`,
+  dispersión, dos `barplot` con `hue` y `estimator="sum"`, líneas por categoría). La semilla va en la URL (`?s=`): con
+  el mismo enlace sale el mismo examen. Nada se ejecuta solo al abrirlo.
+- **El cuaderno.** Celdas de enunciado, la celda «Tu solución AQUÍ» de cada ejercicio y paso (con el editor de los
+  ejercicios), la de los import del proyecto y la «Test Use Case» con `assert` a la vista, de solo lectura. Todas se
+  ejecutan en un kernel compartido, como Jupyter (lo que define una celda lo ven las siguientes): «Ejecutar celda»,
+  «Ejecutar todo» (en orden, para en el primer error), «Reiniciar kernel» y «Detener». Las salidas: lo que se imprime,
+  la última expresión (una tabla de pandas se pinta como tabla de texto recortada, nunca como HTML), la traza de los
+  errores y las figuras. Los CSV están en la carpeta de trabajo con los nombres del enunciado. Reloj de 2 h que no se
+  para (sobrevive a recargar), navegador de ejercicios y pasos, «Entregar» con confirmación y entrega automática a 0.
+  Durante el intento no hay pistas, ni comprobaciones ocultas, ni soluciones.
+- **La corrección**, al entregar, con el banco de pruebas de los ejercicios en el mismo Python: cada corto, con casos
+  ocultos de otros datos y sus requisitos (proporcional a los casos, la mitad si falta un requisito, redondeado a
+  0,25); cada paso, con el cuaderno de la persona hasta ese paso frente a la solución de referencia (proporcional a
+  sus comprobaciones: cada valor y cada requisito de una figura cuenta una, redondeado a 0,25). Si un paso falla, se
+  corrige también con la referencia de los anteriores y vale la mejor: un error arrastrado no se paga dos veces. Una
+  celda sin tocar vale 0.
+- **Resultados.** Nota sobre 10, puntos por ejercicio y por paso, qué comprobaciones ocultas fallaron (con lo que hizo
+  tu código, nunca el valor esperado), tus figuras, la solución de referencia detrás de «Ver la solución completa»,
+  «Practicar este tipo», «Repetir este simulacro», «Nuevo simulacro» e historial.
+- **«Descargar como .ipynb»**, en blanco desde el inicio o con tu código desde los resultados (nbformat 4.5, kernel
+  `python3`, Python 3.12), y **«Descargar los datos (.csv)»**: el cuaderno dice que los CSV van en su misma carpeta.
+- Los intentos se guardan en la clave `pyexam` de los laboratorios (`ia-labs.pyexam.v1` en localStorage), aparte de los
+  del simulacro de 02MIAR, se validan al leer y viajan en «Exportar mis datos»: el código de un intento tiene un
+  límite de 10 000 caracteres y el historial (20 intentos) conserva el código de los tres últimos.
 
 ### Límites
 
@@ -443,10 +483,10 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
 - `renderHeaderAction(tab)`: acción opcional junto al título «Laboratorios»; recibe la pestaña activa
   (`{ id, label }`) o `null`.
 - `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el
-  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises, python, exam })` guarda en localStorage con las
+  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises, python, exam, pyexam })` guarda en localStorage con las
   claves que elijas, por ejemplo las que ya usaba tu app; las que no pases usan `DEFAULT_LABS_KEYS`.
 - También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `SetsLabPage`, `CombinatoricsLabPage`, `MarkovLabPage`, `BooleLabPage`, `LinearAlgebraLabPage`, `CalculusLabPage`, `ProbabilityLabPage`,
-  `ExercisesPage` (con `examPath={null}` no enseña la tarjeta del simulacro), `ExamSimulatorPage` (con `exercisesPath`, la ruta del banco para «Practicar este tipo»; por defecto `..`) y `PythonLabPage` por separado, las piezas del simulacro (`buildExam`, `FULL_BLUEPRINT`, `QUICK_BLUEPRINT`, `topicsBlueprint`, `examItem`, `EXAM_TYPE_IDS`, `scoreExam`, `numericMatches`, `parseExamStore`…), la pregunta de opción múltiple (`ChoiceOptions`, `ChoicePractice`, `ChoiceSolution`, `arrangeChoices`, `gradeChoice`, `toggleChoice`) y el campo numérico `NumericField`, y los motores: banco de ejercicios (`EXERCISE_TYPES`, `exerciseType`, cada tipo con
+  `ExercisesPage` (con `examPath={null}` no enseña la tarjeta del simulacro, ni con `pyExamPath={null}` la del de 01MIAR), `ExamSimulatorPage` (con `exercisesPath`, la ruta del banco para «Practicar este tipo»; por defecto `..`), `PythonLabPage` (con `examPath={null}` no enseña el botón del simulacro de 01MIAR) y `PyExamPage` (el simulacro de 01MIAR; `exercisesPath`, por defecto `../../ejercicios`) por separado, las piezas del simulacro de 01MIAR (`buildPyExam`, `pyExamCells`, `pyExamNotebookJson`, `scoreShort`, `scoreStep`, `parsePyExamStore`…), las piezas del simulacro (`buildExam`, `FULL_BLUEPRINT`, `QUICK_BLUEPRINT`, `topicsBlueprint`, `examItem`, `EXAM_TYPE_IDS`, `scoreExam`, `numericMatches`, `parseExamStore`…), la pregunta de opción múltiple (`ChoiceOptions`, `ChoicePractice`, `ChoiceSolution`, `arrangeChoices`, `gradeChoice`, `toggleChoice`) y el campo numérico `NumericField`, y los motores: banco de ejercicios (`EXERCISE_TYPES`, `exerciseType`, cada tipo con
   `generate(semilla, nivel)`, `createRng`, `seedToText`/`seedFromText`), símbolos (`ALL_SYMBOLS`, `symbolById`, `searchSymbols`, tipos y esquemas), lógica (analizador,
   tabla de verdad, formas canónicas, comparación, F₁, notación), lógica de predicados (`parsePredicate`,
   `predToPlain`, `predToTex`, `analyzeVariables`, `evaluatePred`, `evaluationSteps`, `witnesses`,
