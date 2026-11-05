@@ -25,6 +25,14 @@ jobs:
       - run: npm run typecheck
       - name: Consumidor de la API (solo importa de "ia-labs-comunidad")
         run: npm run typecheck:consumer
+      # Python 3.12 con los paquetes de Pyodide 0.27.7: así las pruebas que usan el python3 del sistema
+      # (ejercicios, paso a paso, banco de pruebas de datos, figuras y el simulacro de 01MIAR) se
+      # ejecutan en vez de saltarse.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Paquetes de Python para las pruebas
+        run: python -m pip install numpy==2.0.2 pandas==2.2.3 matplotlib==3.8.4 seaborn==0.13.2
       - run: npx vitest run
       - run: npm run build
       - name: Tamaño de dist/
