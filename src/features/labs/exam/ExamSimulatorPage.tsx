@@ -44,6 +44,9 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../../../
 import { Switch } from "../../../components/ui/switch.tsx";
 import { cn } from "../../../lib/cn.ts";
 import { ExamBlocks } from "./ExamBlocks.tsx";
+import { announcementMarks, clockText, durationText, remainingAnnouncement } from "./time-text.ts";
+
+export { clockText, durationText } from "./time-text.ts";
 import { loadExamStore, saveExamStore } from "./exam-storage.ts";
 
 export const INTEGRITY_EXAM_NOTE = "Es un simulacro para practicar; no es el examen oficial ni lo sustituye.";
@@ -60,32 +63,10 @@ type View = { kind: "inicio" } | { kind: "examen" } | { kind: "resultados"; id: 
 
 // ---------------------------------------------------------------- Formatos
 
-/** «1:59:30» o «4:05». */
-export function clockText(ms: number): string {
-  const s = Math.ceil(ms / 1000);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  const two = (x: number) => String(x).padStart(2, "0");
-  return h > 0 ? `${h}:${two(m)}:${two(sec)}` : `${m}:${two(sec)}`;
-}
-
-/** «1 h 23 min», «12 min», «45 s». */
-export function durationText(ms: number): string {
-  const s = Math.max(0, Math.round(ms / 1000));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (h > 0) return `${h} h${m > 0 ? ` ${m} min` : ""}`;
-  if (m > 0) return `${m} min`;
-  return `${s} s`;
-}
-
 const minutesText = (m: number) => (m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
 const dateText = (ts: number) => new Date(ts).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 const modeText = (c: ExamConfig) => (c.mode === "temas" ? `Por temas (${configQuestions(c)} preguntas)` : EXAM_MODE_INFO[c.mode].label);
 
-/** «Quedan 15 minutos.» */
-const remainingAnnouncement = (m: number) => (m === 1 ? "Queda 1 minuto." : `Quedan ${m} minutos.`);
 
 // ---------------------------------------------------------------- Página
 
@@ -375,13 +356,6 @@ function NumberInput({ label, value, min, max, disabled, onChange }: { label: st
 
 // ---------------------------------------------------------------- Examen
 
-/** Avisos del reloj: cada 15 minutos, a los 5 y al último minuto. */
-function announcementMarks(totalMinutes: number): number[] {
-  const out: number[] = [];
-  for (let m = Math.floor((totalMinutes - 1) / 15) * 15; m >= 15; m -= 15) out.push(m);
-  out.push(5, 1);
-  return [...new Set(out)].filter((m) => m < totalMinutes).sort((a, b) => b - a);
-}
 
 function ExamView({
   attempt,
