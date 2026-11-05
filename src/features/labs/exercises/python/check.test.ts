@@ -3,7 +3,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeCodeTemplate } from "../../../../../shared/exercises/python.ts";
 import { PyClient, type WorkerIn, type WorkerOut } from "../../python/py-client.ts";
-import { checkCode, runSnippet } from "./check.ts";
+import type { PyCodeInstance } from "../../../../../shared/exercises/python.ts";
+import { checkCode, DATA_CHECK_TIMEOUT_MS, PACKAGES_TIMEOUT_MS, runSnippet } from "./check.ts";
 import { CHECK_TIMEOUT_MS } from "./harness.ts";
 
 class FakeWorker {
@@ -80,5 +81,37 @@ describe("checkCode", () => {
     await tick();
     w().emit({ type: "error", id: w().lastRun().id, message: "MemoryError", line: null, ms: 1 });
     expect(await q).toEqual({ kind: "failed", message: "MemoryError" });
+  });
+
+  it("con paquetes: primero los carga (sin capture, con más tiempo), después comprueba; las figuras vuelven", async () => {
+    vi.useFakeTimers();
+    const { client, w } = await ready();
+    const inst: PyCodeInstance = { ...makeCodeTemplate("sumas", 1, "básico"), packages: ["pandas", "matplotlib.pyplot"] };
+    const p = checkCode(client, inst, "def suma_hasta(n):\n    return 0\n");
+    await tick();
+    const pre = w().lastRun();
+    expect(pre.code).toBe("import pandas\nimport matplotlib.pyplot");
+    expect(pre.capture).toBeUndefined();
+    // La carga puede tardar más que una comprobación.
+    await vi.advanceTimersByTimeAsync(CHECK_TIMEOUT_MS + 1);
+    w().emit({ type: "done", id: pre.id, figures: [], ms: 9000, files: [] });
+    await tick();
+    const run = w().lastRun();
+    expect(run.id).not.toBe(pre.id);
+    expect(run.imports).toBe("def suma_hasta(n):\n    return 0\n\nimport pandas\nimport matplotlib.pyplot\n");
+    const result = { sintaxis: null, falta: false, superior: "", casos: [{ ok: true }], reglas: [] };
+    w().emit({ type: "done", id: run.id, figures: ["iVBORw0KGgo="], ms: 3, files: [], value: JSON.stringify(result) });
+    expect(await p).toEqual({ kind: "result", result, figures: ["iVBORw0KGgo="] });
+    expect(PACKAGES_TIMEOUT_MS).toBeGreaterThan(DATA_CHECK_TIMEOUT_MS);
+  });
+
+  it("si los paquetes no cargan, lo dice y no comprueba", async () => {
+    const { client, w } = await ready();
+    const inst: PyCodeInstance = { ...makeCodeTemplate("sumas", 1, "básico"), packages: ["seaborn"] };
+    const p = checkCode(client, inst, "x");
+    await tick();
+    w().emit({ type: "error", id: w().lastRun().id, message: "Traceback…\nModuleNotFoundError: No module named 'seaborn'", line: null, ms: 1 });
+    expect(await p).toEqual({ kind: "failed", message: "No se han podido cargar seaborn: ModuleNotFoundError: No module named 'seaborn'" });
+    expect(w().posted.filter((m) => m.type === "run")).toHaveLength(1);
   });
 });
