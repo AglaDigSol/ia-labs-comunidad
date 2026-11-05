@@ -16,7 +16,12 @@
 //    la carpeta de cada caso), uno de gráficos del tema 11 comprobado mirando la figura (seaborn con
 //    hue y estimator="sum": primero sin estimator, que falla, y después bien) y un «¿Qué imprime?»
 //    fallado con su paso a paso.
-// 5. Abre /host/ (la app anfitriona), escribe res/data.csv y res/programa.py desde la ranura del
+// 5. El simulacro de 01MIAR (…/python/simulacro): empezar, ejecutar la celda de los import y un paso
+//    con df.head() (tabla de pandas como tabla), resolver un ejercicio corto con su «Test Use Case»,
+//    «Ejecutar todo», entregar con un paso de gráficos hecho y ver la nota, las comprobaciones ocultas y
+//    la figura entregada; y el diseño a 390 px en oscuro y 1280 px en claro (sin desbordar en
+//    horizontal) del inicio, el cuaderno y los resultados.
+// 6. Abre /host/ (la app anfitriona), escribe res/data.csv y res/programa.py desde la ranura del
 //    borrador, los lee con pandas y exec(open(…)), y comprueba que siguen tras reiniciar Python.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -27,6 +32,7 @@ import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { PY_CODE_TYPES } from "../shared/exercises/python.ts";
 import { seedToText } from "../shared/exercises/random.ts";
+import { buildPyExam, finishPyExamAttempt, pyExamParts, pyExamPartPoints, recordPyExamAttempt, serializePyExamStore, setPyExamResult, startPyExamAttempt } from "../shared/pyexam/index.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const dist = join(root, "dist");
@@ -309,6 +315,119 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     await page.getByRole("button", { name: "Ver paso a paso" }).click();
     await page.getByTestId("trace-step").waitFor({ timeout: 60_000 });
     return await page.getByTestId("trace-step").innerText();
+  });
+
+  // ---------------------------------------------------------------- Simulacro de 01MIAR
+  const pyExam = buildPyExam(2);
+  const pyExamUrl = `${url}/laboratorios/python/simulacro?s=${seedToText(2)}`;
+  /** Pulsa «Ejecutar celda» y espera a que el kernel quede libre. */
+  async function runCell(label: string, timeout = 180_000) {
+    await page.getByRole("button", { name: `Ejecutar celda: ${label}`, exact: true }).click();
+    await kernelIdle(timeout);
+  }
+  /** Espera a que «Ejecutar todo» se pueda pulsar otra vez (el kernel no está ejecutando nada). */
+  async function kernelIdle(timeout: number) {
+    const all = page.getByRole("button", { name: "Ejecutar todo", exact: true });
+    const end = Date.now() + timeout;
+    await page.waitForTimeout(300);
+    while (await all.isDisabled()) {
+      if (Date.now() > end) throw new Error(`el kernel sigue ocupado tras ${timeout / 1000} s`);
+      await page.waitForTimeout(200);
+    }
+  }
+  await step("simulacro de 01MIAR: abrir y empezar", async () => {
+    await page.goto(pyExamUrl);
+    await page.getByRole("heading", { level: 1, name: "Simulacro de examen (01MIAR)" }).waitFor({ timeout: 20_000 });
+    await page.getByRole("note").getByText("Es un simulacro para practicar; no es el examen oficial ni lo sustituye.").waitFor({ timeout: 5_000 });
+    await page.getByRole("button", { name: "Empezar" }).click();
+    await page.getByRole("timer", { name: "Tiempo restante" }).waitFor({ timeout: 10_000 });
+    return `reloj ${await page.getByRole("timer").innerText()}; ${pyExamParts(pyExam)} partes`;
+  });
+  await step("simulacro: ejecutar una celda (import y df.head() como tabla)", async () => {
+    await runCell("Celda de los import (solo lectura)", 300_000);
+    await page.getByLabel("Ejecutada en el turno 1").waitFor({ timeout: 5_000 });
+    await page.getByRole("textbox", { name: "Tu solución AQUÍ · Paso A" }).fill(`${pyExam.project.steps[0]!.solution}df.head()\n`);
+    await runCell("Tu solución AQUÍ · Paso A");
+    const table = page.getByRole("table", { name: "DataFrame: 5 filas × 8 columnas" });
+    await table.waitFor({ timeout: 10_000 });
+    const html = await table.innerHTML();
+    if (/<(script|img|iframe)/i.test(html)) throw new Error("la tabla lleva HTML que no es suyo");
+    return `tabla con ${await table.getByRole("row").count()} filas`;
+  });
+  await step("simulacro: resolver un ejercicio corto y su «Test Use Case»", async () => {
+    const short = pyExam.shorts[0]!;
+    await page.getByRole("textbox", { name: "Tu solución AQUÍ · Ejercicio 1" }).fill(short.check.solution);
+    await runCell("Tu solución AQUÍ · Ejercicio 1");
+    await runCell("Test Use Case · Ejercicio 1 (solo lectura)");
+    await page.getByText("Los assert de la vista se cumplen.").first().waitFor({ timeout: 10_000 });
+    // Y un paso de gráficos (la dispersión), para ver la figura en los resultados.
+    const scatter = pyExam.project.steps.find((st) => st.plot)!;
+    await page.getByRole("textbox", { name: `Tu solución AQUÍ · Paso ${scatter.letter}` }).fill(scatter.solution);
+    return `${short.title}: los assert se cumplen`;
+  });
+  await step("simulacro: «Ejecutar todo»", async () => {
+    await page.getByRole("button", { name: "Ejecutar todo", exact: true }).click();
+    const said = page.getByText(/«Ejecutar todo» (se ha parado en un error|ha terminado)/);
+    await said.waitFor({ state: "attached", timeout: 300_000 });
+    await kernelIdle(60_000);
+    return (await said.innerText()).trim();
+  });
+  await step("simulacro: entregar y ver los resultados", async () => {
+    await page.getByRole("button", { name: "Entregar" }).first().click();
+    await page.getByRole("dialog").getByRole("button", { name: "Entregar ahora" }).click();
+    const score = page.getByLabel(/^Nota: .* sobre 10$/);
+    await score.waitFor({ timeout: 420_000 });
+    const label = (await score.getAttribute("aria-label")) ?? "";
+    const scatter = pyExam.project.steps.find((st) => st.plot)!;
+    const expected = `Nota: ${String(1.25 + pyExam.project.steps[0]!.points + scatter.points).replace(".", ",")} sobre 10`;
+    if (label !== expected) throw new Error(`${label} (esperaba ${expected})`);
+    const canvas = page.getByRole("img", { name: `Figura entregada: Paso ${scatter.letter}. ${scatter.title}` });
+    await canvas.waitFor({ timeout: 10_000 });
+    let width = 0;
+    for (let i = 0; i < 50 && width === 0; i++) {
+      width = await canvas.evaluate((c: { width: number }) => c.width);
+      if (width === 0) await page.waitForTimeout(200);
+    }
+    if (width === 0) throw new Error("la figura entregada no se dibuja");
+    const fails = await page.getByText(/: no cumplida$/).count();
+    if ((await page.getByTestId("solution").count()) !== 0) throw new Error("la solución se ve sin pedirla");
+    return `${label}; ${fails} comprobaciones ocultas no cumplidas; figura entregada en canvas de ${width} px`;
+  });
+  await step("simulacro: diseño a 390 px (oscuro) y 1280 px (claro)", async () => {
+    // Un intento corregido en el historial, para abrir también los resultados.
+    const parts = pyExamParts(pyExam);
+    const a = startPyExamAttempt(2, parts, Date.now() - 3_600_000);
+    a.code![0] = pyExam.shorts[0]!.check.solution;
+    const done = finishPyExamAttempt(a, Date.now() - 60_000);
+    const points = pyExamPartPoints(pyExam).map((p, i) => (i === 0 ? p : 0));
+    const store = setPyExamResult(recordPyExamAttempt({ active: null, history: [] }, done), done.id, { score: 1.25, points, failed: points.map((p, i) => (i === 0 ? [] : [0])) });
+    const saved = serializePyExamStore(store);
+    const out: string[] = [];
+    const shots = process.env.E2E_SHOTS;
+    for (const [width, scheme] of [[390, "dark"], [1280, "light"]] as const) {
+      const ctx = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: scheme });
+      await ctx.addInitScript(`try { if (!sessionStorage.getItem("puesto")) { localStorage.setItem("ia-labs.pyexam.v1", ${JSON.stringify(saved)}); sessionStorage.setItem("puesto", "1"); } } catch {}`);
+      const p = await ctx.newPage();
+      const wide = async (what: string) => {
+        const w = (await p.evaluate("[document.documentElement.scrollWidth, window.innerWidth]")) as [number, number];
+        if (w[0] > w[1] + 1) throw new Error(`${what} a ${width} px desborda: ${w[0]} > ${w[1]}`);
+        if (shots) await p.screenshot({ path: join(shots, `pyexam-${width}-${what}.png`), fullPage: false });
+      };
+      await p.goto(pyExamUrl);
+      await p.getByRole("heading", { level: 1, name: "Simulacro de examen (01MIAR)" }).waitFor({ timeout: 20_000 });
+      await wide("inicio");
+      await p.getByRole("button", { name: /^Historial/ }).click();
+      await p.getByRole("button", { name: "Ver resultados" }).first().click();
+      await p.getByLabel("Nota: 1,25 sobre 10").waitFor({ timeout: 10_000 });
+      await wide("resultados");
+      await p.getByRole("button", { name: "Repetir este simulacro" }).click();
+      await p.getByRole("button", { name: "Empezar" }).click();
+      await p.getByRole("timer").waitFor({ timeout: 10_000 });
+      await wide("cuaderno");
+      out.push(`${width} px ${scheme}: sin desbordar`);
+      await ctx.close();
+    }
+    return out.join("; ");
   });
 
   await step("anfitrión: writeFiles desde la ranura del borrador", async () => {
