@@ -140,7 +140,9 @@ describe("tema Python en «Ejercicios»", () => {
     renderAt("/laboratorios/ejercicios");
     await page();
     const block = screen.getByRole("heading", { level: 2, name: "Python (01MIAR)" }).closest("section")!;
-    expect(within(block).getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(PYTHON_EXERCISES.map((t) => t.title));
+    // Antes de los tipos, la tarjeta del simulacro de 01MIAR.
+    expect(within(block).getByRole("link", { name: "Abrir el simulacro de 01MIAR" })).toBeTruthy();
+    expect(within(within(block).getByRole("list")).getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(PYTHON_EXERCISES.map((t) => t.title));
     expect(Python3Worker.all).toHaveLength(0);
   });
 
