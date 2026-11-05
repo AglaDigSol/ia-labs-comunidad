@@ -56,7 +56,7 @@ import { usePythonRuntime } from "../exercises/python/runtime.ts";
 import { Figure, saveBlob } from "../python/Figure.tsx";
 import { gradePyExam, type GradeStage } from "./grade-run.ts";
 import type { PartReport, PyExamGrading } from "./grade.ts";
-import { KernelBar, Notebook, partAnchor, Pre, RichText, useNotebookKernel } from "./Notebook.tsx";
+import { KernelBar, KernelNote, Notebook, partAnchor, Pre, RichText, useNotebookKernel } from "./Notebook.tsx";
 import { loadPyExamStore, savePyExamStore } from "./pyexam-storage.ts";
 
 export const PYEXAM_PAGE_TITLE = "Simulacro de examen (01MIAR)";
@@ -423,6 +423,7 @@ function ExamView({ attempt, heading, onChange, onFinish }: { attempt: PyExamAtt
         <p className="text-[14px] text-muted">Del 1 al 4, los ejercicios cortos; las letras, los pasos del proyecto. Con fondo de color: la celda ya tiene tu código.</p>
       </nav>
 
+      <KernelNote kernel={kernel} />
       <p id="pyexam-teclas" className="text-[14px] text-muted">
         En las celdas, Tab sangra cuatro espacios (Esc y después Tab sale del editor) y Ctrl+Intro ejecuta la celda. Tu código se guarda en este dispositivo mientras escribes.
       </p>

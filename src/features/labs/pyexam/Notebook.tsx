@@ -307,7 +307,7 @@ export function Notebook({
   );
 }
 
-/** La barra del kernel: estado de Python, «Ejecutar todo», «Reiniciar kernel» y «Detener». */
+/** La barra del kernel: «Ejecutar todo», «Reiniciar kernel», «Detener» y el estado de Python. */
 export function KernelBar({ exam, code, starters, kernel, onMessage }: { exam: PyExam; code: ReadonlyArray<string | null> | null; starters: readonly string[]; kernel: NotebookKernel; onMessage: (m: string) => void }) {
   const runAll = async () => {
     for (const c of pyExamCells(exam)) {
@@ -323,7 +323,7 @@ export function KernelBar({ exam, code, starters, kernel, onMessage }: { exam: P
   const busy = kernel.running !== null;
   const phase = kernel.loadFailed && kernel.phase !== "loading" ? "error" : kernel.phase;
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <Button onClick={() => void runAll()} disabled={busy}>
           <PlayCircle size={16} aria-hidden="true" />
@@ -362,9 +362,12 @@ export function KernelBar({ exam, code, starters, kernel, onMessage }: { exam: P
           </Button>
         )}
       </div>
-      {phase === "idle" ? (
-        <p className="text-[14px] text-muted">{`Las celdas se ejecutan con Python en tu navegador. Si aún no está en este dispositivo, la primera vez se descargan unos ${fmtMB(FIRST_DOWNLOAD_BYTES)} (y pandas, matplotlib y seaborn al importarlos).`}</p>
-      ) : null}
     </div>
   );
+}
+
+/** Aviso de la descarga de Python (fuera de la cabecera fija: en el móvil ocuparía media pantalla). */
+export function KernelNote({ kernel }: { kernel: NotebookKernel }) {
+  if (kernel.phase !== "idle") return null;
+  return <p className="text-[14px] text-muted">{`Las celdas se ejecutan con Python en tu navegador. Si aún no está en este dispositivo, la primera vez se descargan unos ${fmtMB(FIRST_DOWNLOAD_BYTES)} (y pandas, matplotlib y seaborn al importarlos).`}</p>;
 }
