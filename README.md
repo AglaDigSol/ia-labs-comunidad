@@ -24,7 +24,7 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Cálculo | Derivadas paso a paso (escribes cada línea y eliges la regla: suma, factor constante, producto, cociente, potencia, cadena o derivadas elementales; cada línea se comprueba en muchos puntos y se avisa si la regla no encaja), o solo el resultado; recta tangente con f y f′ dibujadas y tu recta encima; primitivas (comprobadas derivándolas, con + C) e integrales definidas con sumas de Riemann; derivadas parciales, gradiente y curvas de nivel con flechas, y puntos críticos clasificados con la hessiana; descenso de gradiente en una y dos variables (α, punto de partida, iteraciones, momento y Adam; Rosenbrock, valle alargado, varios mínimos y punto de silla) y los primeros pasos a mano, y adónde converge desde cada punto; «Límites y continuidad»: funciones a trozos, L'Hôpital, dominio y bisección; regla de la cadena en varias variables (también con la jacobiana), puntos críticos tipo test e integración por partes. | siempre activo |
 | Probabilidad | Árbol de probabilidad total y Bayes que rellenas casilla a casilla (ramas que faltan, productos, P(C) y P(Aᵢ \| C)), tabla de contingencia 2×2 con P(A \| B), P(B \| A) e independencia, condicionada con un dado (opciones a–d), independencia con P(A), P(B) y un dato más (selecciona la o las correctas), distribuciones discretas (Bernoulli, binomial, geométrica, Poisson y uniforme: diagrama de barras con la función de distribución, tabla, media y varianza, y práctica con historias: qué distribución es, P(X = k), P(X ≥ k), E[X] y Var(X)), tabla de un juego con dados o monedas (equilibrados o trucados) y su esperanza, penalización justa por fallo en un test, E[XY] con independientes y simulación con semilla de la frecuencia relativa. Fracciones exactas; las respuestas se aceptan como fracción o redondeadas a dos decimales con coma, como en el examen. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
-| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias, FND/FNC y formalizar frases («es suficiente», «solo si», «a menos que», «ni… ni…»); evaluar y negar con cuantificadores, negar frases en lenguaje natural y predicados sobre ℕ, ℤ, ℚ y ℝ; Venn, igualdades, inclusión–exclusión, partes y producto; problemas de combinatoria, ¿qué modelo es?, funciones por cardinal, complejidad de un algoritmo y P y NP; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente; probabilidad total y Bayes (también contada con porcentajes), condicionada con un dado, condicionada e independencia, binomial, geométrica, esperanza de un juego con un dado trucado, penalización en un test y E[XY] con independientes; y teoría con el formato del examen: funciones a trozos, L'Hôpital, dominio, bisección, regla de la cadena (también con la jacobiana), cuencas del descenso, críticos tipo test, integración por partes, propiedades del determinante, verdadero o falso sobre matrices, normas, rango y dimensión de tensores y sistemas tipo test. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. Arriba, el **Simulacro de examen (02MIAR)**: ver [Simulacro de examen](#simulacro-de-examen-02miar). Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 5) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)). | siempre activo |
+| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias, FND/FNC y formalizar frases («es suficiente», «solo si», «a menos que», «ni… ni…»); evaluar y negar con cuantificadores, negar frases en lenguaje natural y predicados sobre ℕ, ℤ, ℚ y ℝ; Venn, igualdades, inclusión–exclusión, partes y producto; problemas de combinatoria, ¿qué modelo es?, funciones por cardinal, complejidad de un algoritmo y P y NP; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente; probabilidad total y Bayes (también contada con porcentajes), condicionada con un dado, condicionada e independencia, binomial, geométrica, esperanza de un juego con un dado trucado, penalización en un test y E[XY] con independientes; y teoría con el formato del examen: funciones a trozos, L'Hôpital, dominio, bisección, regla de la cadena (también con la jacobiana), cuencas del descenso, críticos tipo test, integración por partes, propiedades del determinante, verdadero o falso sobre matrices, normas, rango y dimensión de tensores y sistemas tipo test. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. Arriba, el **Simulacro de examen (02MIAR)**: ver [Simulacro de examen](#simulacro-de-examen-02miar). Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 13: de los tipos de datos a NumPy, pandas, gráficos y generadores) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)). | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
 | Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
 | Calculadora de notas | Nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
@@ -99,6 +99,11 @@ npm run typecheck
 npm run lint:install && npm run lint
 npm run build        # genera dist/
 ```
+
+Las pruebas de los ejercicios de Python ejecutan el código con el `python3` del sistema (3.12 o superior) y se saltan
+si no lo hay. Las de los temas 8 a 13 necesitan además numpy y pandas, y las de gráficos, matplotlib y seaborn (con
+`pip install numpy pandas matplotlib seaborn` en un entorno virtual): sin ellos se saltan solas. Con las mismas
+versiones que Pyodide 0.27.7 (numpy 2.0.2, pandas 2.2.3, matplotlib 3.8.4 y seaborn 0.13.2) la prueba es la más fiel.
 
 ## Generar `dist/`
 
@@ -183,7 +188,7 @@ dependencias que aún no tenga; el navegador los guarda en caché):
 
 ### Ejercicios de Python
 
-Con la pestaña encendida, «Ejercicios» tiene un tema más, **Python (01MIAR)**, con nueve tipos y tres niveles cada
+Con la pestaña encendida, «Ejercicios» tiene un tema más, **Python (01MIAR)**, con veintidós tipos y tres niveles cada
 uno. Cada ejercicio se genera con semilla (los datos de las pruebas cambian con «Siguiente ejercicio») y se corrige en
 el navegador, con el mismo Python de la pestaña (que se descarga al pulsar «Comprobar» o «Cargar Python» si aún no está
 en el dispositivo):
@@ -199,6 +204,19 @@ en el dispositivo):
 | Recursión, lambdas y sorted | 4 | funciones recursivas, `sorted` con `key`, funciones como valores y fábricas de funciones |
 | Ficheros de texto y CSV | 5 | `with open`, contar líneas y palabras, escribir archivos y el módulo `csv` |
 | ¿Qué imprime? | 1–4 | leer un fragmento corto y escribir exactamente su salida |
+| Encuentra el bug | 4 | corregir una función sin cambiar su firma: comparaciones, rangos, el valor por defecto mutable, borrar mientras se recorre, alias de un diccionario y clausuras en un bucle |
+| En una línea | 3 | reescribir un bucle con `if` anidados como un solo `return` con una comprensión (de lista o de diccionario, con dos `for`) |
+| Clases y objetos | 6 | una clase con métodos y `ValueError`, herencia con `super()` y `__str__`, `__len__`, `__contains__` y `@property` |
+| Python avanzado | 7 | `collections.Counter`, un decorador con `functools.wraps` y `heapq` (`merge`, `nsmallest`) |
+| NumPy: matrices y máscaras | 8 | operaciones por columnas, `default_rng` con semilla, máscaras a `np.nan` y quitar columnas con NaN |
+| Sistemas con NumPy | 8 | `np.linalg.solve`, comprobar con `np.allclose` y matrices singulares (`matrix_rank`) |
+| pandas: fechas y cadenas | 9 | partir «Título - Año» (también por el último separador), `to_datetime` y `.dt.year`, `str.strip` y `str.lower` |
+| pandas: agrupar y pivotar | 10 | porcentaje de nulos por columna, `groupby` con `size` y `sum`, y `pivot_table(aggfunc="count")` con `fillna(0)` |
+| pandas: combinar | 10 | `merge(how="left")`, claves normalizadas, filas repetidas en la tabla de consulta y contar lo que no casa |
+| Gráficos con requisitos | 11 | dispersión con `figsize`, dos `barplot` de seaborn con `hue` y `estimator="sum"`, y un gráfico de líneas por categoría |
+| pandas: valores perdidos | 12 | `isna`, `dropna(axis=1, thresh=…)`, `interpolate` y rellenar los extremos (`bfill`, `ffill`) |
+| pandas: limpiar y convertir | 12 | «ERROR» y «UNKNOWN» a NaN, `to_numeric(errors="coerce")`, el precio de cada artículo por moda y total = precio × cantidad |
+| Generadores | 13 | `yield`, un generador sobre las filas de un DataFrame ordenadas y generadores que funcionan con un iterable infinito |
 
 - **Ejercicio de código.** Escribes la función en el editor y pulsas «Comprobar». Cada caso se ejecuta en un espacio
   de nombres nuevo, con 2 s como mucho, y se compara con una solución de referencia: «Caso 2: incorrecto» enseña la
@@ -206,6 +224,17 @@ en el dispositivo):
   error con su línea), **nunca el valor esperado**. Algunos piden un requisito («usa una comprensión», «sin `if`»,
   «recursiva»), que se comprueba leyendo el código. En el tema 5, los archivos de cada caso se escriben en la carpeta
   de trabajo con la misma API de archivos de la pestaña y se borran al terminar.
+- **Temas 6 a 13.** Los datos son sintéticos ([`shared/pydata/`](shared/pydata/index.ts): ventas sucias de una cafetería
+  inventada, incidencias con coordenadas fuera de rango y su tabla de países, sensores con huecos y tablas pequeñas),
+  deterministas con la semilla, y se escriben en la carpeta de trabajo de cada caso (`ejercicio/caso1/ventas.csv`…)
+  con la misma API de archivos. Las tablas de pandas, las series y los arrays de NumPy se comparan con tolerancia y,
+  si no coinciden, se dice por qué con lo que hizo tu código (la forma, las columnas, el tipo de una columna, el
+  orden de las filas, dónde están tus NaN o el primer valor distinto y el tuyo). Los generadores se comparan por lo
+  que producen y se comprueba que lo son (y que no empiezan antes de tiempo). En los gráficos se mira la figura que
+  deja tu código: cuántos gráficos tiene, su `figsize`, si son de dispersión, barras o líneas, cuántas barras y de
+  qué altura (así se comprueba `estimator="sum"`), los puntos, las líneas, la leyenda del `hue` y los títulos y los
+  nombres de los ejes; cada requisito sale como «cumplida» o «no cumplida» con lo tuyo, y tu gráfico se ve debajo.
+  pandas, matplotlib y seaborn se descargan la primera vez que compruebas uno de estos ejercicios.
 - **«Dame una pista»** da pistas graduadas, de la idea al detalle, sin código. La solución de referencia solo se ve
   detrás de «Ver la solución completa».
 - **«¿Qué imprime?»** no enseña la salida: al comprobar dice si coincide (sin contar los espacios del final) y, si
