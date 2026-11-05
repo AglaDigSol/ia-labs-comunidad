@@ -12,7 +12,10 @@
 // 3. Abre /laboratorios/python, carga Python y ejecuta código real: print, numpy, seaborn, un
 //    gráfico, %timeit, un archivo subido, input(), sin internet, TensorFlow y «Detener».
 // 4. Paso a paso de un bucle de 5 líneas en la pestaña y, en «Ejercicios», un ejercicio de Python
-//    resuelto (de ficheros CSV), otro fallado y un «¿Qué imprime?» fallado con su paso a paso.
+//    resuelto (de ficheros CSV), otro fallado, uno de pandas del tema 12 resuelto (con ventas.csv en
+//    la carpeta de cada caso), uno de gráficos del tema 11 comprobado mirando la figura (seaborn con
+//    hue y estimator="sum": primero sin estimator, que falla, y después bien) y un «¿Qué imprime?»
+//    fallado con su paso a paso.
 // 5. Abre /host/ (la app anfitriona), escribe res/data.csv y res/programa.py desde la ranura del
 //    borrador, los lee con pandas y exec(open(…)), y comprueba que siguen tras reiniciar Python.
 import { spawnSync } from "node:child_process";
@@ -263,6 +266,40 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     if (mine === 0) throw new Error("no muestra «Tu resultado»");
     if (await page.getByText("¡Correcto!").count()) throw new Error("lo da por bueno");
     return `${inst.title}: ${await list.getByText(/: incorrecto$/).count()} casos incorrectos`;
+  });
+  await step("ejercicio de pandas resuelto (tema 12: total = precio × cantidad)", async () => {
+    const inst = tipo("py-pandas-limpiar").generate(3, "avanzado");
+    await page.goto(exerciseUrl("py-pandas-limpiar", "avanzado", 3));
+    await page.getByText("Tema 12 · Procesamiento de datos").waitFor({ timeout: 20_000 });
+    // Primero el error típico: el primer precio visto en vez de la moda.
+    const firstSeen = inst.solution.replace('precios = validos.groupby("articulo")["precio"].agg(lambda s: s.mode()[0])', 'precios = validos.drop_duplicates("articulo").set_index("articulo")["precio"]');
+    await page.getByLabel("Tu código").fill(firstSeen);
+    await page.getByRole("button", { name: "Comprobar" }).click();
+    const list = page.getByRole("list", { name: "Resultados de las pruebas" });
+    await list.getByText(/: incorrecto$/).first().waitFor({ timeout: 300_000 });
+    const why = await list.getByText(/^Hay algún valor distinto en la columna '/).count();
+    if (why === 0) throw new Error("no dice qué columna no coincide");
+    await page.getByLabel("Tu código").fill(inst.solution);
+    await page.getByRole("button", { name: "Comprobar" }).click();
+    await page.getByText("¡Correcto! Tu código pasa todas las pruebas.").waitFor({ timeout: 180_000 });
+    return `${inst.title}: el «primer precio visto» falla (${why} casos lo dicen); la moda, ${inst.cases.length} casos correctos`;
+  });
+  await step("gráfico con requisitos comprobado (tema 11: dos barplots con hue y estimator)", async () => {
+    const inst = tipo("py-graficos").generate(5, "medio");
+    await page.goto(exerciseUrl("py-graficos", "medio", 5));
+    await page.getByText("Tema 11 · Visualización de datos").waitFor({ timeout: 20_000 });
+    await page.getByLabel("Tu código", { exact: true }).fill(inst.solution.replace(/, estimator="sum"/g, ""));
+    await page.getByRole("button", { name: "Comprobar" }).click();
+    const list = page.getByRole("list", { name: "Resultados de las pruebas" });
+    await list.getByText(/^Izquierda: las barras son las sumas de total \(estimator="sum"\): no cumplida/).first().waitFor({ timeout: 300_000 });
+    await page.getByRole("img", { name: "Gráfico de tu código" }).waitFor({ timeout: 10_000 });
+    await page.waitForFunction(`(document.querySelector('canvas[aria-label="Gráfico de tu código"]')?.width ?? 0) > 0`);
+    await page.getByLabel("Tu código", { exact: true }).fill(inst.solution);
+    await page.getByRole("button", { name: "Comprobar" }).click();
+    await page.getByText("¡Correcto! Tu código pasa todas las pruebas.").waitFor({ timeout: 180_000 });
+    const ok = await list.getByText(/: cumplida$/).count();
+    const size = await page.evaluate(`(() => { const c = document.querySelector('canvas[aria-label="Gráfico de tu código"]'); return c.width + "x" + c.height; })()`);
+    return `sin estimator: no cumplida; bien: ${ok} comprobaciones cumplidas; tu gráfico en canvas ${size}`;
   });
   await step("«¿Qué imprime?» fallado y su paso a paso", async () => {
     await page.goto(exerciseUrl("py-que-imprime", "medio", 21));
