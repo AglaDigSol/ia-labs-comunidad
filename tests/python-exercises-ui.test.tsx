@@ -2,7 +2,8 @@
 // Ejercicios de Python en «Ejercicios», con un worker falso que ejecuta de verdad cada programa con el
 // python3 del sistema (el protocolo es el del worker de Pyodide: init, fs-write, fs-clear y run con
 // capture). Tema oculto sin el módulo, ejercicio resuelto y fallado, archivos del tema 5, pistas,
-// solución detrás de la puerta y «¿Qué imprime?» con el paso a paso.
+// solución detrás de la puerta y «¿Qué imprime?» con el paso a paso. Temas 6 a 13: un ejercicio de
+// pandas (con su CSV en la carpeta de cada caso) y uno de gráficos, si el python3 tiene esos paquetes.
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -19,18 +20,27 @@ import { LabsRoutes } from "../src/features/labs/labs.tsx";
 import { disposeRuntime, setExerciseWorkerFactory } from "../src/features/labs/exercises/python/runtime.ts";
 import { HARNESS_PY } from "../src/features/labs/exercises/python/harness.ts";
 import type { WorkerIn, WorkerOut } from "../src/features/labs/python/py-client.ts";
-import { hasPython3, runJobs } from "./system-python.ts";
+import { hasPandas, hasPlots, hasPython3, runJobs } from "./system-python.ts";
 
-// Ejecuta el programa y devuelve el valor de su última expresión si es un str (como capture).
+// Ejecuta el programa y devuelve el valor de su última expresión si es un str (como capture) y, como
+// el worker, las figuras de matplotlib que quedan abiertas (PNG en base64).
 const RUNNER = `
-import ast, json, sys
+import ast, base64, io, json, sys
 src = open(sys.argv[1], encoding="utf-8").read()
 tree = ast.parse(src)
-last = tree.body.pop()
+last = tree.body.pop() if tree.body and isinstance(tree.body[-1], ast.Expr) else None
 ns = {"__name__": "__main__"}
 exec(compile(tree, "<exec>", "exec"), ns)
-v = eval(compile(ast.Expression(last.value), "<exec>", "eval"), ns)
-sys.stdout.write(json.dumps(v if isinstance(v, str) else None))
+v = eval(compile(ast.Expression(last.value), "<exec>", "eval"), ns) if last is not None else None
+figs = []
+if "matplotlib.pyplot" in sys.modules:
+    import matplotlib.pyplot as plt
+    for n in plt.get_fignums():
+        buf = io.BytesIO()
+        plt.figure(n).savefig(buf, format="png", dpi=40)
+        figs.append(base64.b64encode(buf.getvalue()).decode())
+    plt.close("all")
+sys.stdout.write(json.dumps({"value": v if isinstance(v, str) else None, "figures": figs}))
 `;
 
 class Python3Worker {
@@ -65,10 +75,10 @@ class Python3Worker {
           }
           writeFileSync(join(dir, "programa.py"), m.code);
           writeFileSync(join(dir, "runner.py"), RUNNER);
-          const r = spawnSync("python3", ["-I", "runner.py", "programa.py"], { cwd: dir, encoding: "utf8", timeout: 60_000 });
+          const r = spawnSync("python3", ["-I", "runner.py", "programa.py"], { cwd: dir, encoding: "utf8", timeout: 60_000, env: { ...process.env, MPLBACKEND: "Agg" } });
           if (r.status !== 0) return this.emit({ type: "error", id: m.id, message: r.stderr, line: null, ms: 1 });
-          const value = JSON.parse(r.stdout) as string | null;
-          return this.emit({ type: "done", id: m.id, figures: [], ms: 1, files: [], ...(value === null ? {} : { value }) });
+          const { value, figures } = JSON.parse(r.stdout) as { value: string | null; figures: string[] };
+          return this.emit({ type: "done", id: m.id, figures, ms: 1, files: [], ...(value === null ? {} : { value }) });
         } finally {
           rmSync(dir, { recursive: true, force: true });
         }
@@ -241,3 +251,51 @@ describe.skipIf(!hasPython3)("«¿Qué imprime?» con python3", () => {
     expect(Python3Worker.all[0]!.posted.map((m) => m.type)).toEqual(["init"]);
   });
 });
+
+describe.skipIf(!hasPandas)("temas 6 a 13: un ejercicio de pandas con python3", () => {
+  it("resuelto: prepara pandas, escribe ventas.csv en la carpeta de cada caso y lo da por bueno", async () => {
+    const inst = await openCode("py-pandas-limpiar", "básico", 2);
+    expect(screen.getByText("Tema 12 · Procesamiento de datos")).toBeTruthy();
+    expect(screen.getByText(/^Este ejercicio usa NumPy y pandas: la primera vez que compruebes se descargan unos \d+ MB más/)).toBeTruthy();
+    expect(Python3Worker.all).toHaveLength(0);
+    await submit(inst.solution);
+    expect(await screen.findByText("¡Correcto! Tu código pasa todas las pruebas.", undefined, { timeout: 60_000 })).toBeTruthy();
+    const w = Python3Worker.all[0]!;
+    const runs = w.posted.filter((m): m is Extract<WorkerIn, { type: "run" }> => m.type === "run");
+    expect(runs[0]!.code).toBe("import numpy\nimport pandas");
+    expect(runs[1]!.imports).toContain("import pandas");
+    const writes = w.posted.filter((m): m is Extract<WorkerIn, { type: "fs-write" }> => m.type === "fs-write").map((m) => m.path);
+    expect(writes).toEqual(inst.cases.map((_, k) => `ejercicio/caso${k + 1}/ventas.csv`));
+    const list = screen.getByRole("list", { name: "Resultados de las pruebas" });
+    expect(within(list).getAllByText("Conserva todas las filas y columnas: cumplida")).toHaveLength(inst.cases.length);
+  }, 90_000);
+
+  it("equivocado: dice por qué no coincide la tabla (lo tuyo) y la comprobación que falla", async () => {
+    await openCode("py-pandas-nulos", "avanzado", 3);
+    await submit("import pandas as pd\n\ndef rellenar(df, k):\n    return df.dropna(axis=1, thresh=len(df) - k).interpolate()\n");
+    const list = await screen.findByRole("list", { name: "Resultados de las pruebas" }, { timeout: 60_000 });
+    expect(within(list).getAllByText(/^Los valores perdidos \(NaN\) no coinciden\. Los tuyos, por columna: s\d: \d/).length).toBeGreaterThan(0);
+    expect(within(list).getAllByText(/^No queda ningún NaN: no cumplida \(lo tuyo: \d+ valor(es)? perdidos?\)$/).length).toBeGreaterThan(0);
+    expect(within(list).getAllByText("Quedan las columnas con k NaN o menos: cumplida").length).toBeGreaterThan(0);
+    expect(screen.queryByText("¡Correcto! Tu código pasa todas las pruebas.")).toBeNull();
+  }, 90_000);
+});
+
+describe.skipIf(!hasPlots)("temas 6 a 13: un gráfico con requisitos con python3", () => {
+  it("comprueba la figura requisito a requisito y enseña tu gráfico", async () => {
+    const inst = await openCode("py-graficos", "básico", 4);
+    expect(screen.getByText("Tema 11 · Visualización de datos")).toBeTruthy();
+    // Líneas en vez de puntos y otro tamaño.
+    await submit(inst.solution.replace(/ax\.scatter\((.+)\)/, "ax.plot($1)").replace(/figsize=\(\d+, \d+\)/, "figsize=(5, 5)"));
+    const list = await screen.findByRole("list", { name: "Resultados de las pruebas" }, { timeout: 90_000 });
+    expect(within(list).getAllByText("Es un gráfico de dispersión: no cumplida (lo tuyo: líneas)").length).toBe(inst.cases.length);
+    expect(within(list).getAllByText(/^La figura mide \d × \d pulgadas \(figsize\): no cumplida \(lo tuyo: 5 × 5 pulgadas\)$/).length).toBe(inst.cases.length);
+    expect(within(list).getAllByText("Tiene título: cumplida").length).toBe(inst.cases.length);
+    expect(screen.getByText("Tu gráfico (el del caso 1)")).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Gráfico de tu código" })).toBeTruthy();
+    await submit(inst.solution);
+    expect(await screen.findByText("¡Correcto! Tu código pasa todas las pruebas.", undefined, { timeout: 90_000 })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Gráfico de tu código" })).toBeTruthy();
+  }, 180_000);
+});
+

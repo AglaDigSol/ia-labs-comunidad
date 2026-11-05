@@ -61,14 +61,19 @@ export async function preparePackages(client: PyClient, instance: PyCodeInstance
   return { kind: "failed", message: `No se han podido cargar ${mods.join(", ")}: ${o.message.split("\n").at(-1) ?? o.message}` };
 }
 
+/** En qué está la comprobación: cargando los paquetes del ejercicio o ejecutando los casos. */
+export type CheckStage = "paquetes" | "casos";
+
 /** Comprueba el código de la persona con los casos del ejercicio. */
-export async function checkCode(client: PyClient, instance: PyCodeInstance, code: string): Promise<Outcome<CheckResult>> {
+export async function checkCode(client: PyClient, instance: PyCodeInstance, code: string, onStage: (s: CheckStage) => void = () => {}): Promise<Outcome<CheckResult>> {
   try {
+    if (instance.packages?.length) onStage("paquetes");
     const failed = await preparePackages(client, instance);
     if (failed) return failed;
   } catch (e) {
     return { kind: "failed", message: e instanceof Error ? e.message : String(e) };
   }
+  onStage("casos");
   client.clearFiles();
   for (const f of caseFiles(instance.cases)) client.upload(f.path, bytes(f.text));
   try {

@@ -6,6 +6,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { readLabItem, writeLabItem } from "../../labs-storage.ts";
 import { createPyWorker, PyClient } from "../../python/py-client.ts";
+import { closureBytes, EXTRA_WHEELS } from "../../python/packages.ts";
 import { PYODIDE_CORE, PYODIDE_PACKAGES } from "../../python/pyodide-manifest.ts";
 import { isolationAvailable, pyodideBaseUrl } from "../../python/python-config.ts";
 
@@ -14,6 +15,24 @@ export type RuntimePhase = "idle" | "loading" | "ready" | "error";
 /** Bytes de la primera descarga (núcleo y numpy), para el aviso. */
 export const FIRST_DOWNLOAD_BYTES =
   PYODIDE_CORE.reduce((s, f) => s + f.size, 0) + PYODIDE_PACKAGES.filter((p) => p.name === "numpy").reduce((s, p) => s + p.size, 0);
+
+/**
+ * Bytes que descargan, además de la primera descarga, los paquetes de un ejercicio («pandas»,
+ * «matplotlib.pyplot», «seaborn»…), con sus dependencias del lock y los wheels extra.
+ */
+export function packagesBytes(modules: readonly string[]): number {
+  const roots = new Set<string>();
+  let extra = 0;
+  for (const m of modules) {
+    const root = m.split(".")[0]!;
+    const wheel = EXTRA_WHEELS.find((w) => w.imports.includes(root));
+    if (wheel) {
+      extra += wheel.size;
+      for (const d of wheel.lockDeps) roots.add(d);
+    } else roots.add(root);
+  }
+  return extra + closureBytes(PYODIDE_PACKAGES, [...roots], new Set(["numpy"]));
+}
 
 /** Tras desmontarse la última vista, cuánto se espera antes de terminar el worker. */
 export const RELEASE_DELAY_MS = 5000;

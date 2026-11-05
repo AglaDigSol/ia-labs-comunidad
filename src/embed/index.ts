@@ -142,13 +142,17 @@ export * from "../../shared/exam/items.ts";
 export * from "../../shared/exam/blueprint.ts";
 export * from "../../shared/exam/grading.ts";
 export * from "../../shared/exam/attempt.ts";
-// Ejercicios de Python (solo se muestran con <LabsRoutes python /> o <ExercisesPage python />).
+// Ejercicios de Python (solo se muestran con <LabsRoutes python /> o <ExercisesPage python />). Los
+// conjuntos de datos sintéticos de los temas 8 a 13 se importan de "ia-labs-comunidad/shared/pydata/index.ts".
 export {
   PYTHON_EXERCISES,
   PY_CODE_TYPES,
   PY_OUTPUT,
   PY_TEMAS,
   type PyCase,
+  type PyCheck,
+  type PyCheckKind,
+  type PyCompareOptions,
   type PyCodeInstance,
   type PyInstance,
   type PyOutputInstance,

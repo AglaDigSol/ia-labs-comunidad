@@ -4,6 +4,8 @@
 // «¿Qué imprime?»: el fragmento, la respuesta de la persona y, si falla, el paso a paso.
 // Integridad: el resultado de cada caso dice si es correcto y, si no, lo que hizo tu código; nunca
 // el valor esperado. Las pistas no llevan código. Nada se ejecuta sin pulsar un botón.
+// Temas 6 a 13: con tablas y arrays, por qué no coincide (forma, columnas, NaN…, siempre lo tuyo);
+// las comprobaciones con nombre una a una (las de los gráficos miran tu figura) y tu gráfico debajo.
 import { CircleCheck, CircleX, Footprints, HardDriveDownload, Lightbulb, OctagonAlert, Play, RotateCcw } from "lucide-react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { PY_TEMAS, type PyCase, type PyCodeInstance, type PyInstance, type PyOutputInstance } from "../../../../../shared/exercises/python.ts";
@@ -11,11 +13,12 @@ import { SolutionGate } from "../../../../components/practice/SolutionGate.tsx";
 import { Button } from "../../../../components/ui/button.tsx";
 import { Chip } from "../../../../components/ui/chip.tsx";
 import { cn } from "../../../../lib/cn.ts";
+import { Figure } from "../../python/Figure.tsx";
 import { runTrace, TraceView, type TraceOutcome } from "../../python/Tracer.tsx";
 import type { ExerciseViewProps } from "../views.tsx";
-import { checkCode, runSnippet, type Outcome } from "./check.ts";
-import { allPassed, CASE_SECONDS, firstOutputDiff, type CaseDiff, type CaseResult, type CheckResult, type OutputResult } from "./harness.ts";
-import { FIRST_DOWNLOAD_BYTES, usePythonRuntime, type RuntimePhase } from "./runtime.ts";
+import { checkCode, runSnippet, type CheckStage, type Outcome } from "./check.ts";
+import { allPassed, CASE_SECONDS, firstOutputDiff, type CaseDiff, type CaseResult, type CheckResult, type DataDetail, type OutputResult } from "./harness.ts";
+import { FIRST_DOWNLOAD_BYTES, packagesBytes, usePythonRuntime, type RuntimePhase } from "./runtime.ts";
 
 const fmtMB = (bytes: number) => `${(bytes / 1_000_000).toFixed(0)} MB`;
 export const COPY_LOAD_FAILED = "No se pudo cargar Python. Comprueba la conexión y vuelve a intentarlo.";
@@ -168,8 +171,38 @@ function Pre({ children, className }: { children: ReactNode; className?: string 
 
 // ---------------------------------------------------------------- Ejercicio de código
 
+/** Por qué no coincide una tabla, una serie o un array (con lo que hizo la persona, nunca lo esperado). */
+export function detailText(d: DataDetail): string {
+  const tuyo = d.tuyo ?? "";
+  switch (d.clave) {
+    case "forma":
+      return `La forma (filas, columnas) no es la que debe salir: la tuya es ${tuyo}.`;
+    case "columnas":
+      return `Las columnas no son las que pide el enunciado: las tuyas son ${tuyo}.`;
+    case "tipos":
+      return `Alguna columna no tiene el tipo que pide el enunciado: ${tuyo}.`;
+    case "indice":
+      return tuyo ? `El índice no es el que debe salir (el tuyo: ${tuyo}).` : "El índice no es el que debe salir.";
+    case "orden":
+      return "Las filas son las que deben salir, pero en otro orden.";
+    case "nulos":
+      return tuyo.includes(":") ? `Los valores perdidos (NaN) no coinciden. Los tuyos, por columna: ${tuyo}.` : `Los valores perdidos (NaN) no coinciden: tu array tiene ${tuyo}.`;
+    case "valores": {
+      const where = `${d.donde ? ` en ${d.donde}` : ""}${d.fila !== undefined ? `, ${d.fila + 1}.ª fila` : ""}`;
+      return `Hay algún valor distinto${where}${tuyo ? ` (el tuyo: ${tuyo})` : ""}.`;
+    }
+    case "tipo":
+      return `No es del tipo que pide el enunciado: es ${tuyo || "otra cosa"}.`;
+    default:
+      return "No coincide con lo que debe salir.";
+  }
+}
+
 function diffText(d: CaseDiff): string {
-  if (d.que === "valor") return `Tu resultado: ${d.texto ?? "None"}${d.tipo ? ` (de tipo ${d.tipo}: revisa qué tipo pide el enunciado)` : ""}`;
+  if (d.que === "valor") {
+    const base = `Tu resultado: ${d.texto ?? "None"}${d.tipo ? ` (de tipo ${d.tipo}: revisa qué tipo pide el enunciado)` : ""}`;
+    return d.detalle ? `${detailText(d.detalle)}\n${base}` : base;
+  }
   if (d.que === "salida") return d.texto === "''" ? "Tu código no imprime nada." : `Tu salida: ${d.texto}`;
   const name = d.que.slice("archivo:".length);
   return d.texto === null ? `No has creado el archivo ${name}.` : `Tu archivo ${name}: ${d.texto}`;
@@ -199,7 +232,22 @@ function CaseFiles({ files }: { files: PyCase["files"] }) {
   );
 }
 
-function CheckReport({ instance, result }: { instance: PyCodeInstance; result: CheckResult }) {
+/** Comprobaciones con nombre de un caso: el requisito, si se cumple y, si no, lo que hizo tu código. */
+function CaseChecks({ labels, result }: { labels: readonly string[]; result: CaseResult }) {
+  if (!result.checks?.length) return null;
+  return (
+    <ul aria-label="Comprobaciones" className="flex flex-col gap-1 text-[14px]">
+      {result.checks.map((c, i) => (
+        <li key={i} className={cn("flex items-start gap-2", c.ok ? "text-ok" : "text-crit")}>
+          {c.ok ? <CircleCheck size={16} aria-hidden="true" className="mt-0.5 shrink-0" /> : <CircleX size={16} aria-hidden="true" className="mt-0.5 shrink-0" />}
+          <span>{`${labels[i] ?? "Comprobación"}: ${c.ok ? "cumplida" : "no cumplida"}${!c.ok && c.tuyo ? ` (lo tuyo: ${c.tuyo})` : ""}`}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function CheckReport({ instance, result, figures }: { instance: PyCodeInstance; result: CheckResult; figures?: readonly string[] }) {
   if (result.sintaxis) {
     return (
       <p className="flex items-start gap-2 text-crit">
@@ -244,6 +292,7 @@ function CheckReport({ instance, result }: { instance: PyCodeInstance; result: C
                   {d}
                 </span>
               ))}
+              {cs?.checks ? <CaseChecks labels={cs.checks.map((x) => x.label)} result={c} /> : null}
               {cs ? <CaseFiles files={cs.files} /> : null}
             </li>
           );
@@ -265,8 +314,30 @@ function CheckReport({ instance, result }: { instance: PyCodeInstance; result: C
           <Pre>{result.superior}</Pre>
         </div>
       ) : null}
+      {figures?.length ? <YourFigures instance={instance} figures={figures} /> : null}
     </div>
   );
+}
+
+/** El gráfico que dibuja tu código en el primer caso con gráfico (las comprobaciones miran ese). */
+function YourFigures({ instance, figures }: { instance: PyCodeInstance; figures: readonly string[] }) {
+  const k = instance.cases.findIndex((c) => c.checks?.some((x) => x.kind.startsWith("fig-"))) + 1;
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-[14px] font-semibold">{k > 0 ? `Tu gráfico (el del caso ${k})` : "Tu gráfico"}</span>
+      {figures.map((b64, i) => (
+        <Figure key={i} b64={b64} n={i + 1} label={figures.length > 1 ? `Gráfico ${i + 1} de tu código` : "Gráfico de tu código"} />
+      ))}
+    </div>
+  );
+}
+
+const PACKAGE_NAMES: Record<string, string> = { numpy: "NumPy", pandas: "pandas", "matplotlib.pyplot": "matplotlib", seaborn: "seaborn" };
+
+/** «pandas, matplotlib y seaborn». */
+export function packagesLabel(modules: readonly string[]): string {
+  const ns = [...new Set(modules.map((m) => PACKAGE_NAMES[m] ?? m.split(".")[0]!))];
+  return ns.length <= 1 ? (ns[0] ?? "") : `${ns.slice(0, -1).join(", ")} y ${ns.at(-1)}`;
 }
 
 function CodeExercise({ instance, onSolved }: ExerciseViewProps<PyCodeInstance>) {
@@ -276,7 +347,9 @@ function CodeExercise({ instance, onSolved }: ExerciseViewProps<PyCodeInstance>)
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<Outcome<CheckResult> | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [stage, setStage] = useState<CheckStage>("casos");
   const alive = useRef(true);
+  const pkgs = instance.packages ?? [];
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -295,7 +368,9 @@ function CodeExercise({ instance, onSolved }: ExerciseViewProps<PyCodeInstance>)
       setLoadFailed(true);
       return;
     }
-    const o = await checkCode(client, instance, code);
+    const o = await checkCode(client, instance, code, (s) => {
+      if (alive.current) setStage(s);
+    });
     if (!alive.current) return;
     setOutcome(o);
     setBusy(false);
@@ -333,6 +408,11 @@ function CodeExercise({ instance, onSolved }: ExerciseViewProps<PyCodeInstance>)
           otros datos: no basta con el ejemplo.
         </p>
         <RuntimeNote phase={loadFailed && phase !== "loading" ? "error" : phase} onLoad={() => void ensure()} />
+        {packagesBytes(pkgs) > 0 ? (
+          <p className="text-[14px] text-muted">
+            {`Este ejercicio usa ${packagesLabel(pkgs)}: la primera vez que compruebes se descargan unos ${fmtMB(packagesBytes(pkgs))} más (después quedan en el dispositivo). Los datos de cada caso se escriben en su carpeta de trabajo (ejercicio/caso1/…) y los puedes ver en el resultado.`}
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={() => void check()} disabled={busy}>
             <Play size={16} aria-hidden="true" />
@@ -345,8 +425,12 @@ function CodeExercise({ instance, onSolved }: ExerciseViewProps<PyCodeInstance>)
         </div>
         <Hints hints={instance.hints} />
         <div role="status" aria-live="polite" className="flex flex-col gap-2 text-[14px]">
-          {busy ? <span className="text-muted">{phase === "ready" ? "Comprobando…" : "Cargando Python…"}</span> : null}
-          {!busy && outcome?.kind === "result" ? <CheckReport instance={instance} result={outcome.result} /> : null}
+          {busy ? (
+            <span className="text-muted">
+              {phase !== "ready" ? "Cargando Python…" : stage === "paquetes" ? `Preparando ${packagesLabel(pkgs)}…` : "Comprobando…"}
+            </span>
+          ) : null}
+          {!busy && outcome?.kind === "result" ? <CheckReport instance={instance} result={outcome.result} figures={outcome.figures} /> : null}
           {!busy && outcome?.kind === "timeout" ? <span className="text-crit">{copyTimeout(outcome.seconds)}</span> : null}
           {!busy && outcome?.kind === "failed" ? <span className="text-crit">{outcome.message}</span> : null}
         </div>
