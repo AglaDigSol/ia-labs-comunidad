@@ -89,6 +89,10 @@ declare const __LABS_PYTHON__: boolean | undefined;
 const PythonLabPage = (typeof __LABS_PYTHON__ === "boolean" ? __LABS_PYTHON__ : true)
   ? lazy(() => import("./python/PythonLabPage.tsx").then((m) => ({ default: m.PythonLabPage })))
   : null;
+// El simulacro de 01MIAR: dentro de la pestaña Python (…/python/simulacro), con el mismo interruptor.
+const PyExamPage = (typeof __LABS_PYTHON__ === "boolean" ? __LABS_PYTHON__ : true)
+  ? lazy(() => import("./pyexam/PyExamPage.tsx").then((m) => ({ default: m.PyExamPage })))
+  : null;
 
 function LabFallback() {
   return <div aria-busy="true" className="min-h-[240px] animate-pulse rounded-md bg-sunken motion-reduce:animate-none" />;
@@ -181,6 +185,8 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
           {/* El simulacro de examen va dentro de «Ejercicios» (sin pestaña propia). */}
           <Route path="ejercicios/simulacro" element={<ExamSimulatorPage />} />
           {withPython && PythonLabPage && <Route path={PYTHON_LAB.path} element={<PythonLabPage />} />}
+          {/* El simulacro de 01MIAR va dentro de «Python» (sin pestaña propia). */}
+          {withPython && PyExamPage && <Route path={`${PYTHON_LAB.path}/simulacro`} element={<PyExamPage />} />}
           {extras.map((t) => (
             <Route key={t.id} path={`${t.path}/*`} element={t.element} />
           ))}

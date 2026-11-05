@@ -62,11 +62,12 @@ function paramsOf(c: Current): URLSearchParams {
 /**
  * Módulos opcionales de LabsRoutes: con `python`, el tema «Python (01MIAR)» y sus ejercicios.
  * `examPath`: ruta del simulacro de examen, relativa a esta página (por defecto «simulacro», como en
- * LabsRoutes); con null no se enseña la tarjeta del simulacro.
+ * LabsRoutes); con null no se enseña la tarjeta del simulacro. `pyExamPath`: la del simulacro de
+ * 01MIAR (por defecto «../python/simulacro»; solo con `python`, y con null tampoco).
  */
-export type ExercisesPageProps = { python?: boolean; examPath?: string | null };
+export type ExercisesPageProps = { python?: boolean; examPath?: string | null; pyExamPath?: string | null };
 
-export function ExercisesPage({ python = false, examPath = "simulacro" }: ExercisesPageProps = {}) {
+export function ExercisesPage({ python = false, examPath = "simulacro", pyExamPath = "../python/simulacro" }: ExercisesPageProps = {}) {
   const [params, setParams] = useSearchParams();
   const [progress, setProgress] = useState<ExercisesProgress>(loadProgress);
   // Ejercicios resueltos desde que se abrió la página.
@@ -116,7 +117,7 @@ export function ExercisesPage({ python = false, examPath = "simulacro" }: Exerci
       ) : read ? null : (
         <>
           {examPath !== null ? <ExamCard to={examPath} /> : null}
-          <ExerciseList progress={progress} session={session} modules={modules} onStart={start} onMix={mix} />
+          <ExerciseList progress={progress} session={session} modules={modules} pyExamPath={python ? pyExamPath : null} onStart={start} onMix={mix} />
         </>
       )}
     </section>
@@ -146,6 +147,27 @@ function ExamCard({ to }: { to: string }) {
   );
 }
 
+/** Tarjeta del simulacro de 01MIAR, al principio del tema «Python (01MIAR)». */
+function PyExamCard({ to }: { to: string }) {
+  const id = useId();
+  return (
+    <div aria-labelledby={`${id}-title`} role="group" className="flex flex-col gap-3 rounded-lg border-2 border-accent bg-raised p-4">
+      <h3 id={`${id}-title`} className="flex items-center gap-2 font-display text-[20px] font-semibold">
+        <ClipboardCheck size={20} aria-hidden="true" />
+        Simulacro de examen (01MIAR)
+      </h3>
+      <p className="text-muted">
+        El final de «Python para la IA» como un cuaderno: cuatro ejercicios cortos y un proyecto de datos por pasos en 2 horas, con «Test Use Case» a la vista, pruebas ocultas al entregar, nota sobre 10 y la solución de cada ejercicio. También se descarga como .ipynb.
+      </p>
+      <div>
+        <Link to={to} relative="path" className={buttonVariants({ variant: "primary" })}>
+          Abrir el simulacro de 01MIAR
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function LevelSelect({ id, value, onChange, levels }: { id: string; value: ExerciseLevel; onChange: (l: ExerciseLevel) => void; levels: readonly ExerciseLevel[] }) {
   return (
     <select
@@ -170,12 +192,14 @@ function ExerciseList({
   progress,
   session,
   modules,
+  pyExamPath,
   onStart,
   onMix,
 }: {
   progress: ExercisesProgress;
   session: number;
   modules: ExerciseModules;
+  pyExamPath: string | null;
   onStart: (t: AnyExerciseType, l: ExerciseLevel) => void;
   onMix: (topic: ExerciseTopic, l: ExerciseLevel) => void;
 }) {
@@ -183,7 +207,7 @@ function ExerciseList({
     <div className="flex flex-col gap-8">
       {session > 0 ? <SessionCounter session={session} /> : null}
       {exerciseTopics(modules).map((topic) => (
-        <TopicBlock key={topic.id} topic={topic.id} progress={progress} modules={modules} onStart={onStart} onMix={onMix} />
+        <TopicBlock key={topic.id} topic={topic.id} progress={progress} modules={modules} pyExamPath={topic.id === "python" ? pyExamPath : null} onStart={onStart} onMix={onMix} />
       ))}
     </div>
   );
@@ -193,12 +217,14 @@ function TopicBlock({
   topic,
   progress,
   modules,
+  pyExamPath,
   onStart,
   onMix,
 }: {
   topic: ExerciseTopic;
   progress: ExercisesProgress;
   modules: ExerciseModules;
+  pyExamPath: string | null;
   onStart: (t: AnyExerciseType, l: ExerciseLevel) => void;
   onMix: (topic: ExerciseTopic, l: ExerciseLevel) => void;
 }) {
@@ -222,6 +248,7 @@ function TopicBlock({
           </Button>
         </div>
       </div>
+      {pyExamPath !== null ? <PyExamCard to={pyExamPath} /> : null}
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {types.map((t) => (
           <ExerciseCard key={t.id} type={t} progress={progress} onStart={onStart} />

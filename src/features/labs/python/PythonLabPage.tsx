@@ -8,6 +8,7 @@
 import {
   CircleCheck,
   CircleDashed,
+  ClipboardCheck,
   Download,
   FileUp,
   Footprints,
@@ -32,8 +33,8 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { useSearchParams } from "react-router";
-import { Button } from "../../../components/ui/button.tsx";
+import { Link, useSearchParams } from "react-router";
+import { Button, buttonVariants } from "../../../components/ui/button.tsx";
 import { Chip } from "../../../components/ui/chip.tsx";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../../../components/ui/dialog.tsx";
 import {
@@ -97,8 +98,12 @@ const AFTER_NUMPY = new Set(["numpy"]);
 const packageBytes = (name: string) =>
   closureBytes(PYODIDE_PACKAGES, [name], AFTER_NUMPY) || (EXTRA_WHEELS.find((w) => w.name === name)?.size ?? 0);
 
-/** Ranuras del anfitrión; si se pasan, mandan sobre las de configureLabs({ python }). */
-export type PythonLabPageProps = Pick<PythonLabConfig, "renderDraftActions" | "renderFilesActions">;
+/**
+ * Ranuras del anfitrión; si se pasan, mandan sobre las de configureLabs({ python }). `examPath`: ruta
+ * del simulacro de 01MIAR, relativa a esta página (por defecto «simulacro», como en LabsRoutes); con
+ * null no se enseña el botón.
+ */
+export type PythonLabPageProps = Pick<PythonLabConfig, "renderDraftActions" | "renderFilesActions"> & { examPath?: string | null };
 
 const byPath = (a: FileInfo, b: FileInfo) => a.name.localeCompare(b.name, "es");
 
@@ -212,6 +217,7 @@ export async function prefetchPyodide(opts: {
 }
 
 export function PythonLabPage(props: PythonLabPageProps = {}) {
+  const examPath = props.examPath === undefined ? "simulacro" : props.examPath;
   const [prefs] = useState(readPrefs);
   const prefsRef = useRef<Prefs>(prefs);
   const [phase, setPhase] = useState<Phase>(() => (prefs.loaded ? { k: "preparing" } : { k: "idle" }));
@@ -705,6 +711,14 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
               código y tus archivos no salen de este dispositivo. Las plantillas son ejercicios genéricos para practicar; no
               resuelven ninguna actividad evaluable.
             </p>
+            {examPath !== null ? (
+              <div>
+                <Link to={examPath} relative="path" className={buttonVariants({ variant: "secondary" })}>
+                  <ClipboardCheck size={16} aria-hidden="true" />
+                  Simulacro de examen (01MIAR)
+                </Link>
+              </div>
+            ) : null}
           </div>
           {chip}
         </div>
