@@ -51,6 +51,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 ### Corregido
 
 - La cabecera fija del simulacro de 02MIAR queda pegada a la de la app en el móvil.
+- El paso a paso ya no vuelve al paso 1 si se pulsa «Siguiente paso» justo al abrirlo.
 
 ## [0.11.0] - 2026-11-04
 

@@ -3,7 +3,7 @@
 // ese paso. La línea actual se anuncia con aria-live. La usan la pestaña Python («Ejecutar paso a
 // paso») y «¿Qué imprime?» (tras una respuesta equivocada).
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, OctagonAlert, X } from "lucide-react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Button } from "../../../components/ui/button.tsx";
 import { cn } from "../../../lib/cn.ts";
 import type { PyClient } from "./py-client.ts";
@@ -45,7 +45,13 @@ export async function runTrace(client: PyClient, code: string, stdin: string[] =
 export function TraceView({ code, trace, onClose }: { code: string; trace: Trace; onClose?: () => void }) {
   const id = useId();
   const [i, setI] = useState(0);
-  useEffect(() => setI(0), [trace]);
+  // Un paso a paso nuevo vuelve al paso 1. Se hace al pintar, no en un efecto: un efecto que llega tarde
+  // borraría el «Siguiente paso» que se pulsó justo al abrirlo.
+  const [seen, setSeen] = useState(trace);
+  if (seen !== trace) {
+    setSeen(trace);
+    setI(0);
+  }
   const n = trace.pasos.length;
   const step = trace.pasos[Math.min(i, n - 1)];
   const lines = useMemo(() => code.replace(/\n$/, "").split("\n"), [code]);
