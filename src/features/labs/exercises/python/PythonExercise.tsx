@@ -7,12 +7,13 @@
 // Temas 6 a 13: con tablas y arrays, por qué no coincide (forma, columnas, NaN…, siempre lo tuyo);
 // las comprobaciones con nombre una a una (las de los gráficos miran tu figura) y tu gráfico debajo.
 import { CircleCheck, CircleX, Footprints, HardDriveDownload, Lightbulb, OctagonAlert, Play, RotateCcw } from "lucide-react";
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { PY_TEMAS, type PyCase, type PyCodeInstance, type PyInstance, type PyOutputInstance } from "../../../../../shared/exercises/python.ts";
 import { SolutionGate } from "../../../../components/practice/SolutionGate.tsx";
 import { Button } from "../../../../components/ui/button.tsx";
 import { Chip } from "../../../../components/ui/chip.tsx";
 import { cn } from "../../../../lib/cn.ts";
+import { CodeEditor } from "../../python/CodeEditor.tsx";
 import { Figure } from "../../python/Figure.tsx";
 import { runTrace, TraceView, type TraceOutcome } from "../../python/Tracer.tsx";
 import type { ExerciseViewProps } from "../views.tsx";
@@ -104,66 +105,6 @@ function RuntimeNote({ phase, onLoad }: { phase: RuntimePhase; onLoad: () => voi
         <HardDriveDownload size={16} aria-hidden="true" />
         Cargar Python
       </Button>
-    </div>
-  );
-}
-
-/** Editor sencillo: números de línea, Tab inserta cuatro espacios (Esc y después Tab sale) y Ctrl+Intro comprueba. */
-function CodeEditor({ value, onChange, onSubmit, label }: { value: string; onChange: (v: string) => void; onSubmit: () => void; label: string }) {
-  const gutter = useRef<HTMLDivElement | null>(null);
-  const area = useRef<HTMLTextAreaElement | null>(null);
-  const caret = useRef<number | null>(null);
-  const esc = useRef(false);
-  useEffect(() => {
-    if (caret.current === null || !area.current) return;
-    area.current.setSelectionRange(caret.current, caret.current);
-    caret.current = null;
-  }, [value]);
-  function onKey(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      onSubmit();
-      return;
-    }
-    if (e.key === "Escape") {
-      esc.current = true;
-      return;
-    }
-    if (e.key === "Tab" && !e.shiftKey && !esc.current && !e.altKey && !e.ctrlKey && !e.metaKey) {
-      e.preventDefault();
-      const { selectionStart: s, selectionEnd: t } = e.currentTarget;
-      caret.current = s + 4;
-      onChange(`${value.slice(0, s)}    ${value.slice(t)}`);
-      return;
-    }
-    esc.current = false;
-  }
-  const lines = value.split("\n").length;
-  return (
-    <div className="flex overflow-hidden rounded-lg border border-border bg-sunken focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">
-      <div ref={gutter} aria-hidden="true" className="mono select-none overflow-hidden border-r border-border px-2 py-3 text-right text-[16px] leading-[1.5] text-muted">
-        {Array.from({ length: lines }, (_, i) => (
-          <div key={i}>{i + 1}</div>
-        ))}
-      </div>
-      <textarea
-        ref={area}
-        aria-label={label}
-        aria-describedby="py-ex-editor-keys"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={onKey}
-        onScroll={(e) => {
-          if (gutter.current) gutter.current.scrollTop = e.currentTarget.scrollTop;
-        }}
-        spellCheck={false}
-        autoCapitalize="off"
-        autoCorrect="off"
-        autoComplete="off"
-        wrap="off"
-        rows={Math.max(8, lines + 1)}
-        className="mono w-full resize-y whitespace-pre bg-transparent px-3 py-3 text-[16px] leading-[1.5] text-fg outline-none"
-      />
     </div>
   );
 }
@@ -359,7 +300,7 @@ function CodeExercise({ instance, onSolved }: ExerciseViewProps<PyCodeInstance>)
         <h2 id={`${id}-title`} className="font-display text-[20px] font-semibold">
           Comprueba tu respuesta
         </h2>
-        <CodeEditor label="Tu código" value={code} onChange={setCode} onSubmit={() => void check()} />
+        <CodeEditor label="Tu código" describedBy="py-ex-editor-keys" value={code} onChange={setCode} onSubmit={() => void check()} />
         <p id="py-ex-editor-keys" className="text-[14px] text-muted">
           Tab sangra cuatro espacios (Esc y después Tab sale del editor) y Ctrl+Intro comprueba. Las pruebas llaman a tu función con
           otros datos: no basta con el ejemplo.
