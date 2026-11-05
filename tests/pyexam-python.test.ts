@@ -44,6 +44,55 @@ function runNotebook(exam: PyExam, code: Array<string | null>): KernelReply[] {
   return (raw as unknown[]).map((r) => parseKernelReply(JSON.stringify(r))!);
 }
 
+// Varias celdas seguidas en el mismo proceso, con el kernel que se pida en cada una.
+const KERNEL_DRIVER = `${KERNEL_PY}
+def __labs_celdas(p):
+    return _json.dumps([_json.loads(__labs_celda(c)) for c in p["celdas"]])
+`;
+const cell = (codigo: string, i: number, kernel = "k1", nuevo = false) => ({ codigo, nombre: `<celda ${i}>`, kernel, nuevo });
+const runCells = (cells: ReturnType<typeof cell>[]) =>
+  (runJobs<unknown[]>(KERNEL_DRIVER, [{ fn: "__labs_celdas", payload: { celdas: cells } }])[0] as unknown[]).map((r) => parseKernelReply(JSON.stringify(r))!);
+
+describe.skipIf(!hasPlots)("kernel del cuaderno con python3", () => {
+  it("las celdas comparten variables en orden; reiniciar las borra; un kernel perdido se avisa", () => {
+    const r = runCells([cell("a = 41", 1, "k1", true), cell("a + 1", 2), cell("b = a * 2;", 3), cell("b", 4), cell("a", 5, "k2", true), cell("c = 1", 6, "k9")]);
+    expect(r[0]!.valor).toBeNull();
+    expect(r[1]!.valor).toEqual({ tipo: "texto", texto: "42" });
+    expect(r[2]!.valor).toBeNull(); // con ; al final no se muestra, como en Jupyter
+    expect(r[3]!.valor).toEqual({ tipo: "texto", texto: "82" });
+    expect(r[4]!.error!.tipo).toBe("NameError");
+    expect(r[4]!.error!.traza).toMatch(/<celda 5>/);
+    expect(r[4]!.perdido).toBe(false);
+    expect(r[5]!.perdido).toBe(true);
+    expect(r[5]!.kernel).toBe("k9");
+  });
+
+  it("una tabla vuelve como datos en texto, recortada como en Jupyter; los errores, con su línea", () => {
+    const r = runCells([
+      cell('import numpy as np\nimport pandas as pd\ndf = pd.DataFrame({"x": range(30), "y": ["<b>no</b>"] * 30, "z": [np.nan] * 30})\ndf', 1, "k1", true),
+      cell('df["x"].head(3)', 2),
+      cell("def f():\n    return 1 / 0\nf()", 3),
+      cell("def g(:\n    pass", 4),
+    ]);
+    const t = r[0]!.valor!;
+    expect(t.tipo).toBe("tabla");
+    if (t.tipo !== "tabla") return;
+    expect(t.forma).toEqual([30, 3]);
+    expect(t.columnas).toEqual(["x", "y", "z"]);
+    expect(t.indice).toHaveLength(15);
+    expect(t.corteFilas).toBe(10);
+    expect(t.filas[0]).toEqual(["0", "<b>no</b>", "NaN"]);
+    expect(t.indice.at(-1)).toBe("29");
+    const s = r[1]!.valor!;
+    expect(s.tipo === "tabla" && s.serie && s.columnas[0] === "x" && s.filas.length === 3).toBe(true);
+    expect(r[2]!.error!.tipo).toBe("ZeroDivisionError");
+    expect(r[2]!.error!.linea).toBe(2);
+    expect(r[2]!.error!.traza).toContain("return 1 / 0");
+    expect(r[3]!.error!.tipo).toBe("SyntaxError");
+    expect(r[3]!.error!.linea).toBe(1);
+  });
+});
+
 describe.skipIf(!hasPlots)("simulacro de 01MIAR con python3", () => {
   it("las soluciones de referencia sacan un 10 y pasan los assert a la vista", { timeout: 600_000 }, () => {
     for (const seed of SEEDS) {
