@@ -30,6 +30,16 @@ describe("backup", () => {
     localStorage.clear();
   });
 
+  it("includes the 01MIAR simulator attempts (pyexam) and restores them", () => {
+    localStorage.setItem("ia-labs.pyexam.v1", '{"v":1,"active":null,"history":[]}');
+    const text = JSON.stringify(buildBackup());
+    expect(JSON.parse(text).extras["ia-labs.pyexam.v1"]).toBe('{"v":1,"active":null,"history":[]}');
+    localStorage.clear();
+    expect(restoreBackup(text, "merge").ok).toBe(true);
+    expect(localStorage.getItem("ia-labs.pyexam.v1")).toBe('{"v":1,"active":null,"history":[]}');
+    localStorage.clear();
+  });
+
   it("round-trips through JSON", () => {
     setKv("grade/01MIAR/ev1", 650);
     setKv("pref/theme", "dark");
