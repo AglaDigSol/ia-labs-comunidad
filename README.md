@@ -473,7 +473,9 @@ instala la del paquete aparte y la pestaña usa la suya.
 
 **Rutas y pestañas.** `LabsRoutes` se monta dentro del router de la app, en una ruta con comodín. Los enlaces de las
 pestañas se resuelven respecto a esa ruta, así que no hace falta pasar `basePath` (existe por si se monta fuera de una
-ruta con comodín).
+ruta con comodín). Desde 1024 px las pestañas pasan a otra fila; más estrechas, la barra se desplaza con un degradado y
+flechas, y la pestaña activa se lleva a la vista. En la primera visita, una orientación breve explica las pestañas y
+enlaza los simulacros; se cierra con «Entendido» y se recuerda con la clave `labsIntro` de los laboratorios.
 
 ```tsx
 import { lazy } from "react";
@@ -507,7 +509,7 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
 - `renderHeaderAction(tab)`: acción opcional junto al título «Laboratorios»; recibe la pestaña activa
   (`{ id, label }`) o `null`.
 - `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el
-  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises, python, exam, pyexam, gridAdvance })` guarda en localStorage con las
+  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises, python, exam, pyexam, gridAdvance, labsIntro })` guarda en localStorage con las
   claves que elijas, por ejemplo las que ya usaba tu app; las que no pases usan `DEFAULT_LABS_KEYS`.
 - También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `SetsLabPage`, `CombinatoricsLabPage`, `MarkovLabPage`, `BooleLabPage`, `LinearAlgebraLabPage`, `CalculusLabPage`, `ProbabilityLabPage`,
   `ExercisesPage` (con `examPath={null}` no enseña la tarjeta del simulacro, ni con `pyExamPath={null}` la del de 01MIAR), `ExamSimulatorPage` (con `exercisesPath`, la ruta del banco para «Practicar este tipo»; por defecto `..`), `PythonLabPage` (con `examPath={null}` no enseña el botón del simulacro de 01MIAR) y `PyExamPage` (el simulacro de 01MIAR; `exercisesPath`, por defecto `../../ejercicios`) por separado, las piezas del simulacro de 01MIAR (`buildPyExam`, `pyExamCells`, `pyExamNotebookJson`, `scoreShort`, `scoreStep`, `parsePyExamStore`…), las piezas del simulacro (`buildExam`, `FULL_BLUEPRINT`, `QUICK_BLUEPRINT`, `topicsBlueprint`, `examItem`, `EXAM_TYPE_IDS`, `scoreExam`, `numericMatches`, `parseExamStore`…), la pregunta de opción múltiple (`ChoiceOptions`, `ChoicePractice`, `ChoiceSolution`, `arrangeChoices`, `gradeChoice`, `toggleChoice`) y el campo numérico `NumericField`, y los motores: banco de ejercicios (`EXERCISE_TYPES`, `exerciseType`, cada tipo con

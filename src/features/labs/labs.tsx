@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { Link, Navigate, Route, Routes, useLocation, useParams } from "react-router";
-import { cn } from "../../lib/cn.ts";
+import { Navigate, Route, Routes, useLocation, useParams } from "react-router";
+import { LabsIntro } from "./LabsIntro.tsx";
+import { LabTabs } from "./LabTabs.tsx";
 
 /** Pestañas del área, en orden. «Ejercicios» (el banco de ejercicios de todos los temas) va la última. */
 export const LABS: Array<{
@@ -117,22 +118,6 @@ function useLabsBase(basePath: string | undefined): string {
 
 const isActive = (pathname: string, to: string) => pathname === to || pathname.startsWith(`${to}/`);
 
-function LabTab({ tab, to, active }: { tab: Tab; to: string; active: boolean }) {
-  return (
-    <Link
-      to={to}
-      role="tab"
-      aria-selected={active}
-      className={cn(
-        "flex min-h-11 items-center whitespace-nowrap border-b-2 px-4 text-[14px]",
-        active ? "border-accent font-semibold text-fg" : "border-transparent text-muted hover:text-fg",
-      )}
-    >
-      {tab.label}
-    </Link>
-  );
-}
-
 const RESERVED = new Set<string>(LABS.flatMap((l) => [l.id, l.path]));
 const RESERVED_WITH_PYTHON = new Set<string>([...RESERVED, PYTHON_LAB.id, PYTHON_LAB.path]);
 
@@ -158,16 +143,10 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
           <p className="text-[14px] font-semibold text-muted">Laboratorios</p>
           {renderHeaderAction?.(activeTab ? { id: activeTab.id, label: activeTab.label } : null)}
         </div>
-        <nav
-          aria-label="Laboratorios"
-          role="tablist"
-          className="sticky top-12 z-20 flex gap-1 overflow-x-auto border-b border-border bg-base lg:static print:hidden"
-        >
-          {tabs.map((tab) => (
-            <LabTab key={tab.id} tab={tab} to={hrefOf(tab)} active={tab === activeTab} />
-          ))}
-        </nav>
+        <LabTabs tabs={tabs.map((tab) => ({ id: tab.id, label: tab.label, to: hrefOf(tab) }))} activeId={activeTab?.id ?? null} />
       </div>
+      {/* La orientación no aparece dentro de un simulacro. */}
+      {/\/simulacro\/?$/.test(pathname) ? null : <LabsIntro base={base} python={withPython} />}
       <Suspense fallback={<LabFallback />}>
         <Routes>
           <Route index element={<Navigate to="simbolos" replace />} />

@@ -11,6 +11,7 @@ export const EXTRA_KEYS = [
   DEFAULT_LABS_KEYS.markov,
   DEFAULT_LABS_KEYS.logicFormat,
   DEFAULT_LABS_KEYS.gridAdvance,
+  DEFAULT_LABS_KEYS.labsIntro,
   DEFAULT_LABS_KEYS.boole,
   DEFAULT_LABS_KEYS.exercises,
   DEFAULT_LABS_KEYS.exam,
