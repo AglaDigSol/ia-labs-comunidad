@@ -12,7 +12,7 @@ import type { ExamItem } from "./types.ts";
 export const EXAM_SECTIONS = [
   { id: "logica", label: "Lógica proposicional", types: { "logica-equivalentes": 3, "logica-formalizar": 3, "logica-clasificar": 3, "logica-tabla": 1, "logica-formas-normales": 1 } },
   { id: "predicados", label: "Lógica de predicados", types: { "predicados-negar-frase": 3, "predicados-conjuntos-numericos": 3 } },
-  { id: "conjuntos", label: "Conjuntos y funciones", types: { "conjuntos-cardinal": 2, "conjuntos-iguales": 3, "combinatoria-funciones": 3, "conjuntos-partes": 1 } },
+  { id: "conjuntos", label: "Conjuntos y funciones", types: { "conjuntos-cardinal": 2, "conjuntos-iguales": 3, "conjuntos-relaciones": 3, "combinatoria-funciones": 3, "conjuntos-partes": 1 } },
   { id: "combinatoria", label: "Combinatoria", types: { "combinatoria-problema": 4, "combinatoria-modelo": 2 } },
   { id: "complejidad", label: "Complejidad", types: { "combinatoria-complejidad": 3, "combinatoria-p-np": 1 } },
   { id: "limites", label: "Límites y continuidad", types: { "calculo-trozos": 3, "calculo-lhopital": 2, "calculo-dominio": 1, "calculo-biseccion": 1 } },

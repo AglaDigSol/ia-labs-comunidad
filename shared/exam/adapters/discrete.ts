@@ -9,7 +9,8 @@ import { parseSetExpr, setRegions, setToPlain, setToTex, vennVars, type SetExpr,
 import { createRng } from "../../exercises/random.ts";
 import { seedFromKey, type ChoiceOption } from "../../exercises/choice.ts";
 import { COMB_COMPLEXITY, COMB_FUNCTIONS, COMB_MODEL, COMB_PNP, COMB_PROBLEM, complexityGrowth, problemAnswer } from "../../exercises/discrete.ts";
-import { SETS_CARDINAL, SETS_EQUAL, SETS_PARTS } from "../../exercises/sets.ts";
+import { CARTESIAN_RELATION, parseSetHypotheses, parseSetRelation, relationSpoken, relationToTex } from "../../sets/relations.ts";
+import { relationOptionExplanation, relationsAnswer, SETS_CARDINAL, SETS_EQUAL, SETS_PARTS, SETS_RELATIONS } from "../../exercises/sets.ts";
 import { examAdapter, type ExamAdapter } from "../adapter.ts";
 import { examCode, examList, examMath, examP, examTex } from "../blocks.ts";
 
@@ -58,6 +59,39 @@ const setsEqualAdapter = examAdapter({
           right === "igual"
             ? "Sombrean las mismas regiones del diagrama de Venn: son iguales."
             : `Difieren en ${diff} ${diff === 1 ? "región" : "regiones"} del diagrama de Venn. ${xy ? "Todas las de X están en Y." : yx ? "Todas las de Y están en X." : "Cada una tiene alguna región que la otra no tiene."}`,
+        ),
+      ],
+    };
+  },
+});
+
+const setsRelationsAdapter = examAdapter({
+  type: SETS_RELATIONS,
+  ask: "Relaciones entre conjuntos bajo unos supuestos: cuál es siempre cierta o siempre falsa (opción múltiple).",
+  build(inst) {
+    const h = parseSetHypotheses(inst.hypotheses);
+    if (!h.ok) return null;
+    const answer = relationsAnswer(inst);
+    if (answer < 0) return null;
+    const usesC = inst.hypotheses.includes("C") || inst.options.some((o) => o.includes("C"));
+    const options = inst.options.map((o, i) => {
+      const why = relationOptionExplanation(o, inst.hypotheses);
+      if (o === CARTESIAN_RELATION.text) return opt(`o${i}`, o, i === answer, why, CARTESIAN_RELATION.tex);
+      const r = parseSetRelation(o);
+      if (!r.ok) throw new Error(`relación ilegible: ${o}`);
+      return opt(`o${i}`, o, i === answer, why, r.relations.map(relationToTex).join(",\\; "));
+    });
+    return {
+      kind: "choice",
+      stem: [
+        examP(`Sean ${usesC ? "A, B y C" : "A y B"} conjuntos de un universo U tales que`),
+        examMath(h.relations.map(relationToTex).join(",\\quad "), h.relations.map(relationSpoken).join("; ")),
+      ],
+      prompt: `¿Cuál de estas afirmaciones es siempre ${inst.ask === "cierta" ? "verdadera" : "falsa"}?`,
+      question: { mode: "single", options },
+      solution: [
+        examP(
+          "Se razona por regiones del diagrama de Venn: los supuestos dejan algunas regiones vacías (o con elementos), y una afirmación es siempre cierta si se cumple en todos los diagramas que los respetan, y siempre falsa si no se cumple en ninguno.",
         ),
       ],
     };
@@ -243,5 +277,5 @@ const pnpAdapter = examAdapter({
   },
 });
 
-export const SETS_EXAM_ADAPTERS: readonly ExamAdapter[] = [setsCardinalAdapter, setsEqualAdapter, setsPartsAdapter];
+export const SETS_EXAM_ADAPTERS: readonly ExamAdapter[] = [setsCardinalAdapter, setsEqualAdapter, setsRelationsAdapter, setsPartsAdapter];
 export const COMB_EXAM_ADAPTERS: readonly ExamAdapter[] = [problemAdapter, modelAdapter, functionsAdapter, complexityAdapter, pnpAdapter];
