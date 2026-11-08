@@ -264,6 +264,12 @@ describe.skipIf(!hasPlots)("banco de pruebas: inspección de figuras", () => {
     expect(nada!.casos[0]!.interno).toBeUndefined();
   });
 
+  it("el tamaño de lo tuyo, con coma decimal: 6,4 × 4,8 pulgadas", () => {
+    const i = fig("def dibujar(df):\n    fig, ax = plt.subplots(figsize=(8, 4))\n    ax.scatter(df.x, df.y)\n", [C("fig-tamano")]);
+    const [r] = check(i, [`${PLT}def dibujar(df):\n    plt.figure()\n    plt.scatter(df.x, df.y)\n`]);
+    expect(r!.casos[0]!.checks).toEqual([{ ok: false, tuyo: "6,4 × 4,8 pulgadas" }]);
+  });
+
   it("barras de seaborn con hue y estimator=sum: las alturas son las sumas; la media no vale", () => {
     const i = fig(
       "def dibujar(df):\n    fig, axs = plt.subplots(1, 2, figsize=(10, 4))\n    sns.barplot(data=df, x='g', y='y', hue='h', estimator='sum', errorbar=None, ax=axs[0])\n    sns.barplot(data=df, x='g', y='x', hue='h', estimator='sum', ax=axs[1])\n",
@@ -277,7 +283,7 @@ describe.skipIf(!hasPlots)("banco de pruebas: inspección de figuras", () => {
     expect(allPassed(ok!)).toBe(true);
     const m = media!.casos[0]!.checks!;
     expect(m.map((c) => c.ok)).toEqual([true, true, true, false, true, true]);
-    expect(m[3]!.tuyo).toBe("1, 2, 3, 4.5");
+    expect(m[3]!.tuyo).toBe("1; 2; 3; 4,5");
     const u = uno!.casos[0]!.checks!;
     expect(u[0]).toEqual({ ok: false, tuyo: "1 gráfico" });
     expect(u[5]).toEqual({ ok: false, tuyo: "sin leyenda" });

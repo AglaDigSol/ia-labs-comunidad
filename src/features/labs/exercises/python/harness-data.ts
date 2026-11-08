@@ -303,10 +303,20 @@ def _figuras_nuevas(antes, guardar):
 def _num(n, uno, varios):
     return str(n) + " " + (uno if n == 1 else varios)
 
+def _dec(x):
+    """Un número como en la interfaz, en español: 6,4 (coma decimal), 5 (sin ,0)."""
+    if isinstance(x, float) and x.is_integer():
+        return str(int(x))
+    if isinstance(x, float):
+        return repr(x).replace(".", ",")
+    return str(x)
+
 def _lista_corta(xs, n=12):
     xs = list(xs)
-    texto = ", ".join(str(int(x) if isinstance(x, float) and x.is_integer() else x) for x in xs[:n])
-    return texto + (", …" if len(xs) > n else "")
+    partes = [_dec(x) for x in xs[:n]]
+    # Con coma decimal, los elementos se separan con punto y coma (6,4; 4,8).
+    sep = "; " if any(isinstance(x, float) and not x.is_integer() for x in xs[:n]) else ", "
+    return sep.join(partes) + (sep.rstrip() + " …" if len(xs) > n else "")
 
 def _ejes_de(fig_e, fig_t, ch):
     k = ch.get("ejes")
@@ -332,7 +342,7 @@ def _check_figura(tipo, ch, fe, ft):
     e, t = fe[0], ft[0]
     if tipo == "fig-tamano":
         w, h = t["tamano"]
-        return _cerca(e["tamano"], t["tamano"], 0.01), _lista_corta([w]) + " × " + _lista_corta([h]) + " pulgadas"
+        return _cerca(e["tamano"], t["tamano"], 0.01), _dec(w) + " × " + _dec(h) + " pulgadas"
     if tipo == "fig-ejes":
         return len(e["ejes"]) == len(t["ejes"]), _num(len(t["ejes"]), "gráfico", "gráficos")
     if tipo == "fig-leyenda" and ch.get("ejes") is None:
