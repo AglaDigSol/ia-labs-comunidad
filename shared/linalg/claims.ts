@@ -125,7 +125,7 @@ export const CLAIM_CLASSES: ClaimClass[] = [
       return pair(until(r, () => ints(r, n, n, 3), isRegular));
     },
     claims: [
-      { id: "diag", text: "A es diagonalizable.", truth: false, why: "Ser regular no asegura ser diagonalizable: (1 1; 0 1) es regular y solo tiene un autovector independiente.", holds: (s) => isRealDiagonalizable(s.A), counterexample: { A: [[1, 1], [0, 1]] } },
+      { id: "diag", text: "A es diagonalizable en ℝ.", truth: false, why: "Ser regular no asegura ser diagonalizable: (1 1; 0 1) es regular y solo tiene un autovector independiente.", holds: (s) => isRealDiagonalizable(s.A), counterexample: { A: [[1, 1], [0, 1]] } },
       { id: "positivos", text: "Todos los autovalores de A son positivos.", truth: false, why: "Regular solo dice que ningún autovalor es 0; su signo puede ser cualquiera.", holds: (s) => allEigenPositive(s.A), counterexample: { A: [[-1, 0], [0, 1]] } },
       { id: "cero", text: "λ = 0 no es autovalor de A.", truth: true, why: "det(A − 0·I) = det A ≠ 0.", holds: (s) => !isZero(det(s.A)) },
       { id: "unica", text: "El sistema A·x = b tiene solución única para cada b.", truth: true, why: "rg A = n = número de incógnitas: compatible determinado (Rouché–Frobenius).", holds: (s) => rank(s.A) === dim(s.A) },
@@ -160,7 +160,7 @@ export const CLAIM_CLASSES: ClaimClass[] = [
       { id: "cuadrado", text: "A² tampoco es regular.", truth: true, why: "det(A²) = det(A)² = 0.", holds: (s) => !isRegular(matrixProduct(s.A, s.A)) },
       { id: "nula", text: "A es la matriz nula.", truth: false, why: "Basta con que una fila dependa de las otras: (1 0; 0 0) no es nula.", holds: (s) => s.A.every((r) => r.every(isZero)), counterexample: { A: [[1, 0], [0, 0]] } },
       { id: "autovalor", text: "λ = 0 es autovalor de A.", truth: true, why: "det(A − 0·I) = 0.", holds: (s) => nullSpace(s.A).length > 0 },
-      { id: "nodiag", text: "A no es diagonalizable.", truth: false, why: "diag(1, 0) es singular y diagonal.", holds: (s) => !isRealDiagonalizable(s.A), counterexample: { A: [[1, 0], [0, 0]] } },
+      { id: "nodiag", text: "A no es diagonalizable en ℝ.", truth: false, why: "diag(1, 0) es singular y diagonal.", holds: (s) => !isRealDiagonalizable(s.A), counterexample: { A: [[1, 0], [0, 0]] } },
       { id: "infinitas", text: "A·x = 0 tiene infinitas soluciones.", truth: true, why: "rg A < n: compatible indeterminado (hay vectores no nulos en el núcleo).", holds: (s) => nullSpace(s.A).length > 0 },
     ],
   },
@@ -208,8 +208,8 @@ export const CLAIM_CLASSES: ClaimClass[] = [
       return pair(until(r, () => sym(r, n, 4), isRegular));
     },
     claims: [
-      { id: "diag", text: "A es diagonalizable.", truth: true, why: "Es simétrica (teorema espectral); que los autovalores no sean 0 no hace falta para esto.", holds: (s) => isRealDiagonalizable(s.A) },
-      { id: "nodiag", text: "A no es diagonalizable.", truth: false, why: "Toda simétrica real es diagonalizable.", holds: (s) => !isRealDiagonalizable(s.A), counterexample: { A: [[2, 0], [0, 1]] } },
+      { id: "diag", text: "A es diagonalizable en ℝ.", truth: true, why: "Es simétrica (teorema espectral); que los autovalores no sean 0 no hace falta para esto.", holds: (s) => isRealDiagonalizable(s.A) },
+      { id: "nodiag", text: "A no es diagonalizable en ℝ.", truth: false, why: "Toda simétrica real es diagonalizable.", holds: (s) => !isRealDiagonalizable(s.A), counterexample: { A: [[2, 0], [0, 1]] } },
       { id: "regular", text: "A es regular.", truth: true, why: "det A = producto de los autovalores ≠ 0.", holds: (s) => isRegular(s.A) },
       { id: "definida", text: "A es definida positiva.", truth: false, why: "Puede tener autovalores negativos: diag(−1, 1).", holds: (s) => isPositiveDefinite(s.A), counterexample: { A: [[-1, 0], [0, 1]] } },
       { id: "det-neg", text: "det(A) < 0.", tex: "\\det A < 0", truth: false, why: "El signo del determinante depende de cuántos autovalores son negativos: con I es 1.", holds: (s) => sign(det(s.A)) < 0, counterexample: { A: [[1, 0], [0, 1]] } },
@@ -279,7 +279,7 @@ export const CLAIM_CLASSES: ClaimClass[] = [
   },
   {
     id: "diagonalizable-2-det-pos",
-    subject: "Sea A ∈ ℝ²ˣ² diagonalizable con det(A) > 0.",
+    subject: "Sea A ∈ ℝ²ˣ² diagonalizable en ℝ con det(A) > 0.",
     level: "avanzado",
     member: (s) => dim(s.A) === 2 && isRealDiagonalizable(s.A) && sign(det(s.A)) > 0,
     sample: (r) => {
@@ -289,7 +289,7 @@ export const CLAIM_CLASSES: ClaimClass[] = [
     claims: [
       { id: "signo", text: "Sus dos autovalores tienen el mismo signo.", truth: true, why: "Son reales y λ₁·λ₂ = det A > 0.", holds: (s) => sameSigns(s.A) },
       { id: "regular", text: "A es regular.", truth: true, why: "det A ≠ 0.", holds: (s) => isRegular(s.A) },
-      { id: "definida", text: "A es definida positiva.", truth: false, why: "−I es diagonalizable con det = 1 y no es definida positiva (ni hace falta que sea simétrica).", holds: (s) => isPositiveDefinite(s.A), counterexample: { A: [[-1, 0], [0, -1]] } },
+      { id: "definida", text: "A es definida positiva.", truth: false, why: "−I es diagonalizable en ℝ con det = 1 y no es definida positiva (ni hace falta que sea simétrica).", holds: (s) => isPositiveDefinite(s.A), counterexample: { A: [[-1, 0], [0, -1]] } },
       { id: "simetrica", text: "A es simétrica.", truth: false, why: "(2 1; 0 3) es diagonalizable (autovalores distintos) y no es simétrica.", holds: (s) => isSymmetric(s.A), counterexample: { A: [[2, 1], [0, 3]] } },
       { id: "positivos", text: "Sus autovalores son positivos.", truth: false, why: "Con −I los dos son −1.", holds: (s) => allEigenPositive(s.A), counterexample: { A: [[-1, 0], [0, -1]] } },
       { id: "discriminante", text: "traza(A)² ≥ 4·det(A).", tex: "\\operatorname{tr}(A)^2 \\ge 4\\det A", truth: true, why: "Los autovalores son reales: el discriminante de λ² − tr(A)λ + det A no es negativo.", holds: (s) => cmp(mul(traceOf(s.A), traceOf(s.A)), mul(frac(4n), det(s.A))) >= 0 },

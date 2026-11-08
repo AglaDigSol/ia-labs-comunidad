@@ -188,3 +188,11 @@ describe("banco de afirmaciones", () => {
     expect(diagonalClaimTruth([2, 0, 3], { k: "regular" })).toBe(false);
   });
 });
+
+describe("redacción de las afirmaciones", () => {
+  it("«diagonalizable» de una matriz real general dice «en ℝ» (en ℂ, una rotación también lo es)", () => {
+    const det = CLAIM_CLASSES.find((c) => c.id === "diagonalizable-2-det-pos")!;
+    expect(det.subject).toContain("diagonalizable en ℝ");
+    for (const c of CLAIM_CLASSES) for (const x of c.claims) if (/diagonalizable\.$/.test(x.text)) expect(x.text, `${c.id} ${x.id}`).toMatch(/en ℝ\.$/);
+  });
+});
