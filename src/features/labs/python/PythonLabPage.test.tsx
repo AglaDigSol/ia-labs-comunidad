@@ -736,6 +736,31 @@ describe("PythonLabPage: paso a paso", () => {
     expect(screen.queryByRole("heading", { name: "Paso a paso" })).toBeNull();
   });
 
+  it("el paso a paso se lleva a la vista con el foco en su título, y al cerrarlo el foco vuelve al botón", async () => {
+    const scrolled: Array<[Element, unknown]> = [];
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (this: Element, arg?: unknown) {
+      scrolled.push([this, arg]);
+    };
+    // Por debajo de la pantalla, como en el iPad en horizontal.
+    const rect = vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ top: 1275, bottom: 1600, left: 0, right: 900, width: 900, height: 325, x: 0, y: 1275, toJSON() {} } as DOMRect);
+    try {
+      await renderReady();
+      fireEvent.change(editor(), { target: { value: "x = 1" } });
+      fireEvent.click(screen.getByRole("button", { name: "Ejecutar paso a paso" }));
+      await flush();
+      await act(async () => client().runs.at(-1)!.resolve({ kind: "done", figures: [], ms: 5, files: [], value: JSON.stringify(trace) }));
+      const title = await screen.findByRole("heading", { name: "Paso a paso" });
+      expect(document.activeElement).toBe(title);
+      expect(scrolled.some(([el]) => el.hasAttribute("data-trace-panel"))).toBe(true);
+      fireEvent.click(screen.getByRole("button", { name: "Cerrar el paso a paso" }));
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Ejecutar paso a paso" }));
+    } finally {
+      rect.mockRestore();
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
   it("no traza código con órdenes mágicas y avisa", async () => {
     await renderReady();
     const before = client().runs.length;

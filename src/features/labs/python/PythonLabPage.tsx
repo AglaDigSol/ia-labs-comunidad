@@ -48,6 +48,7 @@ import {
   SelectValue,
 } from "../../../components/ui/select.tsx";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../../components/ui/tooltip.tsx";
+import { revealPanel, scrollIntoViewIfHidden } from "../../../lib/reveal.ts";
 import { readLabItem, writeLabItem } from "../labs-storage.ts";
 import { consumeFreshDraft, getDraft, listDrafts, updateDraftCode, type Draft, type DraftOrigin } from "./drafts.ts";
 import { baseName, checkHostFile, checkUpload, fmtBytes, mimeFor, UPLOAD_ACCEPT, type FileInfo } from "./files.ts";
@@ -248,6 +249,16 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
   const [confirmReset, setConfirmReset] = useState(false);
   // Último paso a paso, con el código que se trazó (si el editor cambia, deja de mostrarse).
   const [traced, setTraced] = useState<{ code: string; outcome: TraceOutcome } | null>(null);
+  // El paso a paso y la salida pueden abrirse por debajo de la pantalla (iPad en horizontal, móvil):
+  // al pulsar el botón se llevan a la vista; el paso a paso además recibe el foco en su título.
+  const traceRef = useRef<HTMLDivElement | null>(null);
+  const outputRef2 = useRef<HTMLDivElement | null>(null);
+  const revealTrace = useRef(false);
+  useEffect(() => {
+    if (!traced || !revealTrace.current) return;
+    revealTrace.current = false;
+    revealPanel(traceRef.current, traceRef.current?.querySelector<HTMLElement>("h2, [role=alert]"));
+  }, [traced]);
 
   const clientRef = useRef<PyClient | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -469,6 +480,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
     outputRef.current = "";
     setLastMs(null);
     setAnnounce("");
+    scrollIntoViewIfHidden(outputRef2.current);
     const magics = transformMagics(code);
     if (!magics.ok) {
       append({ k: "error", line: magics.line, text: magics.message });
@@ -496,6 +508,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
     if (!client || !ready || running) return;
     setAnnounce("");
     const magics = transformMagics(code);
+    revealTrace.current = true;
     if (!magics.ok || magics.code !== code) {
       setTraced({ code, outcome: { ok: false, message: "El paso a paso no admite órdenes mágicas (%time, %timeit…): quítalas para seguir el código." } });
       return;
@@ -765,6 +778,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
             </Tooltip>
           )}
           <Button
+            id="py-trace-button"
             onClick={() => void traceCode()}
             disabled={!ready || running}
             aria-describedby={ready ? undefined : "py-run-hint"}
@@ -935,6 +949,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
               </Button>
             </div>
             <div
+              ref={outputRef2}
               role="log"
               aria-live="off"
               aria-label="Salida"
@@ -949,16 +964,26 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
           </div>
         </div>
 
-        {traced && traced.code === code ? (
-          traced.outcome.ok ? (
-            <TraceView code={traced.code} trace={traced.outcome.trace} onClose={() => setTraced(null)} />
-          ) : (
-            <p role="alert" className="flex items-start gap-2 text-[14px] text-crit">
-              <OctagonAlert size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
-              <span>{traced.outcome.message}</span>
-            </p>
-          )
-        ) : null}
+        <div ref={traceRef} className="scroll-mt-28 lg:scroll-mt-4" data-trace-panel="">
+          {traced && traced.code === code ? (
+            traced.outcome.ok ? (
+              <TraceView
+                code={traced.code}
+                trace={traced.outcome.trace}
+                onClose={() => {
+                  setTraced(null);
+                  // El foco vuelve al botón que lo abrió.
+                  document.getElementById("py-trace-button")?.focus();
+                }}
+              />
+            ) : (
+              <p role="alert" className="flex items-start gap-2 text-[14px] text-crit">
+                <OctagonAlert size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
+                <span>{traced.outcome.message}</span>
+              </p>
+            )
+          ) : null}
+        </div>
 
         <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
           <DialogContent>

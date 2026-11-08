@@ -31,3 +31,11 @@ export function revealPanel(el: HTMLElement | null, focusTarget?: HTMLElement | 
   if (!visible && typeof el.scrollIntoView === "function") el.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
   target.focus({ preventScroll: true });
 }
+
+/** Desplaza `el` a la vista solo si queda por debajo (o por encima) de la pantalla, sin mover el foco. */
+export function scrollIntoViewIfHidden(el: HTMLElement | null): void {
+  if (!el || typeof window === "undefined") return;
+  const r = el.getBoundingClientRect();
+  if (r.top >= 0 && r.top < window.innerHeight - 80) return;
+  if (typeof el.scrollIntoView === "function") el.scrollIntoView({ behavior: scrollBehavior(), block: "nearest" });
+}
