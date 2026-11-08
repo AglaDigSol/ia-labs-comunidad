@@ -84,7 +84,7 @@ const setsRelationsAdapter = examAdapter({
     return {
       kind: "choice",
       stem: [
-        examP(`Sean ${usesC ? "A, B y C" : "A y B"} conjuntos de un universo U tales que`),
+        examP(`Sean ${usesC ? "A, B y C" : "A y B"} conjuntos de un universo U ≠ ∅ tales que`),
         examMath(h.relations.map(relationToTex).join(",\\quad "), h.relations.map(relationSpoken).join("; ")),
       ],
       prompt: `¿Cuál de estas afirmaciones es siempre ${inst.ask === "cierta" ? "verdadera" : "falsa"}?`,

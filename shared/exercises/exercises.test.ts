@@ -22,7 +22,7 @@ import { binaryCount, hasRedundancy, LOGIC_CLASSIFY, LOGIC_EQUIVALENCE, LOGIC_LI
 import { EXERCISE_MAX_EVAL_STEPS, NEGATION_STEPS, PRED_EVALUATE, PRED_NEGATE, toPredInterpretation, wellFormedSentence } from "./predicates.ts";
 import { createRng, generateUntil, randomSeed, seedFromText, seedToText } from "./random.ts";
 import { EXERCISE_TYPES, exerciseType, exerciseTopics, mixedType } from "./registry.ts";
-import { analyzeHypotheses, CARTESIAN_RELATION, checkRelation, parseSetHypotheses, parseSetRelation, relationToPlain, relationVars } from "../sets/relations.ts";
+import { analyzeHypotheses, CARTESIAN_RELATION, checkRelation, parseSetHypotheses, parseSetRelation, relationHolds, relationToPlain, relationVars } from "../sets/relations.ts";
 import {
   relationOptionExplanation,
   relationOptionVerdict,
@@ -332,6 +332,26 @@ describe("conjuntos", () => {
     }
   });
 
+  it("relaciones: con U ≠ ∅ (semillas del revisor), A = Aᶜ y parecidas no «dependen» del mundo vacío", () => {
+    const cases: Array<[string, ExerciseLevel]> = [["1o", "básico"], ["n", "básico"], ["r", "básico"], ["12", "básico"], ["r", "avanzado"]];
+    for (const [text, level] of cases) {
+      const inst = SETS_RELATIONS.generate(seedFromText(text)!, level);
+      expect(relationsAnswer(inst), `${level} ${text}`).toBeGreaterThanOrEqual(0);
+      for (const o of inst.options) {
+        if (o === CARTESIAN_RELATION.text) continue;
+        const r = parseSetRelation(o);
+        const h = parseSetHypotheses(inst.hypotheses);
+        if (!r.ok || !h.ok) throw new Error(o);
+        // Mismo veredicto que contando a mano los mundos con algún elemento.
+        const vars = relationVars([...h.relations, ...r.relations]);
+        const worlds = Array.from({ length: (1 << (1 << vars.length)) - 1 }, (_, i) => i + 1).filter((w) => h.relations.every((x) => relationHolds(x, vars, w)));
+        const yes = worlds.filter((w) => r.relations.every((x) => relationHolds(x, vars, w))).length;
+        const want = yes === worlds.length ? "siempre" : yes === 0 ? "nunca" : "depende";
+        expect(relationOptionVerdict(o, inst.hypotheses), `${level} ${text} ${o}`).toBe(want);
+      }
+    }
+  });
+
   it("relaciones: cuatro opciones legibles y distintas, una sola correcta que depende de los supuestos y algún «depende»", () => {
     for (const level of EXERCISE_LEVELS) {
       let cierta = 0;
@@ -355,6 +375,8 @@ describe("conjuntos", () => {
           // Ninguna opción repite un supuesto; todas tienen explicación.
           expect(h.relations.map(relationToPlain)).not.toContain(o);
           expect(relationOptionExplanation(o, inst.hypotheses).length).toBeGreaterThan(20);
+          // U ≠ ∅: nunca «con elementos solo en ninguna».
+          expect(relationOptionExplanation(o, inst.hypotheses)).not.toMatch(/solo en ninguna/);
           if (o === CARTESIAN_RELATION.text) {
             cartesian++;
             expect(level).not.toBe("básico");

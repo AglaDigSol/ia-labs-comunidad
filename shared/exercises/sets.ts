@@ -33,7 +33,7 @@ import {
   relationHolds,
   relationReason,
   relationToPlain,
-  worldText,
+  worldPlace,
   type RelationVerdict,
   type SetRelation,
   type SetRelationOp,
@@ -427,9 +427,9 @@ export function relationOptionExplanation(option: string, hypotheses: string): s
   };
   if (c.verdict === "siempre") return "Siempre cierta: se cumple en todos los diagramas que cumplen los supuestos.";
   if (c.verdict === "nunca") {
-    return `Siempre falsa: no se cumple en ningún diagrama con los supuestos. Por ejemplo, con elementos solo en ${worldText(c.vars, c.counterexample!)}, falla porque ${why(c.counterexample!)}.`;
+    return `Siempre falsa: no se cumple en ningún diagrama con los supuestos. Por ejemplo, con elementos solo ${worldPlace(c.vars, c.counterexample!)}, falla porque ${why(c.counterexample!)}.`;
   }
-  return `Depende: con elementos solo en ${worldText(c.vars, c.example!)} se cumple; con elementos solo en ${worldText(c.vars, c.counterexample!)}, no, porque ${why(c.counterexample!)}.`;
+  return `Depende: con elementos solo ${worldPlace(c.vars, c.example!)} se cumple; con elementos solo ${worldPlace(c.vars, c.counterexample!)}, no, porque ${why(c.counterexample!)}.`;
 }
 
 /** Índice de la opción correcta (o -1 si no hay exactamente una). */

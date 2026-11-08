@@ -339,7 +339,7 @@ function SetsRelationsExercise({ instance, onSolved }: ExerciseViewProps<SetsRel
   return (
     <>
       <Statement>
-        <p className="text-[14px] text-muted">{`Sean ${vars} conjuntos de un universo U tales que`}</p>
+        <p className="text-[14px] text-muted">{`Sean ${vars} conjuntos de un universo U ≠ ∅ tales que`}</p>
         <Tex display tex={hyps.map(relationToTex).join(",\\quad ")} label={hyps.map(relationSpoken).join("; ")} className="text-[20px]" />
         <p className="text-[16px] font-semibold">{`¿Cuál de estas afirmaciones es siempre ${instance.ask === "cierta" ? "cierta" : "falsa"}?`}</p>
       </Statement>

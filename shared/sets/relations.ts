@@ -7,7 +7,8 @@
 // Cómo se decide: las relaciones entre expresiones de A, B y C solo dependen de qué regiones del
 // diagrama de Venn tienen algún elemento. Un «mundo» es una máscara de bits sobre las regiones (bit r:
 // la región r no está vacía); con tres conjuntos hay 8 regiones y 256 mundos, así que se recorren
-// todos. Una relación es «siempre cierta» bajo unos supuestos si se cumple en todos los mundos que los
+// todos. El universo U no es vacío (como en clase): el mundo sin ningún elemento, ni siquiera fuera de
+// los conjuntos, no cuenta; si contara, A = Aᶜ «dependería». Una relación es «siempre cierta» bajo unos supuestos si se cumple en todos los mundos que los
 // cumplen, «nunca cierta» si no se cumple en ninguno y «depende» en otro caso; los contraejemplos son
 // mundos concretos (con el menor número de regiones con elementos).
 import type { ParseError } from "../logic/parser.ts";
@@ -224,12 +225,12 @@ function holds(c: Compiled, w: VennWorld): boolean {
 /** ¿Se cumple la relación en este mundo? */
 export const relationHolds = (r: SetRelation, vars: readonly SetName[], w: VennWorld): boolean => holds(compile(r, vars), w);
 
-/** Mundos que cumplen todos los supuestos. */
+/** Mundos que cumplen todos los supuestos (con U ≠ ∅: el mundo 0, sin ningún elemento, no cuenta). */
 export function validWorlds(hypotheses: readonly SetRelation[], vars: readonly SetName[]): VennWorld[] {
   const total = 1 << regionCount(vars.length);
   const hs = hypotheses.map((h) => compile(h, vars));
   const out: VennWorld[] = [];
-  for (let w = 0; w < total; w++) if (hs.every((h) => holds(h, w))) out.push(w);
+  for (let w = 1; w < total; w++) if (hs.every((h) => holds(h, w))) out.push(w);
   return out;
 }
 
@@ -295,10 +296,22 @@ export function checkRelation(relations: readonly SetRelation[], hypotheses: rea
 /** Orden de lectura de las regiones (de dentro hacia fuera), como en el diagrama. */
 export const READING_ORDER: Record<2 | 3, readonly Region[]> = { 2: [3, 1, 2, 0], 3: [7, 3, 5, 6, 1, 2, 4, 0] };
 
-/** Regiones con elementos de un mundo, en texto: «A ∩ Bᶜ; Aᶜ ∩ B» o «ninguna». */
+/** Regiones con elementos de un mundo, en texto: «A ∩ Bᶜ; Aᶜ ∩ B» (o «ninguna», el mundo 0, que no cuenta). */
 export function worldText(vars: readonly SetName[], w: VennWorld, order: readonly Region[] = READING_ORDER[vars.length as 2 | 3]): string {
   const list = order.filter((r) => worldHas(w, r)).map((r) => regionLabel(vars, r));
-  return list.length === 0 ? "ninguna (todos los conjuntos vacíos)" : list.join("; ");
+  return list.length === 0 ? "ninguna" : list.join("; ");
+}
+
+/** «A y B», «A, B y C». */
+const namesText = (vars: readonly SetName[]) => (vars.length <= 1 ? vars.join("") : `${vars.slice(0, -1).join(", ")} y ${vars[vars.length - 1]}`);
+
+/**
+ * Dónde están los elementos de un mundo, para «con elementos solo …»: «en A ∩ B; Aᶜ ∩ B» o, si solo
+ * la región de fuera tiene elementos, «fuera de A, B y C» (todos los conjuntos vacíos).
+ */
+export function worldPlace(vars: readonly SetName[], w: VennWorld, order: readonly Region[] = READING_ORDER[vars.length as 2 | 3]): string {
+  if (w === 1) return `fuera de ${namesText(vars)} (${vars.length === 2 ? "los dos" : "todos"} vacíos)`;
+  return `en ${worldText(vars, w, order)}`;
 }
 
 /**

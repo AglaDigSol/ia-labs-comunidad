@@ -12,6 +12,7 @@ import {
   relationToPlain,
   relationToTex,
   worldHas,
+  worldPlace,
   type SetRelation,
 } from "./relations.ts";
 
@@ -227,5 +228,19 @@ describe("checkRelation", () => {
       expect(r("A ≠ ∅")).toBe(a);
       expect(r("B = ∅")).toBe(!b);
     }
+  });
+});
+
+describe("universo no vacío (U ≠ ∅)", () => {
+  it("A = Aᶜ es siempre falsa y A ∪ Aᶜ ≠ ∅ siempre cierta: el mundo sin ningún elemento no cuenta", () => {
+    expect(checkRelation(rel("A = Aᶜ")).verdict).toBe("nunca");
+    expect(checkRelation(rel("A ∪ Aᶜ ≠ ∅")).verdict).toBe("siempre");
+    expect(checkRelation(rel("A ∪ B = ∅")).verdict).toBe("depende");
+  });
+
+  it("si solo la región de fuera tiene elementos, se dice «fuera de A, B y C»", () => {
+    expect(worldPlace(["A", "B"], 1)).toBe("fuera de A y B (los dos vacíos)");
+    expect(worldPlace(["A", "B", "C"], 1)).toBe("fuera de A, B y C (todos vacíos)");
+    expect(worldPlace(["A", "B"], 1 << 3)).toBe("en A ∩ B");
   });
 });
