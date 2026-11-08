@@ -4,6 +4,7 @@
 //   Si la fórmula completa no es cuantificada, al final se pide su valor.
 // - «Solo el resultado»: el valor de la fórmula completa.
 // En los dos, si la fórmula es ∀ falsa o ∃ verdadera, se pide además un contraejemplo o un testigo.
+// Las casillas V/F se rellenan con el ratón o con el teclado (grid-input.tsx: V/F o 1/0, flechas, Supr).
 // La app solo corrige y da pistas; nunca muestra los valores correctos (eso queda en la solución).
 import { Check, Lightbulb, RotateCcw, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,12 +20,14 @@ import { Button } from "../../../components/ui/button.tsx";
 import { Chip } from "../../../components/ui/chip.tsx";
 import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group.tsx";
 import { cn } from "../../../lib/cn.ts";
+import { GridShortcuts, useCellGrid, type CellGrid, type CellPos, type CellValue } from "../grid-input.tsx";
 import { truthLetter, truthWord } from "./common.tsx";
 
 /** Más pasos que esto no caben en una práctica razonable: solo queda «Solo el resultado». */
 export const MAX_EVAL_STEPS = 10;
 
 const next = (a: boolean | null) => (a === null ? true : a ? false : null);
+const truthOf = (v: CellValue): boolean | null => (v === "X" ? null : v);
 
 export type EvalMode = "pasos" | "resultado";
 
@@ -99,18 +102,19 @@ function TruthButton({
   onClick,
   label,
   bad,
-  buttonRef,
+  cell,
 }: {
   value: boolean | null;
   onClick: () => void;
   label: string;
   bad: boolean;
-  buttonRef?: React.Ref<HTMLButtonElement>;
+  /** Props de la rejilla (teclado y tabindex itinerante). */
+  cell: ReturnType<CellGrid["cellProps"]>;
 }) {
   return (
     <span className="inline-flex items-center gap-1">
       <button
-        ref={buttonRef}
+        {...cell}
         type="button"
         aria-label={`${label}: ${value === null ? "sin responder" : truthWord(value)}${bad ? ", incorrecta" : ""}`}
         onClick={onClick}
@@ -170,7 +174,6 @@ function StepPractice({
   const [solved, setSolved] = useState(0);
   const [checked, setChecked] = useState(false);
   const [hints, setHints] = useState(0);
-  const firstCell = useRef<HTMLButtonElement>(null);
   const moved = useRef(false);
 
   const isFinal = !finalIsStep && index === steps.length;
@@ -178,10 +181,32 @@ function StepPractice({
   const stepDone = solved > index;
   const allDone = solved === total;
 
+  // Casillas editables, en una columna: las instancias sin resolver y, debajo, la fórmula del paso.
+  const quantRow = step ? step.instances.length : 0;
+  const editable = useMemo<CellPos[]>(() => {
+    if (stepDone) return [];
+    const inst = step ? step.instances.flatMap((x, i) => (x.step === null ? [{ row: i, col: 0 }] : [])) : [];
+    return [...inst, { row: quantRow, col: 0 }];
+  }, [stepDone, step, quantRow]);
+  const setInstance = (i: number, f: (a: boolean | null) => boolean | null) => {
+    setAnswers((prev) => prev.map((a, k) => (k === i ? f(a) : a)));
+    setChecked(false);
+  };
+  const setFormula = (f: (a: boolean | null) => boolean | null) => {
+    setQuant(f);
+    setChecked(false);
+  };
+  const grid = useCellGrid({
+    cells: editable,
+    onValue: (p, v) => (p.row === quantRow ? setFormula(() => truthOf(v)) : setInstance(p.row, () => truthOf(v))),
+  });
+
+  const focusFirst = useRef(grid.focusFirst);
+  focusFirst.current = grid.focusFirst;
   useEffect(() => {
     if (!moved.current) return;
     moved.current = false;
-    firstCell.current?.focus();
+    focusFirst.current();
   }, [index]);
 
   const wrong = step ? step.instances.map((inst, i) => inst.step === null && answers[i] !== null && answers[i] !== inst.value) : [];
@@ -226,8 +251,8 @@ function StepPractice({
   return (
     <>
       <p className="text-[14px] text-muted">
-        Evalúa de dentro hacia fuera: en cada paso, pulsa cada casilla para elegir V o F en las instancias y en la fórmula
-        cuantificada, y pulsa «Comprobar paso».
+        Evalúa de dentro hacia fuera: en cada paso, pulsa cada casilla (o escribe) para elegir V o F en las instancias y en
+        la fórmula cuantificada, y pulsa «Comprobar paso».
       </p>
       {solved > 0 ? (
         <div>
@@ -244,9 +269,10 @@ function StepPractice({
         <span className="font-mono font-normal">{step ? step.plain : plain}</span>
       </p>
 
+      {allDone || stepDone ? null : <GridShortcuts id={grid.hintId} format="VF" />}
       {step ? (
         <div className="overflow-x-auto">
-          <table className="border-separate border-spacing-0">
+          <table role="grid" className="border-separate border-spacing-0">
             <caption className="sr-only">{`Instancias de ${step.plain}`}</caption>
             <thead>
               <tr>
@@ -279,11 +305,8 @@ function StepPractice({
                         value={answers[i] ?? null}
                         bad={checked && wrong[i]!}
                         label={`Instancia ${inst.plain}`}
-                        buttonRef={i === step.instances.findIndex((x) => x.step === null) ? firstCell : undefined}
-                        onClick={() => {
-                          setAnswers((prev) => prev.map((a, k) => (k === i ? next(a) : a)));
-                          setChecked(false);
-                        }}
+                        cell={grid.cellProps({ row: i, col: 0 })}
+                        onClick={() => setInstance(i, next)}
                       />
                     )}
                   </td>
@@ -302,11 +325,8 @@ function StepPractice({
                       value={quant}
                       bad={quantBad}
                       label={`Fórmula ${step.plain}`}
-                      buttonRef={step.instances.every((x) => x.step !== null) ? firstCell : undefined}
-                      onClick={() => {
-                        setQuant(next);
-                        setChecked(false);
-                      }}
+                      cell={grid.cellProps({ row: quantRow, col: 0 })}
+                      onClick={() => setFormula(next)}
                     />
                   )}
                 </td>
@@ -324,11 +344,8 @@ function StepPractice({
               value={quant}
               bad={quantBad}
               label={`Fórmula ${plain}`}
-              buttonRef={firstCell}
-              onClick={() => {
-                setQuant(next);
-                setChecked(false);
-              }}
+              cell={grid.cellProps({ row: quantRow, col: 0 })}
+              onClick={() => setFormula(next)}
             />
           )}
         </div>
