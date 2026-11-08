@@ -14,6 +14,7 @@ export const es = {
   },
   nav: {
     main: "Principal",
+    skip: "Saltar al contenido",
     labs: "Laboratorios",
     labsShort: "Labs",
     flashcards: "Flashcards",
