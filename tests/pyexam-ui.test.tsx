@@ -335,6 +335,13 @@ describe.skipIf(!hasPlots)("simulacro de 01MIAR con un python3 vivo", () => {
     const listB = screen.getByRole("list", { name: `Comprobaciones ocultas: Paso B. ${exam.project.steps[1]!.title}` });
     expect(within(listB).getAllByText(/: no cumplida$/).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Sin contestar: la celda sigue como al principio.").length).toBe(pyExamParts(exam) - 2);
+    // En las celdas sin contestar no se listan los requisitos («Requisito: … no cumplida» no aporta nada).
+    expect(exam.shorts.slice(1).some((s) => (s.check.rules ?? []).length > 0)).toBe(true);
+    exam.shorts.slice(1).forEach((s, k) => {
+      const list = screen.getByRole("list", { name: `Comprobaciones ocultas: Ejercicio ${k + 2}. ${s.title}` });
+      expect(list.textContent).not.toMatch(/Requisito:/);
+      expect(list.textContent).toMatch(/Prueba oculta 1: no cumplida/);
+    });
     // La solución, detrás de la puerta; «Practicar este tipo» va al banco de ejercicios.
     expect(screen.queryByTestId("solution")).toBeNull();
     const practice = screen.getByRole("link", { name: "Practicar este tipo: Paso D" });

@@ -673,6 +673,7 @@ function ResultsView({
               failed={r?.failed[i] ?? null}
               report={reports?.[i] ?? null}
               code={attempt.code ? slotCode(starters, attempt.code, i) : null}
+              blank={attempt.code ? attempt.code[i] === null : false}
               seed={attempt.seed}
               exercisesPath={exercisesPath}
             />
@@ -703,6 +704,7 @@ function PartReview({
   failed,
   report,
   code,
+  blank,
   seed,
   exercisesPath,
 }: {
@@ -714,6 +716,8 @@ function PartReview({
   failed: readonly number[] | null;
   report: PartReport | null;
   code: string | null;
+  /** La celda sigue como al principio («Sin contestar»). */
+  blank: boolean;
   seed: number;
   exercisesPath: string;
 }) {
@@ -723,7 +727,9 @@ function PartReview({
   const title = short ? `Ejercicio ${part + 1}. ${short.title}` : `Paso ${step!.letter}. ${step!.title}`;
   const practice = (short ?? step)!.practice;
   const solution = short ? short.check.solution : step!.solution;
-  const units = report?.units ?? (failed ? labels.map((label, k) => ({ label, ok: !failed.includes(k), detail: [] as string[] })) : null);
+  const all = report?.units ?? (failed ? labels.map((label, k) => ({ label, ok: !failed.includes(k), detail: [] as string[] })) : null);
+  // En una celda sin contestar, «Requisito: … no cumplida» no aporta nada (ya dice «Sin contestar»).
+  const units = all && blank ? all.filter((u) => !u.label.startsWith("Requisito:")) : all;
   return (
     <li className="flex min-w-0 break-inside-avoid flex-col gap-3 rounded-lg border border-border bg-raised p-4">
       <div className="flex flex-wrap items-center gap-2">
