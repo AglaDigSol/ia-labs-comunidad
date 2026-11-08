@@ -45,6 +45,15 @@ describe("Diagrama de Venn", () => {
     fireEvent.keyDown(region("A ∩ B, incorrecta"), { key: " " });
     expect(region("A ∩ B").getAttribute("aria-checked")).toBe("false");
     fireEvent.keyDown(region("A ∩ Bᶜ"), { key: "Enter" });
+    // V o 1 marca (y no desmarca); F, 0 o Supr desmarca (y no marca).
+    fireEvent.keyDown(region("Aᶜ ∩ B"), { key: "v" });
+    fireEvent.keyDown(region("Aᶜ ∩ B"), { key: "1" });
+    expect(region("Aᶜ ∩ B").getAttribute("aria-checked")).toBe("true");
+    fireEvent.keyDown(region("Aᶜ ∩ B"), { key: "0" });
+    fireEvent.keyDown(region("Aᶜ ∩ B"), { key: "Delete" });
+    expect(region("Aᶜ ∩ B").getAttribute("aria-checked")).toBe("false");
+    fireEvent.keyDown(region("A ∩ Bᶜ"), { key: "1" });
+    expect(region("A ∩ Bᶜ").getAttribute("aria-checked")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
     expect(screen.getByText("¡Correcto! Esas son las regiones de A ∩ Bᶜ.")).toBeTruthy();
 

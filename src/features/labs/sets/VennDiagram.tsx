@@ -1,12 +1,14 @@
 // Diagrama de Venn en SVG en línea (geometría en venn-geometry.ts). Cada región es un camino propio:
 // - interactivo (onToggle): cada región es una casilla (role="checkbox") que se marca con clic, Enter
-//   o Espacio y se nombra como intersección («A ∩ Bᶜ ∩ C»);
+//   o Espacio (también V o 1 para marcarla y F, 0 o Supr para desmarcarla) y se nombra como
+//   intersección («A ∩ Bᶜ ∩ C»);
 // - de solo lectura: una imagen con la lista de regiones sombreadas en su etiqueta.
 // Las regiones marcadas se rayan (no solo cambian de color) y las incorrectas llevan borde discontinuo
 // y una ✕. Los colores salen de los tokens (fill-accent-soft, stroke-crit…), así que sigue al tema.
 import { useId, type KeyboardEvent } from "react";
 import { regionLabel, SET_NAMES, type Region, type SetName } from "../../../../shared/sets/expr.ts";
 import { cn } from "../../../lib/cn.ts";
+import { cellKeyValue } from "../grid-input.tsx";
 import { regionOrder, vennLayout } from "./venn-geometry.ts";
 
 export function VennDiagram({
@@ -43,7 +45,12 @@ export function VennDiagram({
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onToggle?.(r);
+      return;
     }
+    const typed = cellKeyValue(e);
+    if (!typed) return;
+    e.preventDefault();
+    if ((typed.value === true) !== (selected[r] ?? false)) onToggle?.(r);
   };
 
   return (

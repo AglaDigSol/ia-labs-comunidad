@@ -174,8 +174,8 @@ export function ShadePractice({ expr, onSolved }: { expr: SetExpr; onSolved?: ()
           <Tex tex={setToTex(expr)} label={plain} />
         </div>
         <p className="text-[14px] text-muted">
-          Pulsa cada región (o enfócala con el tabulador y pulsa Espacio) para marcarla o desmarcarla. Las marcadas se ven
-          rayadas.
+          Pulsa cada región (o enfócala con el tabulador y pulsa Espacio) para marcarla o desmarcarla; con el teclado,
+          también V o 1 la marca y F, 0 o Supr la desmarca. Las marcadas se ven rayadas.
         </p>
         <VennDiagram
           n={n}
