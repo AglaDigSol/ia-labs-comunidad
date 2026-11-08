@@ -251,3 +251,154 @@ describe("Partes y producto cartesiano", () => {
     expect(within(screen.getByTestId("solution")).getByText("A × B = {(x, 1), (x, 2)}")).toBeTruthy();
   });
 });
+
+describe("Supuestos en el diagrama de Venn (sugerencias del grupo)", () => {
+  const useOwn = (text: string) => {
+    fireEvent.change(screen.getByLabelText("Expresión"), { target: { value: "propia" } });
+    fireEvent.change(screen.getByLabelText("Tu expresión"), { target: { value: text } });
+    fireEvent.click(screen.getByRole("button", { name: "Usar esta expresión" }));
+  };
+  const addHypothesis = (text: string) => {
+    fireEvent.change(screen.getByLabelText("Nuevo supuesto"), { target: { value: text } });
+    fireEvent.click(screen.getByRole("button", { name: "Añadir supuesto" }));
+  };
+
+  it("A ⊆ B como expresión explica que es una relación; el teclado trae ⊆, ⊂, ⊇, = y ≠", async () => {
+    renderAt("/laboratorios/conjuntos");
+    await heading();
+    useOwn("A ⊆ B");
+    expect(screen.getByRole("alert").textContent).toBe(
+      "A ⊆ B es una relación (verdadera o falsa), no un conjunto: aquí va una expresión que se pueda sombrear, como A ∩ B. Para suponerla, añádela en «Supuestos»; para decidir si es cierta, usa «Relaciones» en «Comprobar una igualdad».",
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Teclado de símbolos" })[0]!);
+    for (const name of ["contenido en (subconjunto)", "contenido y distinto (subconjunto propio)", "contiene a", "igual a", "distinto de", "unión"]) {
+      expect(screen.getByRole("button", { name })).toBeTruthy();
+    }
+  });
+
+  it("A ⊆ B vacía A ∩ Bᶜ (con trama, ∅ y texto), no cuenta al comprobar y se puede dibujar A dentro de B", async () => {
+    renderAt("/laboratorios/conjuntos");
+    await heading();
+    useOwn("B ∖ A");
+    expect(screen.getByText("Ninguno: cualquier región puede tener elementos.")).toBeTruthy();
+    addHypothesis("A ⊆ B");
+    expect(within(screen.getByRole("list", { name: "Supuestos" })).getAllByRole("listitem")).toHaveLength(1);
+    expect(screen.getByText("Supuestos: A ⊆ B.")).toBeTruthy();
+    // La región vacía no es una casilla: es una imagen con su nombre.
+    const venn = within(screen.getByRole("group", { name: "Tu diagrama de Venn para B ∖ A" }));
+    expect(venn.getAllByRole("checkbox")).toHaveLength(3);
+    expect(venn.getByRole("img", { name: "A ∩ Bᶜ: vacía por hipótesis" })).toBeTruthy();
+    expect(screen.getByText("Vacías por hipótesis (rayado cruzado y ∅): A ∩ Bᶜ. No cuentan al comprobar.")).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Tu diagrama de Venn para B ∖ A" }).textContent).toContain("∅");
+
+    // Dibujo anidado: las mismas regiones (por nombre) y el mismo teclado.
+    const nested = screen.getByRole("checkbox", { name: "Dibujar anidados (A dentro de B)" });
+    fireEvent.click(nested);
+    const drawn = within(screen.getByRole("group", { name: "Tu diagrama de Venn para B ∖ A" }));
+    expect(drawn.getAllByRole("checkbox").map((c) => c.getAttribute("aria-label"))).toEqual(["A ∩ B", "Aᶜ ∩ B", "Aᶜ ∩ Bᶜ"]);
+    expect(drawn.queryByRole("img")).toBeNull();
+    expect(screen.getByText("Dibujo con los supuestos: no aparece la región A ∩ Bᶜ, que está vacía por hipótesis.")).toBeTruthy();
+    fireEvent.keyDown(region("Aᶜ ∩ B"), { key: "1" });
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(screen.getByText("¡Correcto! Esas son las regiones de B ∖ A.")).toBeTruthy();
+    fireEvent.keyDown(region("A ∩ B"), { key: " " });
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(screen.getByText("2 de 3 regiones bien")).toBeTruthy();
+
+    // Quitar el supuesto: vuelve el diagrama de siempre, sin la casilla de anidar.
+    fireEvent.click(screen.getByRole("button", { name: "Quitar el supuesto A ⊆ B" }));
+    expect(screen.queryByRole("checkbox", { name: /^Dibujar/ })).toBeNull();
+    expect(within(screen.getByRole("group", { name: "Tu diagrama de Venn para B ∖ A" })).getAllByRole("checkbox")).toHaveLength(4);
+  });
+
+  it("disjuntos: «Dibujar separados»; con C, tres conjuntos sin dibujo anidado; supuestos contradictorios avisan", async () => {
+    renderAt("/laboratorios/conjuntos");
+    await heading();
+    useOwn("A ∪ B");
+    addHypothesis("A ∩ B = ∅");
+    fireEvent.click(screen.getByRole("checkbox", { name: "Dibujar separados (A y B disjuntos)" }));
+    expect(within(screen.getByRole("group", { name: "Tu diagrama de Venn para A ∪ B" })).getAllByRole("checkbox").map((c) => c.getAttribute("aria-label"))).toEqual([
+      "A ∩ Bᶜ",
+      "Aᶜ ∩ B",
+      "Aᶜ ∩ Bᶜ",
+    ]);
+    // Un supuesto con C pasa a tres conjuntos: regiones vacías marcadas, sin anidar.
+    addHypothesis("B ⊆ C");
+    const venn = within(screen.getByRole("group", { name: "Tu diagrama de Venn para A ∪ B" }));
+    expect(venn.getAllByRole("checkbox")).toHaveLength(5);
+    expect(venn.getAllByRole("img").map((i) => i.getAttribute("aria-label"))).toEqual([
+      "A ∩ B ∩ C: vacía por hipótesis",
+      "A ∩ B ∩ Cᶜ: vacía por hipótesis",
+      "Aᶜ ∩ B ∩ Cᶜ: vacía por hipótesis",
+    ]);
+    expect(screen.queryByRole("checkbox", { name: /^Dibujar/ })).toBeNull();
+    // Errores al añadir y contradicciones.
+    addHypothesis("A ∪ C");
+    expect(screen.getByRole("alert").textContent).toMatch(/^A ∪ C es un conjunto, no una relación/);
+    addHypothesis("A ⊊ A");
+    expect(screen.getByText("Estos supuestos se contradicen: ningún diagrama los cumple. Quita alguno.")).toBeTruthy();
+    expect(within(screen.getByRole("group", { name: "Tu diagrama de Venn para A ∪ B" })).queryAllByRole("img")).toHaveLength(0);
+  });
+});
+
+describe("Relaciones (en «Comprobar una igualdad»)", () => {
+  const openRelations = async () => {
+    renderAt("/laboratorios/conjuntos?s=igualdades");
+    await heading();
+    fireEvent.click(screen.getByRole("radio", { name: "Relaciones" }));
+  };
+  const pick = (id: string) => fireEvent.change(screen.getByLabelText("Relación"), { target: { value: id } });
+  const answer = (name: string) => {
+    fireEvent.click(screen.getByRole("radio", { name }));
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+  };
+
+  it("si ∅ ≠ A ⊆ B, B ∖ A ⊆ A depende: el contraejemplo solo aparece tras responder", async () => {
+    await openRelations();
+    pick("no-vacio-diferencia");
+    expect(screen.getByRole("img", { name: /^Diagrama de los supuestos\. .*Vacías por hipótesis: A ∩ Bᶜ\./ })).toBeTruthy();
+    expect(screen.queryByText(/Contraejemplo/)).toBeNull();
+    answer("Siempre cierta");
+    expect(screen.getByText("No es correcto: es «depende».")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Contraejemplo: con elementos solo en A ∩ B; Aᶜ ∩ B, se cumplen los supuestos y falla porque la región Aᶜ ∩ B tiene elementos y está en B ∖ A, pero no en A.",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText("En cambio, con elementos solo en A ∩ B, sí se cumple.")).toBeTruthy();
+    expect(screen.getByRole("img", { name: /^Contraejemplo: regiones con elementos: A ∩ B; Aᶜ ∩ B\./ })).toBeTruthy();
+    answer("Depende");
+    expect(screen.getByText("¡Correcto! Depende.")).toBeTruthy();
+  });
+
+  it("siempre cierta, sin contraejemplo; nunca cierta, con el suyo; y A × B ⊆ A ∪ B con su explicación", async () => {
+    await openRelations();
+    pick("contenido-interseccion");
+    answer("Siempre cierta");
+    expect(screen.getByText("¡Correcto! Siempre cierta.")).toBeTruthy();
+    expect(screen.queryByText(/Contraejemplo/)).toBeNull();
+    pick("no-vacio-disjuntos");
+    answer("Nunca cierta");
+    expect(screen.getByText("¡Correcto! Nunca cierta.")).toBeTruthy();
+    expect(screen.getByText(/^Contraejemplo: con elementos solo en A ∩ B, se cumplen los supuestos y falla porque/)).toBeTruthy();
+    pick("producto-cartesiano");
+    answer("Depende");
+    expect(screen.getByText("No es correcto: es «nunca cierta».")).toBeTruthy();
+    expect(screen.getByText(/un par no es un elemento de U/)).toBeTruthy();
+  });
+
+  it("escribir la mía: supuestos y relación con sus errores; supuestos contradictorios desactivan «Comprobar»", async () => {
+    await openRelations();
+    pick("propia");
+    expect((screen.getByRole("button", { name: "Comprobar" }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText("Tu relación"), { target: { value: "A ∩ B" } });
+    expect(screen.getByRole("alert").textContent).toMatch(/^A ∩ B es un conjunto, no una relación/);
+    fireEvent.change(screen.getByLabelText("Tu relación"), { target: { value: "A ⊆ C" } });
+    fireEvent.change(screen.getByLabelText("Supuestos (opcional, separados por comas)"), { target: { value: "A <= B, B subseteq C" } });
+    answer("Siempre cierta");
+    expect(screen.getByText("¡Correcto! Siempre cierta.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Supuestos (opcional, separados por comas)"), { target: { value: "A ⊊ B, B ⊆ A" } });
+    expect(screen.getByText("Estos supuestos se contradicen: ningún diagrama los cumple. Cambia alguno.")).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Comprobar" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+});
