@@ -125,3 +125,27 @@ h1:focus {
     scroll-behavior: auto !important;
   }
 }
+
+/* Bloqueo del scroll del fondo con un diálogo abierto (src/lib/remove-scroll.tsx): una clase en <html>
+   en lugar del <style> que insertaba react-remove-scroll y que la CSP rechaza. */
+html.scroll-locked,
+html.scroll-locked body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.scroll-locked body {
+  padding-right: var(--scroll-lock-gap, 0px);
+}
+
+/* La lista de Radix Select, sin barra de scroll visible (Radix lo hacía con un <style> en línea que la
+   CSP rechaza; vite.config.ts lo quita del paquete). */
+[data-radix-select-viewport] {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+[data-radix-select-viewport]::-webkit-scrollbar {
+  display: none;
+}

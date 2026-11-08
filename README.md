@@ -381,9 +381,11 @@ Sobre la CSP:
 - No hay scripts inline: el tema se aplica con `public/theme-init.js`, un fichero externo.
 - `style-src-attr 'unsafe-inline'` es necesario porque KaTeX dibuja las fórmulas con atributos `style` y React aplica
   props de estilo. No permite elementos `<style>` ni scripts.
-- Limitación conocida: algunos componentes de Radix (diálogos y selectores) intentan insertar un `<style>` pequeño
-  (bloqueo de scroll del fondo y ocultar la barra de scroll). La CSP lo bloquea y el navegador lo anota en la consola;
-  la app funciona igual, solo que la página de fondo puede desplazarse con un diálogo abierto.
+- Sin `<style>` en línea: Radix insertaría uno para bloquear el scroll del fondo con un diálogo abierto
+  (`react-remove-scroll`) y otro para ocultar la barra de la lista de un selector. `scripts/csp-safe-radix.ts` (un
+  plugin de Vite) redirige `react-remove-scroll` a `src/lib/remove-scroll.tsx`, que bloquea el scroll con una clase en
+  `<html>` definida en `tokens.css`, y quita el `<style>` del selector (la regla también está en `tokens.css`). Si una
+  versión nueva de Radix cambia ese código, el build falla en lugar de dejar errores de CSP en la consola.
 - No se usa COEP (es opcional con la pestaña Python: ver [Cabeceras](#cabeceras) de Python).
 - Los gráficos de matplotlib se dibujan en un `<canvas>`, así que `img-src` sigue sin `data:` ni `blob:`.
 
