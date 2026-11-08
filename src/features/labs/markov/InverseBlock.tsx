@@ -89,7 +89,7 @@ export function InverseBlock({
                   key={j}
                   id={vInvId(j)}
                   aria-label={`v(${j + 1})`}
-                  inputMode="decimal"
+                  inputMode="text"
                   autoComplete="off"
                   maxLength={MAX_CELL}
                   value={val}

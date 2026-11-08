@@ -129,7 +129,7 @@ export function MarkovPractice({
             {names.map((nm, j) => (
               <label key={j} className="flex flex-col gap-1 text-[14px]">
                 {`v(${j + 1}) · ${nm}`}
-                <Input className="mono w-28" inputMode="decimal" value={v[j] ?? ""} onChange={(e) => onV(j, e.target.value)} />
+                <Input className="mono w-28" inputMode="text" value={v[j] ?? ""} onChange={(e) => onV(j, e.target.value)} />
               </label>
             ))}
           </div>
@@ -145,7 +145,7 @@ export function MarkovPractice({
               <span className="flex items-center gap-1">
                 <Input
                   className="mono w-28"
-                  inputMode="decimal"
+                  inputMode="text"
                   autoComplete="off"
                   value={mine[j]}
                   aria-invalid={checked && marks[j] === false ? true : undefined}
