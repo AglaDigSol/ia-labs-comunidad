@@ -10,7 +10,7 @@ const single: ChoiceQuestion = {
   mode: "single",
   noneOfOthers: true,
   options: [
-    { id: "a", text: "Dos", correct: false, why: "No: es tres." },
+    { id: "a", text: "Dos", correct: false, why: "Te has dejado uno al contar." },
     { id: "b", text: "Tres", correct: true },
     { id: "c", text: "Cuatro", correct: false },
     { id: "d", text: "Cinco", tex: "5", correct: false },
@@ -31,6 +31,8 @@ describe("ChoicePractice", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Dos/ }));
     fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
     expect(status()).toMatch(/No es esa/);
+    // El «por qué» de la opción elegida, sin decir cuál es la buena.
+    expect(status()).toMatch(/Por qué no: Te has dejado uno al contar\./);
     expect(status()).not.toMatch(/Tres|[a-e]\)/);
     expect(onSolved).not.toHaveBeenCalled();
     expect(screen.queryByTestId("solution")).toBeNull();
@@ -41,7 +43,7 @@ describe("ChoicePractice", () => {
     expect(status()).toMatch(/¡Correcto!/);
     expect(onSolved).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: "Ver la solución completa" }));
-    expect(screen.getByTestId("solution").textContent).toMatch(/No: es tres\./);
+    expect(screen.getByTestId("solution").textContent).toMatch(/Te has dejado uno al contar\./);
   });
 
   it("varias correctas: casillas; hace falta marcar exactamente las correctas", () => {

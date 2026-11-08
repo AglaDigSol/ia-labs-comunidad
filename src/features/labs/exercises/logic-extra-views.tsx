@@ -8,7 +8,7 @@ import { toTex } from "../../../../shared/logic/ast.ts";
 import { parseFormula } from "../../../../shared/logic/parser.ts";
 import { predToPlain, predToTex } from "../../../../shared/predicates/ast.ts";
 import { parsePredicate } from "../../../../shared/predicates/parser.ts";
-import { isNegation } from "../../../../shared/exercises/logic-extra-negation.ts";
+import { isNegation, negationMistake } from "../../../../shared/exercises/logic-extra-negation.ts";
 import {
   ATOMS,
   divides,
@@ -200,7 +200,7 @@ function NegateNLExercise({ instance, onSolved }: ExerciseViewProps<PredNegateNL
             "Escríbela con fórmulas (la leyenda está en la solución) y vuelve a pasarla a palabras.",
           ]}
         />
-        <Verdicts checked={checked} solved={solved} message={choice === null ? "Elige una opción." : "Esa no es la negación."} />
+        <Verdicts checked={checked} solved={solved} message={choice === null ? "Elige una opción." : `Esa no es la negación. ${negationMistake(instance.formula, instance.options[Number(choice)]!.formula)}`} />
         <SolutionGate resetKey={instance.sentence}>
           <div className="flex flex-col gap-2 rounded-lg border border-border bg-raised p-3 text-[14px]">
             <p>{instance.legend}</p>

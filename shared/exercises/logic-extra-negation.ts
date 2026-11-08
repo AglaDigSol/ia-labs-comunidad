@@ -2,8 +2,10 @@
 // buena y tres errores típicos (negar solo el predicado, dejar el cuantificador como estaba, aplicar
 // De Morgan al revés o repetir la frase con otras palabras). Cada opción lleva su fórmula: la buena es
 // la que equivale a ¬(fórmula de la frase), y eso lo comprueba el motor de predicados.
-import { parsePredicate } from "../predicates/parser.ts";
+import type { PredFormula } from "../predicates/ast.ts";
 import { findPredDifference } from "../predicates/equivalence.ts";
+import { pushNegation } from "../predicates/negation.ts";
+import { parsePredicate } from "../predicates/parser.ts";
 import type { Rng } from "./random.ts";
 import type { ExerciseLevel } from "./types.ts";
 
@@ -180,4 +182,35 @@ function pred(text: string) {
 /** ¿La opción es la negación de la frase? (Equivalente a ¬fórmula en todos los dominios pequeños.) */
 export function isNegation(formula: string, option: string): boolean {
   return findPredDifference({ kind: "not", arg: pred(formula) }, pred(option), NEGATION_DOMAINS) === null;
+}
+
+/** Los cuantificadores de delante, en orden: «∀∃» para ∀x ∃y R(x, y). */
+function prefix(f: PredFormula): string {
+  let out = "";
+  for (let x = f; x.kind === "forall" || x.kind === "exists"; x = x.body) out += x.kind === "forall" ? "∀" : "∃";
+  return out;
+}
+
+/** La forma normal negativa (la negación pegada a los predicados). */
+const nnf = (f: PredFormula): PredFormula => pushNegation(f).at(-1)?.formula ?? f;
+const dual = (p: string) => [...p].map((q) => (q === "∀" ? "∃" : "∀")).join("");
+
+/**
+ * Por qué una opción equivocada no es la negación de la frase, sin decir cuál es la buena: dice lo
+ * mismo que la frase; deja los cuantificadores como estaban; los cambia, pero no niega bien lo de
+ * dentro; o, si no, que hay situaciones en que la frase y la opción valen lo mismo.
+ */
+export function negationMistake(formula: string, option: string): string {
+  const f = pred(formula);
+  const o = pred(option);
+  if (findPredDifference(f, o, NEGATION_DOMAINS) === null) return "Esa frase dice lo mismo que la original, con otras palabras: no la niega.";
+  const pf = prefix(nnf(f));
+  const po = prefix(nnf(o));
+  if (pf !== "" && po === pf) {
+    return "Deja los cuantificadores como estaban. Al negar, «para todo» pasa a «existe» y «existe» a «para todo» (¬∀x P(x) ≡ ∃x ¬P(x); «nadie» es «para todo x, no»).";
+  }
+  if (pf !== "" && po === dual(pf)) {
+    return "Los cuantificadores sí cambian como deben, pero lo de dentro no queda negado: revisa qué niegas (¬(A ∧ B) ≡ ¬A ∨ ¬B, ¬(A → B) ≡ A ∧ ¬B, y ¬¬P ≡ P).";
+  }
+  return "Una negación vale siempre lo contrario que la frase, y esa no: hay situaciones en las que las dos son verdaderas (o las dos falsas) a la vez.";
 }

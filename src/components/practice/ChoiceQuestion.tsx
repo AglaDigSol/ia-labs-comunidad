@@ -4,8 +4,8 @@
 //
 // - ChoiceOptions: solo las opciones (radios o casillas), controladas desde fuera. Es lo que usará el
 //   simulador de examen, que recoge las respuestas y corrige al final.
-// - ChoicePractice: las opciones con «Comprobar», el aviso (sin decir cuál es la buena) y la solución
-//   detrás de SolutionGate. Es lo que usan los laboratorios y el banco de ejercicios.
+// - ChoicePractice: las opciones con «Comprobar», el aviso (sin decir cuál es la buena; con una sola
+//   opción elegida y mal, el «por qué» de esa opción) y la solución detrás de SolutionGate. Es lo que usan los laboratorios y el banco de ejercicios.
 //
 // Los datos y la corrección están en shared/exercises/choice.ts (arrangeChoices, gradeChoice).
 import { Check, CircleCheck, CircleX } from "lucide-react";
@@ -150,6 +150,7 @@ export function ChoicePractice({
   const key = value.join("|");
   const grade = gradeChoice(options, value);
   const showing = checked === key;
+  const chosenWhy = value.length === 1 ? options.find((o) => o.id === value[0] && !o.correct)?.why : undefined;
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <ChoiceOptions legend={legend} options={options} mode={question.mode} value={value} onChange={setValue} />
@@ -178,11 +179,15 @@ export function ChoicePractice({
               {question.mode === "single" ? "¡Correcto!" : "¡Correcto! Has marcado todas las correctas y ninguna más."}
             </Chip>
           ) : (
-            <Chip tone="warn" className="whitespace-normal">
-              {question.mode === "single"
-                ? "No es esa. Repasa la regla y vuelve a mirar cada opción."
-                : "Aún no: sobra alguna marcada o falta alguna. Decide cada afirmación por separado."}
-            </Chip>
+            <>
+              <Chip tone="warn" className="whitespace-normal">
+                {question.mode === "single"
+                  ? "No es esa. Repasa la regla y vuelve a mirar cada opción."
+                  : "Aún no: sobra alguna marcada o falta alguna. Decide cada afirmación por separado."}
+              </Chip>
+              {/* Con una sola opción elegida, su «por qué» explica el fallo sin decir cuál es la buena. */}
+              {question.mode === "single" && chosenWhy ? <span>{`Por qué no: ${chosenWhy}`}</span> : null}
+            </>
           )
         ) : null}
       </div>

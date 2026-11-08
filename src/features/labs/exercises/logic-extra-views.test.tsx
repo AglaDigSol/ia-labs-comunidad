@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
-import { isNegation } from "../../../../shared/exercises/logic-extra-negation.ts";
+import { isNegation, negationMistake } from "../../../../shared/exercises/logic-extra-negation.ts";
 import { formalizeMatches, formalizeSentence, LOGIC_FORMALIZE, numberFamily, PRED_NEGATE_NL, PRED_NUMBERS, truthSets } from "../../../../shared/exercises/logic-extra.ts";
 import { seedFromText } from "../../../../shared/exercises/random.ts";
 import { LabsRoutes } from "../labs.tsx";
@@ -57,9 +57,30 @@ describe("Negar en lenguaje natural", () => {
     const x = PRED_NEGATE_NL.generate(seedFromText("n2")!, "avanzado");
     expect(await screen.findByText(`«${x.sentence}»`, undefined, { timeout: 5000 })).toBeTruthy();
     const right = x.options.findIndex((o) => isNegation(x.formula, o.formula));
+    const wrong = x.options.findIndex((_, i) => i !== right);
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(`${x.options[wrong]!.text.replace(/[.()]/g, "\\$&")}$`) }));
+    check();
+    // Explica el fallo de la opción elegida, sin decir cuál es la buena.
+    expect(status()).toContain(`Esa no es la negación. ${negationMistake(x.formula, x.options[wrong]!.formula)}`);
+    expect(status()).not.toContain(x.options[right]!.text);
     fireEvent.click(screen.getByRole("radio", { name: new RegExp(`${x.options[right]!.text.replace(/[.()]/g, "\\$&")}$`) }));
     check();
     expect(status()).toMatch(/¡Correcto!/);
+  });
+
+  it("cada error típico tiene su explicación", () => {
+    expect(negationMistake("¬∃x G(x)", "∀x ¬G(x)")).toMatch(/dice lo mismo/);
+    expect(negationMistake("∀x ∃y R(x, y)", "∀x ∃y ¬R(x, y)")).toMatch(/Deja los cuantificadores/);
+    expect(negationMistake("∀x ∃y R(x, y)", "∃x ∀y R(x, y)")).toMatch(/sí cambian como deben/);
+    expect(negationMistake("∃x G(x)", "∃x ¬G(x)")).toMatch(/Deja los cuantificadores/);
+    expect(negationMistake("∀x ∃y R(x, y)", "∀x ∀y ¬R(x, y)")).toMatch(/vale siempre lo contrario/);
+    // Sobre todas las opciones equivocadas de muchas semillas: siempre hay explicación.
+    for (const level of PRED_NEGATE_NL.levels) {
+      for (let s = 0; s < 40; s++) {
+        const y = PRED_NEGATE_NL.generate(s, level);
+        for (const o of y.options) if (!isNegation(y.formula, o.formula)) expect(negationMistake(y.formula, o.formula).length).toBeGreaterThan(30);
+      }
+    }
   });
 });
 

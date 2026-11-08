@@ -23,7 +23,7 @@ import {
   setsText,
   truthSets,
 } from "../../exercises/logic-extra.ts";
-import { isNegation } from "../../exercises/logic-extra-negation.ts";
+import { isNegation, negationMistake } from "../../exercises/logic-extra-negation.ts";
 import { examAdapter, type ExamAdapter } from "../adapter.ts";
 import { examList, examMath, examMuted, examP, examTex } from "../blocks.ts";
 
@@ -176,7 +176,10 @@ const negateNLAdapter = examAdapter({
   type: PRED_NEGATE_NL,
   ask: "Negación de una frase con cuantificadores (opción múltiple).",
   build(inst) {
-    const options = inst.options.map((o, i) => opt(`n${i}`, o.text, isNegation(inst.formula, o.formula), `Fórmula: ${o.formula}`, undefined));
+    const options = inst.options.map((o, i) => {
+      const right = isNegation(inst.formula, o.formula);
+      return opt(`n${i}`, o.text, right, right ? `Fórmula: ${o.formula}` : `${negationMistake(inst.formula, o.formula)} Fórmula: ${o.formula}`, undefined);
+    });
     const good = inst.options.find((o) => isNegation(inst.formula, o.formula));
     if (!good) return null;
     return {
