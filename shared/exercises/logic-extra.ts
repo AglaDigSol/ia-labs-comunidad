@@ -200,6 +200,15 @@ export function formalizeSentence(x: LogicFormalizeInstance): string {
 export const formalizeTarget = (x: LogicFormalizeInstance): string => formalizePattern(x.pattern).formula;
 
 /** ¿La fórmula escrita es equivalente a la buena? (null si no se lee o usa otras letras.) */
+/**
+ * En «Formalizar» las letras son p, q y r: una «v» suelta (p v q, (p)v(q)) solo puede ser el «o» que
+ * se escribe a mano, y se lee como ∨. Una v pegada a otras letras (pvq) no se toca: es un nombre, y el
+ * aviso de las letras sugiere ∨ o |.
+ */
+export function readFormalizeInput(text: string): string {
+  return text.replace(/(?<![A-Za-z0-9_])[vV](?![A-Za-z0-9_])/g, "∨");
+}
+
 export function formalizeMatches(text: string, x: LogicFormalizeInstance): boolean | null {
   const r = parseFormula(text);
   if (!r.ok) return null;

@@ -21,6 +21,7 @@ import {
   NUMBER_SETS,
   PRED_NEGATE_NL,
   PRED_NUMBERS,
+  readFormalizeInput,
   SET_TEX,
   SET_TEXT,
   setsText,
@@ -90,8 +91,10 @@ function FormalizeExercise({ instance, onSolved }: ExerciseViewProps<LogicFormal
   const [checked, setChecked] = useState(false);
   const pattern = formalizePattern(instance.pattern);
   const letters = ["p", "q", "r"].slice(0, instance.atoms.length);
-  const parsed = text.trim() === "" ? null : parseFormula(text);
-  const typed = text.trim() === "" ? null : formalizeMatches(text, instance);
+  // «p v q»: la v suelta es el «o» (aquí no hay ninguna letra v).
+  const input = readFormalizeInput(text);
+  const parsed = text.trim() === "" ? null : parseFormula(input);
+  const typed = text.trim() === "" ? null : formalizeMatches(input, instance);
   const solved = mode === "elegir" ? choice !== null && formalizeMatches(instance.options[Number(choice)]!, instance) === true : typed === true;
   const message =
     mode === "elegir"
@@ -101,7 +104,7 @@ function FormalizeExercise({ instance, onSolved }: ExerciseViewProps<LogicFormal
       : parsed && !parsed.ok
         ? parsed.error.message
         : typed === null
-          ? `Usa solo ${letters.join(", ")}.`
+          ? `Usa solo ${letters.join(", ")}.${/v/i.test(input) ? " Para «o», escribe ∨ o | (o una v suelta, entre espacios: p v q)." : ""}`
           : "No es equivalente a la frase. Vuelve a leerla.";
   return (
     <>
@@ -156,7 +159,7 @@ function FormalizeExercise({ instance, onSolved }: ExerciseViewProps<LogicFormal
           hints={[
             "Busca la palabra clave (suficiente, necesario, solo si, a menos que, ni… ni…) y decide qué parte es la condición y qué parte la consecuencia.",
             pattern.rule,
-            "Se escribe con ¬, ∧, ∨, → y ↔ (o con ~, &, |, ->, <->).",
+            "Se escribe con ¬, ∧, ∨, → y ↔ (o con ~, &, |, ->, <->; el «o» también con una v suelta: p v q).",
           ]}
         />
         <Verdicts checked={checked} solved={solved} message={message} />

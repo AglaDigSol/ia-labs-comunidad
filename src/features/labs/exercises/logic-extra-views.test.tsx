@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 import { isNegation, negationMistake } from "../../../../shared/exercises/logic-extra-negation.ts";
-import { formalizeMatches, formalizeSentence, LOGIC_FORMALIZE, numberFamily, PRED_NEGATE_NL, PRED_NUMBERS, truthSets } from "../../../../shared/exercises/logic-extra.ts";
+import { formalizeMatches, formalizeSentence, LOGIC_FORMALIZE, numberFamily, PRED_NEGATE_NL, PRED_NUMBERS, readFormalizeInput, truthSets } from "../../../../shared/exercises/logic-extra.ts";
 import { seedFromText } from "../../../../shared/exercises/random.ts";
 import { LabsRoutes } from "../labs.tsx";
 
@@ -48,6 +48,22 @@ describe("Formalizar un enunciado", () => {
     fireEvent.change(field, { target: { value: x.options[right]! } });
     check();
     expect(status()).toMatch(/¡Correcto!/);
+    // «v» suelta como «o»: (T) v (T) equivale a T.
+    fireEvent.change(field, { target: { value: `(${x.options[right]!}) v (${x.options[right]!})` } });
+    check();
+    expect(status()).toMatch(/¡Correcto!/);
+    // Pegada a otras letras es un nombre: se sugiere ∨ o |.
+    fireEvent.change(field, { target: { value: "pvq" } });
+    check();
+    expect(status()).toMatch(/Para «o», escribe ∨ o \|/);
+  });
+
+  it("readFormalizeInput lee la v suelta como ∨ y deja los nombres", () => {
+    expect(readFormalizeInput("p v q")).toBe("p ∨ q");
+    expect(readFormalizeInput("(p)v(¬q)")).toBe("(p)∨(¬q)");
+    expect(readFormalizeInput("p V q → r")).toBe("p ∨ q → r");
+    expect(readFormalizeInput("pvq")).toBe("pvq");
+    expect(readFormalizeInput("v1 ∧ vel")).toBe("v1 ∧ vel");
   });
 });
 
