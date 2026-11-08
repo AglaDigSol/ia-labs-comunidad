@@ -2,6 +2,7 @@
 // del laboratorio correspondiente (la misma que en su pestaña) y, cuando la práctica no la trae, la
 // solución completa detrás de SolutionGate. Cada vista llama a onSolved cuando la práctica confirma
 // una respuesta correcta. Para un tipo nuevo: un componente aquí y una entrada en EXERCISE_VIEWS.
+import { Check } from "lucide-react";
 import { useMemo, useState, type ComponentType } from "react";
 import { booleVector, indexListText, vectorDontCares, vectorOnes } from "../../../../shared/boole/canonical.ts";
 import { booleToPlain, booleToTex, parseBoole } from "../../../../shared/boole/expr.ts";
@@ -26,12 +27,17 @@ import {
   SETS_EQUAL,
   SETS_PARTS,
   SETS_PROOF,
+  SETS_RELATIONS,
   SETS_VENN,
+  relationOptionExplanation,
+  relationsAnswer,
   type SetExprInstance,
   type SetPairInstance,
   type SetsCardinalInstance,
   type SetsPartsInstance,
+  type SetsRelationsInstance,
 } from "../../../../shared/exercises/sets.ts";
+import { CARTESIAN_RELATION, parseSetHypotheses, parseSetRelation, relationSpoken, relationToTex } from "../../../../shared/sets/relations.ts";
 import type { ExerciseType } from "../../../../shared/exercises/types.ts";
 import { collectVars, toPlain, toTex, type Node } from "../../../../shared/logic/ast.ts";
 import { compareFormulas } from "../../../../shared/logic/compare.ts";
@@ -43,9 +49,11 @@ import { parseSetExpr, setToPlain, setToTex, type SetExpr } from "../../../../sh
 import type { SavedStep } from "../boole/boole-storage.ts";
 import { NOTATION } from "../../../../content/notation/index.ts";
 import { SolutionGate } from "../../../components/practice/SolutionGate.tsx";
+import { Button } from "../../../components/ui/button.tsx";
 import { Chip } from "../../../components/ui/chip.tsx";
 import { Tex } from "../../../lib/tex.tsx";
 import { CanonicalPractice } from "../boole/CanonicalPractice.tsx";
+import { Hints, OptionList, PracticeBox, Status, Verdict } from "../combinatorics/common.tsx";
 import { KarnaughPractice } from "../boole/KarnaughPractice.tsx";
 import { SimplifyDerivation } from "../boole/SimplifySection.tsx";
 import { readLabItem } from "../labs-storage.ts";
@@ -309,6 +317,99 @@ function SetsProofExercise({ instance, onSolved }: ExerciseViewProps<SetPairInst
   );
 }
 
+/** Una relación (o A × B ⊆ A ∪ B) en TeX, con su lectura. */
+function RelationTex({ text }: { text: string }) {
+  if (text === CARTESIAN_RELATION.text) return <Tex tex={CARTESIAN_RELATION.tex} label="A por B está contenido en A unión B" />;
+  const r = parseSetRelation(text);
+  if (!r.ok) throw new Error(`ejercicio ilegible: ${text}`);
+  return <Tex tex={r.relations.map(relationToTex).join(",\\; ")} label={r.relations.map(relationSpoken).join(" y ")} />;
+}
+
+function SetsRelationsExercise({ instance, onSolved }: ExerciseViewProps<SetsRelationsInstance>) {
+  const [choice, setChoice] = useState<string | null>(null);
+  const [checked, setChecked] = useState(false);
+  const answer = useMemo(() => relationsAnswer(instance), [instance]);
+  const hyps = useMemo(() => {
+    const r = parseSetHypotheses(instance.hypotheses);
+    if (!r.ok) throw new Error(`ejercicio ilegible: ${instance.hypotheses}`);
+    return r.relations;
+  }, [instance.hypotheses]);
+  const solved = choice !== null && Number(choice) === answer;
+  const vars = instance.hypotheses.includes("C") || instance.options.some((o) => o.includes("C")) ? "A, B y C" : "A y B";
+  return (
+    <>
+      <Statement>
+        <p className="text-[14px] text-muted">{`Sean ${vars} conjuntos de un universo U tales que`}</p>
+        <Tex display tex={hyps.map(relationToTex).join(",\\quad ")} label={hyps.map(relationSpoken).join("; ")} className="text-[20px]" />
+        <p className="text-[16px] font-semibold">{`¿Cuál de estas afirmaciones es siempre ${instance.ask === "cierta" ? "cierta" : "falsa"}?`}</p>
+      </Statement>
+      <PracticeBox title="Elige la opción">
+        <OptionList
+          legend={`Es siempre ${instance.ask}:`}
+          options={instance.options.map((o, i) => ({ key: String(i), content: <RelationTex text={o} /> }))}
+          value={choice}
+          onChange={(k) => {
+            setChoice(k);
+            setChecked(false);
+          }}
+          invalid={checked && !solved}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="primary"
+            onClick={() => {
+              setChecked(true);
+              if (solved) onSolved();
+            }}
+          >
+            <Check size={16} aria-hidden="true" />
+            Comprobar
+          </Button>
+          <Hints
+            hints={[
+              "Dibuja el diagrama de Venn con los supuestos: ¿qué regiones quedan vacías?",
+              "Una inclusión X ⊆ Y falla si alguna región de X que no está en Y puede tener elementos.",
+              instance.ask === "cierta"
+                ? "Para descartar una opción basta un diagrama que cumpla los supuestos y en el que falle."
+                : "Una afirmación es siempre falsa si falla en todo diagrama que cumpla los supuestos; si en alguno se cumple, no lo es.",
+            ]}
+          />
+        </div>
+        {checked ? (
+          <Status>
+            {choice === null ? (
+              <span>Elige una opción.</span>
+            ) : solved ? (
+              <Verdict tone="ok">
+                <Check size={16} aria-hidden="true" />
+                ¡Correcto!
+              </Verdict>
+            ) : (
+              <>
+                <Verdict tone="warn">No es esa.</Verdict>
+                <span>{relationOptionExplanation(instance.options[Number(choice)]!, instance.hypotheses)}</span>
+              </>
+            )}
+          </Status>
+        ) : null}
+        <SolutionGate resetKey={JSON.stringify(instance)}>
+          <ul className="flex flex-col gap-2 rounded-lg border border-border bg-raised p-3 text-[14px]">
+            {instance.options.map((o, i) => (
+              <li key={o} className="flex flex-col gap-1">
+                <span>
+                  <span className="font-semibold">{`${"abcd"[i]}) `}</span>
+                  <RelationTex text={o} />
+                </span>
+                <span>{relationOptionExplanation(o, instance.hypotheses)}</span>
+              </li>
+            ))}
+          </ul>
+        </SolutionGate>
+      </PracticeBox>
+    </>
+  );
+}
+
 const SetsCardinalExercise = ({ instance, onSolved }: ExerciseViewProps<SetsCardinalInstance>) => (
   <CardinalProblem problem={instance} onSolved={onSolved} />
 );
@@ -384,6 +485,7 @@ export const EXERCISE_VIEWS: Readonly<Record<string, View>> = Object.fromEntries
   entry(SETS_VENN, VennExercise),
   entry(SETS_EQUAL, SetsEqualExercise),
   entry(SETS_PROOF, SetsProofExercise),
+  entry(SETS_RELATIONS, (p: ExerciseViewProps<SetsRelationsInstance>) => <SetsRelationsExercise key={JSON.stringify(p.instance)} {...p} />),
   entry(SETS_CARDINAL, SetsCardinalExercise),
   entry(SETS_PARTS, SetsPartsExercise),
   ...DISCRETE_EXERCISE_VIEWS,

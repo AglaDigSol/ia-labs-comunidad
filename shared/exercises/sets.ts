@@ -1,6 +1,7 @@
 // Ejercicios de conjuntos: expresiones para sombrear en el diagrama de Venn, igualdades (verdaderas por
 // leyes conocidas o falsas por errores habituales), problemas de inclusión–exclusión con datos
-// coherentes y conjuntos de partes o productos cartesianos. Se generan con semilla; las regiones, la
+// coherentes, conjuntos de partes o productos cartesianos y relaciones entre conjuntos bajo unos
+// supuestos («Si ∅ ≠ A ⊆ B, ¿cuál es siempre falsa?»), como en el examen. Se generan con semilla; las regiones, la
 // igualdad, la solución de los recuentos (solveRegions) y las listas los calculan los motores de
 // shared/sets/ al resolver.
 import { solveRegions } from "../sets/cardinal.ts";
@@ -23,6 +24,20 @@ import {
   type SetExpr,
   type SetName,
 } from "../sets/expr.ts";
+import {
+  CARTESIAN_RELATION,
+  checkRelation,
+  forcesNonEmptyAB,
+  parseSetHypotheses,
+  parseSetRelation,
+  relationHolds,
+  relationReason,
+  relationToPlain,
+  worldText,
+  type RelationVerdict,
+  type SetRelation,
+  type SetRelationOp,
+} from "../sets/relations.ts";
 import type { SetsCardinalProblem } from "../sets/schema.ts";
 import { generateUntil, rngFor, type Rng } from "./random.ts";
 import type { ExerciseLevel, ExerciseType } from "./types.ts";
@@ -368,4 +383,161 @@ export const SETS_PARTS: ExerciseType<SetsPartsInstance> = {
   },
 };
 
-export const SET_EXERCISES = [SETS_VENN, SETS_EQUAL, SETS_PROOF, SETS_CARDINAL, SETS_PARTS] as const;
+// ---------------------------------------------------------------- Relaciones
+
+/**
+ * «Relaciones entre conjuntos»: unos supuestos y cuatro afirmaciones a)–d); se pregunta cuál es
+ * siempre cierta (o siempre falsa). La instancia solo lleva los textos: quién es la correcta lo decide
+ * checkRelation al resolver (relationOptionVerdict).
+ */
+export type SetsRelationsInstance = {
+  /** Supuestos separados por comas («∅ ≠ A ⊆ B»). */
+  hypotheses: string;
+  /** «cierta»: ¿cuál es siempre cierta?; «falsa»: ¿cuál es siempre falsa? */
+  ask: "cierta" | "falsa";
+  /** Cuatro relaciones (o A × B ⊆ A ∪ B, el caso fijo del producto cartesiano). */
+  options: string[];
+};
+
+/** Veredicto de una afirmación bajo los supuestos (A × B ⊆ A ∪ B, por su explicación fija). */
+export function relationOptionVerdict(option: string, hypotheses: string): RelationVerdict {
+  const h = parseSetHypotheses(hypotheses);
+  if (!h.ok) throw new Error(`supuestos ilegibles: ${hypotheses}`);
+  if (option === CARTESIAN_RELATION.text) return forcesNonEmptyAB(h.relations) ? "nunca" : "depende";
+  const r = parseSetRelation(option);
+  if (!r.ok) throw new Error(`relación ilegible: ${option}`);
+  const v = checkRelation(r.relations, h.relations).verdict;
+  if (v === null) throw new Error(`supuestos contradictorios: ${hypotheses}`);
+  return v;
+}
+
+/**
+ * Por qué una afirmación es siempre cierta, siempre falsa o depende, en una o dos frases, con un
+ * diagrama concreto (las regiones que tienen elementos) cuando no es siempre cierta.
+ */
+export function relationOptionExplanation(option: string, hypotheses: string): string {
+  if (option === CARTESIAN_RELATION.text) return CARTESIAN_RELATION.explanation;
+  const h = parseSetHypotheses(hypotheses);
+  const r = parseSetRelation(option);
+  if (!h.ok || !r.ok) throw new Error(`ilegible: ${hypotheses} / ${option}`);
+  const c = checkRelation(r.relations, h.relations);
+  const why = (w: number) => {
+    const bad = r.relations.find((x) => !relationHolds(x, c.vars, w)) ?? r.relations[0]!;
+    return relationReason(bad, c.vars, w);
+  };
+  if (c.verdict === "siempre") return "Siempre cierta: se cumple en todos los diagramas que cumplen los supuestos.";
+  if (c.verdict === "nunca") {
+    return `Siempre falsa: no se cumple en ningún diagrama con los supuestos. Por ejemplo, con elementos solo en ${worldText(c.vars, c.counterexample!)}, falla porque ${why(c.counterexample!)}.`;
+  }
+  return `Depende: con elementos solo en ${worldText(c.vars, c.example!)} se cumple; con elementos solo en ${worldText(c.vars, c.counterexample!)}, no, porque ${why(c.counterexample!)}.`;
+}
+
+/** Índice de la opción correcta (o -1 si no hay exactamente una). */
+export function relationsAnswer(inst: SetsRelationsInstance): number {
+  const want: RelationVerdict = inst.ask === "cierta" ? "siempre" : "nunca";
+  const hits = inst.options.flatMap((o, i) => (relationOptionVerdict(o, inst.hypotheses) === want ? [i] : []));
+  return hits.length === 1 ? hits[0]! : -1;
+}
+
+const RELATION_HYPOTHESES: Record<ExerciseLevel, string[]> = {
+  básico: ["A ⊆ B", "B ⊆ A", "A ∩ B = ∅"],
+  medio: ["∅ ≠ A ⊆ B", "A ⊂ B", "∅ ≠ B ⊆ A", "A ∩ B = ∅, A ≠ ∅", "B ⊂ A"],
+  avanzado: ["A ⊆ B, B ∩ C = ∅", "A ⊆ B, B ⊆ C", "A ∩ B ⊆ C", "A ∪ B ⊆ C", "C ⊆ A, A ∩ B = ∅", "A ⊆ B ∩ C"],
+};
+
+const RELATION_OPS: Record<ExerciseLevel, SetRelationOp[]> = {
+  // Sin ≠ no hay nada siempre falso: con todo vacío se cumplen todas las ⊆ y las =.
+  básico: ["subseteq", "subseteq", "eq", "neq"],
+  medio: ["subseteq", "subseteq", "eq", "neq"],
+  avanzado: ["subseteq", "subseteq", "eq", "neq", "subset"],
+};
+
+/** Una relación al azar entre dos expresiones (sin lados iguales ni expresiones pobres). */
+function randomRelation(rng: Rng, level: ExerciseLevel): SetRelation {
+  const vars: SetName[] = level === "avanzado" ? ["A", "B", "C"] : ["A", "B"];
+  const allowed: Op[] = level === "básico" ? ["union", "inter", "diff"] : ["union", "inter", "diff", "sym"];
+  const side = (): SetExpr => {
+    if (rng.chance(0.12)) return sempty;
+    const ops = level === "avanzado" ? rng.int(0, 2) : rng.int(0, 1);
+    return randomSetExpr(rng, vars, ops, allowed, level !== "básico");
+  };
+  return { op: rng.pick(RELATION_OPS[level]), left: side(), right: side() };
+}
+
+/**
+ * ¿Tiene la expresión una parte que se simplifica sola? Una operación que da ∅, U o uno de sus
+ * operandos (Bᶜ ∖ B = Bᶜ, A Δ Aᶜ = U, A ∩ (A ∪ B) = A): el enunciado quedaría pobre.
+ */
+export function setTrivialPart(e: SetExpr, vars: readonly SetName[]): boolean {
+  if (e.k === "set" || e.k === "empty" || e.k === "universe") return false;
+  if (e.k === "comp") return setTrivialPart(e.a, vars);
+  const kids = "args" in e ? e.args : [e.a, e.b];
+  if (kids.some((k) => setTrivialPart(k, vars))) return true;
+  const mine = setRegions(e, vars).join();
+  const all = regionCount(vars.length);
+  if (mine === Array(all).fill(false).join() || mine === Array(all).fill(true).join()) return true;
+  return kids.some((k) => setRegions(k, vars).join() === mine);
+}
+
+function relationOk(r: SetRelation, vars: readonly SetName[]): boolean {
+  if (setKey(r.left) === setKey(r.right)) return false;
+  if ([r.left, r.right].some((x) => setRedundant(x) || setTrivialPart(x, vars))) return false;
+  // ∅ a la izquierda solo en ∅ ≠ X; a la derecha, nada de X ⊊ ∅.
+  if (r.left.k === "empty" && r.op !== "neq") return false;
+  if (r.right.k === "empty" && (r.op === "subset" || r.op === "supset")) return false;
+  return true;
+}
+
+export const SETS_RELATIONS: ExerciseType<SetsRelationsInstance> = {
+  id: "conjuntos-relaciones",
+  topic: "conjuntos",
+  title: "Relaciones entre conjuntos",
+  description: "Con unos supuestos (como ∅ ≠ A ⊆ B), elige la afirmación que es siempre cierta o la que es siempre falsa.",
+  levels: ["básico", "medio", "avanzado"],
+  generate(seed, level) {
+    const rng = rngFor("conjuntos-relaciones", seed);
+    return generateUntil(
+      rng,
+      (r) => {
+        const hypotheses = r.pick(RELATION_HYPOTHESES[level]);
+        const h = parseSetHypotheses(hypotheses);
+        if (!h.ok) throw new Error(`supuestos ilegibles: ${hypotheses}`);
+        const ask: SetsRelationsInstance["ask"] = r.chance(0.5) ? "cierta" : "falsa";
+        const want: RelationVerdict = ask === "cierta" ? "siempre" : "nunca";
+        const other: RelationVerdict = ask === "cierta" ? "nunca" : "siempre";
+        const right: string[] = [];
+        const wrong: Array<{ text: string; verdict: RelationVerdict }> = [];
+        // El producto cartesiano, como distractor o como respuesta, cuando los supuestos dicen que A y B no son vacíos.
+        if (level !== "básico" && forcesNonEmptyAB(h.relations) && r.chance(0.35)) {
+          if (want === "nunca") right.push(CARTESIAN_RELATION.text);
+          else wrong.push({ text: CARTESIAN_RELATION.text, verdict: "nunca" });
+        }
+        for (let k = 0; k < 300 && (right.length < 1 || wrong.length < 3); k++) {
+          const rel = randomRelation(r, level);
+          if (!relationOk(rel, level === "avanzado" ? ["A", "B", "C"] : ["A", "B"])) continue;
+          const text = relationToPlain(rel);
+          if (text.length > 40 || right.includes(text) || wrong.some((w) => w.text === text)) continue;
+          // Nada de repetir un supuesto como opción.
+          if (h.relations.some((x) => relationToPlain(x) === text)) continue;
+          const v = checkRelation([rel], h.relations).verdict;
+          if (v === null) return null;
+          if (v === want) {
+            // La correcta tiene que depender de los supuestos: sin ellos, no sería siempre cierta (o falsa).
+            if (right.length < 1 && checkRelation([rel]).verdict === "depende") right.push(text);
+          } else if (wrong.length < 3) {
+            // Al menos un «depende» entre los distractores, y no más de uno del veredicto contrario.
+            const opposite = wrong.filter((w) => w.verdict === other).length;
+            if (v === other && opposite >= 1) continue;
+            if (v === other || wrong.length < 2 || wrong.some((w) => w.verdict === "depende")) wrong.push({ text, verdict: v });
+          }
+        }
+        if (right.length !== 1 || wrong.length !== 3) return null;
+        const options = r.shuffle([right[0]!, ...wrong.map((w) => w.text)]);
+        return { hypotheses, ask, options };
+      },
+      (inst) => relationsAnswer(inst) >= 0 && inst.options.some((o) => relationOptionVerdict(o, inst.hypotheses) === "depende"),
+    );
+  },
+};
+
+export const SET_EXERCISES = [SETS_VENN, SETS_EQUAL, SETS_PROOF, SETS_RELATIONS, SETS_CARDINAL, SETS_PARTS] as const;
