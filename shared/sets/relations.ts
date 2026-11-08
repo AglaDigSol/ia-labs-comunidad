@@ -192,12 +192,18 @@ function gaps(r: SetRelation, vars: readonly SetName[]) {
   return { onlyLeft, onlyRight };
 }
 
-/** ¿Se cumple la relación en este mundo? */
-export function relationHolds(r: SetRelation, vars: readonly SetName[], w: VennWorld): boolean {
+/** La relación como dos máscaras de regiones (las de X que no están en Y, y al revés): se evalúa rápido. */
+type Compiled = { op: SetRelationOp; left: number; right: number };
+const compile = (r: SetRelation, vars: readonly SetName[]): Compiled => {
   const { onlyLeft, onlyRight } = gaps(r, vars);
-  const sub = onlyLeft.every((x) => !worldHas(w, x));
-  const sup = onlyRight.every((x) => !worldHas(w, x));
-  switch (r.op) {
+  const mask = (rs: number[]) => rs.reduce((m, x) => m | (1 << x), 0);
+  return { op: r.op, left: mask(onlyLeft), right: mask(onlyRight) };
+};
+
+function holds(c: Compiled, w: VennWorld): boolean {
+  const sub = (w & c.left) === 0;
+  const sup = (w & c.right) === 0;
+  switch (c.op) {
     case "subseteq":
       return sub;
     case "supseteq":
@@ -215,11 +221,15 @@ export function relationHolds(r: SetRelation, vars: readonly SetName[], w: VennW
   }
 }
 
+/** ¿Se cumple la relación en este mundo? */
+export const relationHolds = (r: SetRelation, vars: readonly SetName[], w: VennWorld): boolean => holds(compile(r, vars), w);
+
 /** Mundos que cumplen todos los supuestos. */
 export function validWorlds(hypotheses: readonly SetRelation[], vars: readonly SetName[]): VennWorld[] {
   const total = 1 << regionCount(vars.length);
+  const hs = hypotheses.map((h) => compile(h, vars));
   const out: VennWorld[] = [];
-  for (let w = 0; w < total; w++) if (hypotheses.every((h) => relationHolds(h, vars, w))) out.push(w);
+  for (let w = 0; w < total; w++) if (hs.every((h) => holds(h, w))) out.push(w);
   return out;
 }
 
@@ -275,14 +285,18 @@ const simplest = (ws: readonly VennWorld[]): VennWorld | null =>
 export function checkRelation(relations: readonly SetRelation[], hypotheses: readonly SetRelation[] = []): RelationCheck {
   const vars = relationVars([...relations, ...hypotheses]);
   const worlds = validWorlds(hypotheses, vars);
-  const yes = worlds.filter((w) => relations.every((r) => relationHolds(r, vars, w)));
-  const no = worlds.filter((w) => !relations.every((r) => relationHolds(r, vars, w)));
+  const rs = relations.map((r) => compile(r, vars));
+  const yes = worlds.filter((w) => rs.every((r) => holds(r, w)));
+  const no = worlds.filter((w) => !rs.every((r) => holds(r, w)));
   const verdict: RelationVerdict | null = worlds.length === 0 ? null : no.length === 0 ? "siempre" : yes.length === 0 ? "nunca" : "depende";
   return { vars, verdict, counterexample: simplest(no), example: simplest(yes) };
 }
 
+/** Orden de lectura de las regiones (de dentro hacia fuera), como en el diagrama. */
+export const READING_ORDER: Record<2 | 3, readonly Region[]> = { 2: [3, 1, 2, 0], 3: [7, 3, 5, 6, 1, 2, 4, 0] };
+
 /** Regiones con elementos de un mundo, en texto: «A ∩ Bᶜ; Aᶜ ∩ B» o «ninguna». */
-export function worldText(vars: readonly SetName[], w: VennWorld, order: readonly Region[]): string {
+export function worldText(vars: readonly SetName[], w: VennWorld, order: readonly Region[] = READING_ORDER[vars.length as 2 | 3]): string {
   const list = order.filter((r) => worldHas(w, r)).map((r) => regionLabel(vars, r));
   return list.length === 0 ? "ninguna (todos los conjuntos vacíos)" : list.join("; ");
 }
