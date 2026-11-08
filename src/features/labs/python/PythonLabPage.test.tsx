@@ -366,6 +366,44 @@ describe("PythonLabPage: salida", () => {
     expect(screen.getByText("Python se ha reiniciado; las variables anteriores se han perdido.")).toBeTruthy();
   });
 
+  it("muestra el valor de la última expresión como Jupyter: una tabla de pandas en texto o el repr", async () => {
+    await renderReady();
+    let run = await startRun();
+    expect(client().run.mock.calls.at(-1)![4]).toEqual({ display: true });
+    const tabla = { tipo: "tabla", serie: false, forma: [2, 1], columnas: ["<b>x</b>"], indice: ["0", "1"], filas: [["1"], ["<img src=x>"]], corteFilas: null, corteCols: null };
+    await act(async () => run.resolve({ kind: "done", figures: [], ms: 5, files: [], display: JSON.stringify(tabla) }));
+    const log = screen.getByRole("log");
+    const table = within(log).getByRole("table");
+    expect(within(table).getByText("DataFrame: 2 filas × 1 columna")).toBeTruthy();
+    // Texto, nunca HTML.
+    expect(within(table).getByText("<b>x</b>")).toBeTruthy();
+    expect(within(table).getByText("<img src=x>")).toBeTruthy();
+    expect(log.querySelector("img, b")).toBeNull();
+    run = await startRun();
+    await act(async () => run.resolve({ kind: "done", figures: [], ms: 5, files: [], display: JSON.stringify({ tipo: "texto", texto: "array([1, 2, 3])" }) }));
+    expect(within(screen.getByRole("log")).getByLabelText("Valor de la última expresión").textContent).toBe("array([1, 2, 3])");
+    // Un valor que no se lee no se muestra.
+    run = await startRun();
+    await act(async () => run.resolve({ kind: "done", figures: [], ms: 5, files: [], display: "{roto" }));
+    expect(within(screen.getByRole("log")).queryByLabelText("Valor de la última expresión")).toBeNull();
+  });
+
+  it("los avisos de stderr no van en rojo: la caché de fuentes es un aviso neutro y un FutureWarning, un aviso", async () => {
+    await renderReady();
+    const run = await startRun();
+    await act(async () => {
+      run.onEvent({ type: "stderr", text: "Matplotlib is building the font cache; this may take a moment.\n" });
+      run.onEvent({ type: "stderr", text: "<exec>:3: FutureWarning: Series.__getitem__ treating keys as positions is deprecated\n" });
+      run.resolve({ kind: "done", figures: [], ms: 5, files: [] });
+    });
+    const log = screen.getByRole("log");
+    expect(within(log).getByText("matplotlib está preparando su caché de fuentes: solo pasa la primera vez y tarda unos segundos.").className).toContain("text-muted");
+    expect(within(log).queryByText(/building the font cache/)).toBeNull();
+    const warn = within(log).getByLabelText("Aviso de Python (no es un error)");
+    expect(warn.textContent).toMatch(/FutureWarning/);
+    expect(warn.className).not.toContain("text-crit");
+  });
+
   it("«Limpiar salida» vacía la salida", async () => {
     await renderReady();
     const run = await startRun();

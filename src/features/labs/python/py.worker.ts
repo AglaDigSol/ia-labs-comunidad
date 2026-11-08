@@ -8,6 +8,7 @@ import { loadPyodide, type PyodideInterface } from "pyodide";
 import type { PyDict } from "pyodide/ffi";
 import type { FileInfo } from "./files.ts";
 import { clearTree, listTree, readTree, removeTree, writeTree, type TreeFS } from "./fs-tree.ts";
+import { DISPLAY_PY } from "../pyexam/kernel.ts";
 import { MAGICS_PY } from "./magics.ts";
 import { extraClosure, extraForImport, type ExtraWheel } from "./packages.ts";
 import { INIT_ID, parseErrorLine, type WorkerIn, type WorkerOut } from "./py-client.ts";
@@ -21,15 +22,39 @@ const post = (m: WorkerOut, transfer: Transferable[] = []) => ctx.postMessage(m,
 /** Carpeta de trabajo: la HOME de Pyodide. Ahí van los archivos subidos y los del anfitrión (con sus carpetas). */
 const WORKDIR = "/home/pyodide";
 
-// Backend Agg y plt.show sin efecto, para que el código que llama a show() funcione sin pantalla.
+// Backend Agg y plt.show sin efecto, para que el código que llama a show() funcione sin pantalla. El
+// primer import de pyplot crea la caché de fuentes y lo anuncia por stderr («Matplotlib is building
+// the font cache…»): no es un error, así que ese aviso se calla aquí (la página dice antes que se
+// está preparando matplotlib).
 const SETUP_MPL = `
-import os
+import os, io, contextlib, logging
 os.environ["MPLBACKEND"] = "Agg"
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+_fm_log = logging.getLogger("matplotlib.font_manager")
+_fm_level = _fm_log.level
+_fm_log.setLevel(logging.ERROR)
+try:
+    with contextlib.redirect_stderr(io.StringIO()):
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+finally:
+    _fm_log.setLevel(_fm_level)
 plt.show = lambda *a, **k: None
+del _fm_log, _fm_level
 `;
+
+// Valor de la última expresión, como en Jupyter (pestaña Python): el código corre con
+// eval_code_async, igual que con runPythonAsync, y el valor vuelve en JSON con el formato del cuaderno
+// (tabla de pandas en texto o repr). El código del usuario sigue llamándose «<exec>» en las trazas.
+const DISPLAY_MODULE = `${DISPLAY_PY}
+async def ejecutar(src, ns):
+    from pyodide.code import eval_code_async
+    v = await eval_code_async(src, ns, filename="<exec>")
+    if v is None:
+        return None
+    return _json.dumps(_mostrar(v))
+`;
+let displayReady = false;
 
 // Guarda cada figura abierta como PNG en base64 y las cierra.
 const FLUSH_FIGS = `
@@ -151,7 +176,7 @@ function listFiles(p: PyodideInterface | null): FileInfo[] {
   return p ? listTree(treeFS(p), WORKDIR) : [];
 }
 
-async function run(id: number, code: string, stdin: string[], capture: boolean, imports: string): Promise<void> {
+async function run(id: number, code: string, stdin: string[], capture: boolean, imports: string, display: boolean): Promise<void> {
   const t0 = performance.now();
   const p = py;
   if (!p) {
@@ -169,7 +194,9 @@ async function run(id: number, code: string, stdin: string[], capture: boolean, 
     for (const name of lockPkgs) post({ type: "package", name, phase: "done" });
     await installExtras(p, extras);
     if (!mplReady && "matplotlib" in p.loadedPackages) {
+      post({ type: "package", name: "matplotlib (fuentes)", phase: "start" });
       await p.runPythonAsync(SETUP_MPL); // el primer import de pyplot crea la caché de fuentes
+      post({ type: "package", name: "matplotlib (fuentes)", phase: "done" });
       mplReady = true;
     }
     const globals = p.globals.get("dict")() as PyDict; // espacio de nombres nuevo en cada ejecución
@@ -177,15 +204,34 @@ async function run(id: number, code: string, stdin: string[], capture: boolean, 
     globals.set("__name__", "__main__");
     (globals as unknown as { update(d: unknown): void }).update(magicsExports);
     p.FS.chdir(WORKDIR);
-    const result: unknown = await p.runPythonAsync(code, { globals });
-    // Con capture, una cadena final vuelve tal cual (los str llegan ya convertidos a JS).
-    const value = capture && typeof result === "string" ? result : undefined;
-    if (capture && result && typeof (result as { destroy?: unknown }).destroy === "function") (result as { destroy(): void }).destroy();
+    let shown: string | undefined;
+    let value: string | undefined;
+    if (display) {
+      if (!displayReady) {
+        p.runPython(`import sys, types\n_m = types.ModuleType("_labs_display")\nexec(compile(${JSON.stringify(DISPLAY_MODULE)}, "<labs-display>", "exec"), _m.__dict__)\nsys.modules["_labs_display"] = _m\ndel _m`);
+        displayReady = true;
+      }
+      const helper = p.globals.get("dict")() as PyDict;
+      try {
+        helper.set("__labs_src", code);
+        helper.set("__labs_ns", globals);
+        const r: unknown = await p.runPythonAsync("import _labs_display\nawait _labs_display.ejecutar(__labs_src, __labs_ns)", { globals: helper, filename: "<labs>" });
+        if (typeof r === "string") shown = r;
+      } finally {
+        helper.destroy();
+      }
+    } else {
+      const result: unknown = await p.runPythonAsync(code, { globals });
+      // Con capture, una cadena final vuelve tal cual (los str llegan ya convertidos a JS).
+      value = capture && typeof result === "string" ? result : undefined;
+      if (capture && result && typeof (result as { destroy?: unknown }).destroy === "function") (result as { destroy(): void }).destroy();
+    }
     const figsProxy = await p.runPythonAsync(FLUSH_FIGS);
     const figures = figsProxy.toJs() as string[];
     figsProxy.destroy();
     const done: WorkerOut = { type: "done", id, figures, ms: Math.round(performance.now() - t0), files: listFiles(p) };
     if (value !== undefined) done.value = value;
+    if (shown !== undefined) done.display = shown;
     post(done);
   } catch (e) {
     const message = cleanTraceback(errorMessage(e));
@@ -254,7 +300,7 @@ ctx.onmessage = (e: MessageEvent<WorkerIn>) => {
       case "init":
         return init(msg.indexURL, msg.interrupt);
       case "run":
-        return run(msg.id, msg.code, msg.stdin, msg.capture === true, msg.imports ?? msg.code);
+        return run(msg.id, msg.code, msg.stdin, msg.capture === true, msg.imports ?? msg.code, msg.display === true);
       case "fs-write":
         return writeFile(msg.path, msg.data);
       case "fs-read":

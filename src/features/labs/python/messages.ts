@@ -74,3 +74,15 @@ export function hintsFor(input: { error?: string | null; output?: string }): str
   if (/EOFError: EOF when reading a line/.test(error)) hints.push(COPY_STDIN_EMPTY);
   return hints;
 }
+
+export const COPY_FONT_CACHE = "matplotlib está preparando su caché de fuentes: solo pasa la primera vez y tarda unos segundos.";
+
+/**
+ * Qué es un trozo de stderr: el aviso de la caché de fuentes de matplotlib (un aviso neutro), un
+ * aviso de Python (FutureWarning, UserWarning…: no es un error, el programa sigue) o stderr de verdad.
+ */
+export function classifyStderr(text: string): "font-cache" | "warning" | "stderr" {
+  if (/Matplotlib is building the font cache/i.test(text)) return "font-cache";
+  if (/^\S.*:\d+: [A-Za-z]*Warning: /m.test(text) || /^[A-Za-z]*Warning: /m.test(text)) return "warning";
+  return "stderr";
+}

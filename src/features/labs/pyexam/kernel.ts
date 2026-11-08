@@ -15,8 +15,12 @@ export const KERNEL_MAX_COLS = 20;
 /** Límite de una celda (la primera vez que se importa pandas o seaborn se descargan). */
 export const CELL_TIMEOUT_MS = 120_000;
 
-export const KERNEL_PY = String.raw`
-import ast as _ast, json as _json, linecache as _linecache, sys as _sys, traceback as _tb, types as _types
+/**
+ * Cómo se muestra el valor de la última expresión (lo comparten el cuaderno y la pestaña Python):
+ * una tabla de pandas como datos en texto (nunca HTML) y cualquier otro valor con su repr.
+ */
+export const DISPLAY_PY = String.raw`
+import json as _json, sys as _sys
 
 def _celda_txt(x):
     if x is None:
@@ -64,6 +68,11 @@ def _mostrar(v):
     except BaseException as e:
         t = "<no se puede mostrar: " + type(e).__name__ + ">"
     return {"tipo": "texto", "texto": t if len(t) <= 20000 else t[:19999] + "…"}
+`;
+
+export const KERNEL_PY = String.raw`
+${DISPLAY_PY}
+import ast as _ast, linecache as _linecache, traceback as _tb, types as _types
 
 def _traza(e):
     tb = e.__traceback__
@@ -169,6 +178,16 @@ function parseValue(x: unknown): KernelValue | null {
   if (!forma) return null;
   const cut = (v: unknown) => (Number.isInteger(v) && (v as number) > 0 ? (v as number) : null);
   return { tipo: "tabla", serie: x.serie === true, forma, columnas, indice, filas, corteFilas: cut(x.corteFilas), corteCols: cut(x.corteCols) };
+}
+
+/** Lee el valor que mostró `_mostrar` (en JSON); null si no tiene la forma esperada. */
+export function parseKernelValue(raw: string | undefined): KernelValue | null {
+  if (typeof raw !== "string") return null;
+  try {
+    return parseValue(JSON.parse(raw));
+  } catch {
+    return null;
+  }
 }
 
 /** Lee la respuesta del kernel; null si no tiene la forma esperada. */

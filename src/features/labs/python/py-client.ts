@@ -11,7 +11,7 @@ import type { FileInfo } from "./files.ts";
 /** principal -> worker */
 export type WorkerIn =
   | { type: "init"; indexURL: string; interrupt?: SharedArrayBuffer }
-  | { type: "run"; id: number; code: string; stdin: string[]; capture?: boolean; imports?: string }
+  | { type: "run"; id: number; code: string; stdin: string[]; capture?: boolean; imports?: string; display?: boolean }
   | { type: "fs-write"; path: string; data: ArrayBuffer }
   | { type: "fs-read"; id: number; path: string }
   | { type: "fs-delete"; path: string }
@@ -22,14 +22,14 @@ export type WorkerOut =
   | { type: "ready"; python: string; numpy?: string }
   | { type: "stdout" | "stderr"; text: string }
   | { type: "package"; name: string; phase: "start" | "done" }
-  | { type: "done"; id: number; figures: string[]; ms: number; files: FileInfo[]; value?: string }
+  | { type: "done"; id: number; figures: string[]; ms: number; files: FileInfo[]; value?: string; display?: string }
   | { type: "error"; id: number; message: string; line: number | null; ms: number; files?: FileInfo[] }
   | { type: "fs-data"; id: number; path: string; data: ArrayBuffer | null };
 
 export type PyEvent = Extract<WorkerOut, { type: "ready" | "stdout" | "stderr" | "package" }>;
 
 export type RunOutcome =
-  | { kind: "done"; figures: string[]; ms: number; files: FileInfo[]; value?: string }
+  | { kind: "done"; figures: string[]; ms: number; files: FileInfo[]; value?: string; display?: string }
   | { kind: "error"; message: string; line: number | null; ms: number; files: FileInfo[] | null }
   | { kind: "stopped"; restarted: boolean }
   | { kind: "timeout"; seconds: number };
@@ -38,9 +38,11 @@ export type RunOutcome =
  * Opciones de una ejecución. `capture`: el valor de la última expresión, si es un str, vuelve en
  * `value` (lo usan los ejercicios y el paso a paso, que devuelven su resultado como JSON). `imports`:
  * el código del que se sacan los paquetes que cargar, cuando el que se ejecuta lo lleva dentro de
- * una cadena (por defecto, el propio código).
+ * una cadena (por defecto, el propio código). `display`: el valor de la última expresión, sea cual sea,
+ * vuelve en `display` como lo muestra el cuaderno (JSON de pyexam/kernel.ts: tabla de pandas en texto o
+ * repr), como en Jupyter; lo usa la pestaña Python.
  */
-export type RunOptions = { capture?: boolean; imports?: string };
+export type RunOptions = { capture?: boolean; imports?: string; display?: boolean };
 
 export const STOP_ESCALATE_MS = 1500;
 /**
@@ -135,6 +137,7 @@ export class PyClient {
       this.pending = p;
       const msg: WorkerIn = { type: "run", id, code, stdin };
       if (opts.capture) msg.capture = true;
+      if (opts.display) msg.display = true;
       if (opts.imports !== undefined) msg.imports = opts.imports;
       worker.postMessage(msg);
     });
@@ -295,6 +298,7 @@ export class PyClient {
           const figures = msg.figures.filter((f) => typeof f === "string" && BASE64.test(f));
           const done: RunOutcome = { kind: "done", figures, ms: msg.ms, files: validFiles(msg.files) };
           if (typeof msg.value === "string") done.value = msg.value;
+          if (typeof msg.display === "string") done.display = msg.display;
           this.finish(p, done);
         }
         return;

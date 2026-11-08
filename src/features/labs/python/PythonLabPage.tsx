@@ -53,7 +53,9 @@ import { readLabItem, writeLabItem } from "../labs-storage.ts";
 import { consumeFreshDraft, getDraft, listDrafts, updateDraftCode, type Draft, type DraftOrigin } from "./drafts.ts";
 import { baseName, checkHostFile, checkUpload, fmtBytes, mimeFor, UPLOAD_ACCEPT, type FileInfo } from "./files.ts";
 import { transformMagics } from "./magics.ts";
-import { hintsFor } from "./messages.ts";
+import { classifyStderr, COPY_FONT_CACHE, hintsFor } from "./messages.ts";
+import { parseKernelValue, type KernelValue } from "../pyexam/kernel.ts";
+import { TableOutput } from "../pyexam/TableOutput.tsx";
 import { closureBytes, EXTRA_WHEELS } from "./packages.ts";
 import { PYODIDE_CORE, PYODIDE_PACKAGES } from "./pyodide-manifest.ts";
 import { createPyWorker, PyClient, type PyEvent, type RunOutcome } from "./py-client.ts";
@@ -145,7 +147,8 @@ type Phase =
   | { k: "error" };
 
 type OutItem =
-  | { k: "stdout" | "stderr" | "info"; text: string }
+  | { k: "stdout" | "stderr" | "info" | "warn"; text: string }
+  | { k: "value"; value: KernelValue }
   | { k: "hint"; text: string }
   | { k: "error"; line: number | null; text: string }
   | { k: "crit"; text: string }
@@ -416,10 +419,10 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
   }
 
   function append(item: OutItem) {
-    if (item.k === "stdout" || item.k === "stderr") outputRef.current += item.text;
+    if (item.k === "stdout" || item.k === "stderr" || item.k === "warn") outputRef.current += item.text;
     setOut((prev) => {
       const last = prev[prev.length - 1];
-      if (last && (item.k === "stdout" || item.k === "stderr") && last.k === item.k) {
+      if (last && (item.k === "stdout" || item.k === "stderr" || item.k === "warn") && last.k === item.k) {
         return [...prev.slice(0, -1), { k: item.k, text: last.text + item.text }];
       }
       return [...prev, item];
@@ -427,7 +430,12 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
   }
 
   function onRunEvent(e: PyEvent) {
-    if (e.type === "stdout" || e.type === "stderr") append({ k: e.type, text: e.text });
+    if (e.type === "stdout") append({ k: "stdout", text: e.text });
+    else if (e.type === "stderr") {
+      // Los avisos (caché de fuentes de matplotlib, FutureWarning…) no son errores: no van en rojo.
+      const kind = classifyStderr(e.text);
+      append(kind === "font-cache" ? { k: "info", text: COPY_FONT_CACHE } : { k: kind === "warning" ? "warn" : "stderr", text: e.text });
+    }
     else if (e.type === "package") {
       const bytes = packageBytes(e.name);
       if (e.phase === "start") {
@@ -443,13 +451,17 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
 
   function showOutcome(o: RunOutcome) {
     switch (o.kind) {
-      case "done":
+      case "done": {
+        // El valor de la última expresión, como en Jupyter (tabla de pandas en texto o repr).
+        const shown = parseKernelValue(o.display);
+        if (shown) append({ k: "value", value: shown });
         o.figures.forEach((b64, i) => append({ k: "fig", b64, n: i + 1 }));
         for (const text of hintsFor({ output: outputRef.current })) append({ k: "hint", text });
         setFiles(o.files);
         setLastMs(o.ms);
         setAnnounce(`Ejecución terminada en ${seconds(o.ms)} s`);
         return;
+      }
       case "error":
         for (const text of hintsFor({ error: o.message, output: outputRef.current })) append({ k: "hint", text });
         append({ k: "error", line: o.line, text: o.message });
@@ -491,7 +503,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
     setNow(started);
     setRunningSince(started);
     try {
-      const outcome = await client.run(magics.code, limit * 1000, onRunEvent, stdinLines(stdin));
+      const outcome = await client.run(magics.code, limit * 1000, onRunEvent, stdinLines(stdin), { display: true });
       if (aliveRef.current) showOutcome(outcome);
     } catch (e) {
       if (aliveRef.current) append({ k: "error", line: null, text: e instanceof Error ? e.message : String(e) });
@@ -955,7 +967,13 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
               aria-label="Salida"
               className="flex min-h-[240px] flex-col gap-2 overflow-auto rounded-lg border border-border bg-base p-3"
             >
-              <OutputBody phase={phase} out={out} onLoad={() => void loadPython()} onAbort={() => abortRef.current?.abort()} onRetry={retry} />
+              <OutputBody
+                phase={phase}
+                out={out}
+                onLoad={() => void loadPython()}
+                onAbort={() => abortRef.current?.abort()}
+                onRetry={retry}
+              />
             </div>
             <div className="sr-only" aria-live="polite" role="status">
               {announce && <span className="sr-only">{announce}</span>}
@@ -1161,6 +1179,20 @@ function OutputBody({
             return (
               <pre key={i} className="mono whitespace-pre-wrap break-words text-[14px] text-crit">
                 {item.text.replace(/\n$/, "")}
+              </pre>
+            );
+          case "warn":
+            return (
+              <pre key={i} aria-label="Aviso de Python (no es un error)" className="mono whitespace-pre-wrap break-words rounded-md bg-warn-bg px-2 py-1 text-[14px] text-warn">
+                {item.text.replace(/\n$/, "")}
+              </pre>
+            );
+          case "value":
+            return item.value.tipo === "tabla" ? (
+              <TableOutput key={i} value={item.value} />
+            ) : (
+              <pre key={i} aria-label="Valor de la última expresión" className="mono whitespace-pre-wrap break-words border-l-2 border-accent pl-2 text-[14px] text-fg">
+                {item.value.texto}
               </pre>
             );
           case "info":
