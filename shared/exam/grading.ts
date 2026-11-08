@@ -1,7 +1,9 @@
 // Nota del simulacro: cada pregunta vale 10/N. Sin penalización (lo que se ha visto en el examen de
 // 02MIAR), un fallo vale 0, igual que una pregunta en blanco. Con «Penalización por fallo», un fallo
 // resta un tercio del valor de la pregunta (lo justo para que, con cuatro opciones, contestar al azar
-// valga 0 de media: 1/4·1 − 3/4·1/3 = 0); en blanco sigue valiendo 0. La nota nunca baja de 0.
+// valga 0 de media: 1/4·1 − 3/4·1/3 = 0); en blanco sigue valiendo 0. Solo penalizan las de opción
+// múltiple: en una numérica no se acierta al azar, así que un fallo vale 0, como en blanco. La nota
+// nunca baja de 0.
 import { EXAM_SECTIONS, examSectionLabel, type ExamQuestion, type ExamSectionId } from "./blueprint.ts";
 import { isAnswered } from "./types.ts";
 
@@ -43,8 +45,8 @@ export function scoreExam(questions: readonly ExamQuestion[], answers: ReadonlyA
     if (!isAnswered(q, a)) return "en-blanco";
     return q.grade(a) ? "bien" : "mal";
   });
-  const pointsOf = (o: QuestionOutcome) => (o === "bien" ? value : o === "mal" && penalty ? -value * WRONG_PENALTY : 0);
-  const raw = outcomes.reduce((s, o) => s + pointsOf(o), 0);
+  const pointsOf = (o: QuestionOutcome, q: ExamQuestion) => (o === "bien" ? value : o === "mal" && penalty && q.kind === "choice" ? -value * WRONG_PENALTY : 0);
+  const raw = outcomes.reduce((s, o, i) => s + pointsOf(o, questions[i]!), 0);
   const sections: SectionScore[] = EXAM_SECTIONS.flatMap((s) => {
     const idx = questions.map((q, i) => (q.section === s.id ? i : -1)).filter((i) => i >= 0);
     if (idx.length === 0) return [];
@@ -57,7 +59,7 @@ export function scoreExam(questions: readonly ExamQuestion[], answers: ReadonlyA
         correct: os.filter((o) => o === "bien").length,
         wrong: os.filter((o) => o === "mal").length,
         blank: os.filter((o) => o === "en-blanco").length,
-        points: os.reduce((acc, o) => acc + pointsOf(o), 0),
+        points: idx.reduce((acc, i) => acc + pointsOf(outcomes[i]!, questions[i]!), 0),
         max: idx.length * value,
       },
     ];

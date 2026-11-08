@@ -117,9 +117,21 @@ describe("scoreExam", () => {
   it("con penalización, un fallo resta un tercio de la pregunta; en blanco, nada; nunca baja de 0", () => {
     const answers = qs.map((q, i) => (i < 6 ? rightAnswer(q) : i < 9 ? wrongAnswer(q) : null));
     const s = scoreExam(qs, answers, true);
-    expect(s.score).toBeCloseTo(6 - 3 / 3);
+    // Solo las de opción múltiple restan: una numérica mal vale 0, como en blanco.
+    const choiceWrong = qs.filter((q, i) => i >= 6 && i < 9 && q.kind === "choice").length;
+    expect(s.score).toBeCloseTo(6 - choiceWrong / 3);
     expect(scoreExam(qs, qs.map(wrongAnswer), true).score).toBe(0);
-    expect(scoreText(s.score)).toBe("5,00");
+    expect(scoreText(s.score)).toBe(scoreText(6 - choiceWrong / 3));
+  });
+
+  it("con penalización, una numérica mal no resta (no se acierta al azar)", () => {
+    const numeric = qs.findIndex((q) => q.kind === "numeric");
+    const choice = qs.findIndex((q) => q.kind === "choice");
+    expect(numeric).toBeGreaterThanOrEqual(0);
+    const base = qs.map((q, i) => (i === numeric || i === choice ? null : rightAnswer(q)));
+    const blank = scoreExam(qs, base, true).score;
+    expect(scoreExam(qs, base.map((a, i) => (i === numeric ? wrongAnswer(qs[i]!) : a)), true).score).toBeCloseTo(blank);
+    expect(scoreExam(qs, base.map((a, i) => (i === choice ? wrongAnswer(qs[i]!) : a)), true).score).toBeCloseTo(blank - 1 / 3);
   });
 
   it("desglosa por bloques", () => {

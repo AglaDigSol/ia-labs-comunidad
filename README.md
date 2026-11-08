@@ -93,8 +93,8 @@ simulacro para practicar; no es el examen oficial ni lo sustituye**, y no contie
   15 minutos, a los 5 y en el último, y a 0 entrega solo. «Entregar» pide confirmación y lista las preguntas sin
   contestar.
 - **Nota.** Cada pregunta vale 10/N. Sin penalización por defecto (no se ha visto en el examen); con «Penalización por
-  fallo», un fallo resta un tercio del valor de la pregunta (contestar al azar entre cuatro opciones vale 0 de media)
-  y la nota nunca baja de 0.
+  fallo», un fallo de opción múltiple resta un tercio del valor de la pregunta (contestar al azar entre cuatro opciones
+  vale 0 de media; una numérica mal no resta) y la nota nunca baja de 0.
 - **Resultados.** Nota sobre 10, tiempo, desglose por bloques (barras con su texto) y, pregunta a pregunta, tu
   respuesta, la correcta y la solución razonada, con «Practicar este tipo», que abre el mismo ejercicio en el banco
   (`?t=&n=&s=`). «Repetir este simulacro» (misma semilla), «Nuevo simulacro» e «Imprimir».

@@ -282,7 +282,7 @@ function StartView({
         <Switch label="Penalización por fallo" checked={config.penalty} disabled={!!active} onCheckedChange={(v) => set({ penalty: v })} aria-describedby={`${id}-pen`} />
         <p id={`${id}-pen`} className="text-[14px] text-muted">
           {config.penalty
-            ? `Activada: cada respuesta incorrecta resta un tercio del valor de la pregunta (${scoreText((10 / Math.max(1, n)) * WRONG_PENALTY)} puntos); en blanco no resta. Así, contestar al azar entre cuatro opciones vale 0 de media. La nota nunca baja de 0.`
+            ? `Activada: cada respuesta incorrecta de opción múltiple resta un tercio del valor de la pregunta (${scoreText((10 / Math.max(1, n)) * WRONG_PENALTY)} puntos); en blanco no resta, ni una numérica mal (no se acierta al azar). Así, contestar al azar entre cuatro opciones vale 0 de media. La nota nunca baja de 0.`
             : "Desactivada, como en el examen de 2025-26: una respuesta incorrecta vale 0, igual que una en blanco."}
         </p>
       </div>
@@ -697,7 +697,7 @@ function ResultsView({
         <p>{`Bien: ${r.correct} · Mal: ${r.wrong} · En blanco: ${r.blank}`}</p>
         <p>{`Tiempo: ${durationText(used)} de ${minutesText(configMinutes(attempt.config))}.`}</p>
         <p className="text-[14px] text-muted">
-          {attempt.config.penalty ? "Con penalización: cada fallo resta un tercio del valor de la pregunta; en blanco no resta." : "Sin penalización por fallo."}
+          {attempt.config.penalty ? "Con penalización: cada fallo de opción múltiple resta un tercio del valor de la pregunta; en blanco o una numérica mal, no resta." : "Sin penalización por fallo."}
         </p>
       </div>
 
