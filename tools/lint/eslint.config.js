@@ -34,4 +34,8 @@ export default tseslint.config(
     files: ["public/**/*.js"],
     languageOptions: { sourceType: "script", globals: { window: "readonly", document: "readonly", localStorage: "readonly", matchMedia: "readonly" } },
   },
+  {
+    files: ["vite/**/*.mjs"],
+    languageOptions: { sourceType: "module", globals: { URL: "readonly" } },
+  },
 );

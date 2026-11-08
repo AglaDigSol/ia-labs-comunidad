@@ -4,14 +4,60 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.14)
+## [Próximamente] (0.15)
 
 - i18n completo: mover a `src/i18n/` los textos internos de los laboratorios, las flashcards, la calculadora y el
   calendario (hoy están en sus componentes) y añadir inglés.
 - Registro de plugins completo para módulos de terceros (hoy `src/config.ts` es un registro sencillo con
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
-- Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.14.0] - 2026-11-08
+
+Dos revisiones del conjunto, una con ojos de estudiante (móvil, iPad, teclado) y otra con ojos de profesor (lo que se
+corrige y cómo se explica).
+
+### Añadido
+
+- **Simbología**: notación de cálculo, combinatoria, probabilidad y álgebra lineal (sumatorio, productorio, integral,
+  límite, derivada, factorial, número combinatorio, esperanza, varianza, O grande, Θ, ≈, :=, |x|, ≤/≥, producto
+  escalar, norma, rango), con su lectura y su equivalente en Python/NumPy. La búsqueda encuentra los nombres de Python
+  (`np.sum`, `math.factorial`, `itertools.combinations`…), con o sin paréntesis.
+- **Laboratorios**: orientación en la primera visita (clave `labsIntro`); pestañas en otra fila en pantallas anchas y
+  barra con degradado y flechas en las estrechas.
+- **Ejercicios**: índice de temas, «Cambiar de tipo» vuelve al tema de donde se vino y «Practicar: <tipo>» como nombre
+  accesible.
+- **Python**: valor de la última expresión como en Jupyter (DataFrame y Series como texto, nunca HTML); avisos de stderr
+  (caché de fuentes de matplotlib, `FutureWarning`) como aviso neutro; aviso y arreglo «Cambiar por comillas rectas»
+  para “ ” y ‘ ’.
+- **Opción múltiple**: un fallo explica por qué la opción elegida no vale, sin decir cuál es la buena.
+- **Combinatoria**: el nivel avanzado de «Problema» siempre tiene varios pasos (complementarios, etapas, bloques), con
+  la solución paso a paso. Los problemas avanzados cambian para las semillas de antes.
+- **Formalizar**: una «v» suelta se lee como ∨.
+- **Conjuntos**: el diagrama de Venn recuerda la expresión y los supuestos (clave `sets`).
+- **Navegación**: «Saltar al contenido» y etiquetas en la barra inferior del móvil.
+- `ia-labs-comunidad/vite`: el plugin `cspSafeRadix()` para la CSP estricta de una app anfitriona.
+
+### Corregido
+
+- **CSP**: los diálogos y selectores de Radix ya no insertan `<style>` en línea (resuelve la limitación conocida).
+- **Complejidad**: «¿de qué orden es?» pide el orden exacto; una cota verdadera pero no ajustada da un aviso propio y
+  junto a «Ninguna» no hay cotas mayores.
+- **Conjuntos**: las relaciones se deciden con universo no vacío, y «solo fuera de A, B y C».
+- **Lógica**: → y ↔ encadenados siempre entre paréntesis al escribirlos; tabla paso a paso legible en el móvil.
+- **Combinatoria**: las pistas de «¿Qué modelo es?» ya no dan el nombre; un número de otro modelo se explica.
+- **Python**: lo que el enunciado pide redondear se comprueba; «Precio con IVA» sin medios céntimos exactos; «¿Qué
+  imprime?» nunca sale sin salida; `dividir(a, b)` explica el cociente con negativos; coma decimal en las comprobaciones
+  de figuras; el paso a paso y la salida se llevan a la vista.
+- **Simulacros**: la penalización solo resta en las de opción múltiple; en el de 01MIAR, las celdas sin contestar ya no
+  listan cada requisito como «no cumplida».
+- **Cálculo**: sin `1x` ni `−1x`; avisos de regla con su artículo; (x − 2)′ = 1 vale como derivadas elementales; ejemplo
+  de función en los campos, no «p → q».
+- **Álgebra**: «diagonalizable en ℝ» en las afirmaciones sobre matrices reales.
+- **Probabilidad**: subíndices en TeX en el árbol y hojas más legibles en el móvil; «De estos».
+- **Simbología**: buscar ≠ o ∉ ya no devuelve = o ∈.
+- **Respuestas numéricas**: teclado con signo menos y «/» en el iPad; sin «Atajos de teclado» en pantallas táctiles;
+  Notas sin autofoco y su fórmula en dos líneas.
 
 ## [0.13.0] - 2026-11-08
 
@@ -509,7 +555,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.13.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.14.0
 [0.13.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.13.0
 [0.12.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.12.0
 [0.11.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.11.0

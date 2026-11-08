@@ -382,8 +382,8 @@ Sobre la CSP:
 - `style-src-attr 'unsafe-inline'` es necesario porque KaTeX dibuja las fórmulas con atributos `style` y React aplica
   props de estilo. No permite elementos `<style>` ni scripts.
 - Sin `<style>` en línea: Radix insertaría uno para bloquear el scroll del fondo con un diálogo abierto
-  (`react-remove-scroll`) y otro para ocultar la barra de la lista de un selector. `scripts/csp-safe-radix.ts` (un
-  plugin de Vite) redirige `react-remove-scroll` a `src/lib/remove-scroll.tsx`, que bloquea el scroll con una clase en
+  (`react-remove-scroll`) y otro para ocultar la barra de la lista de un selector. `vite/csp-safe-radix.mjs` (un
+  plugin de Vite, exportado como `ia-labs-comunidad/vite`) redirige `react-remove-scroll` a `src/lib/remove-scroll.tsx`, que bloquea el scroll con una clase en
   `<html>` definida en `tokens.css`, y quita el `<style>` del selector (la regla también está en `tokens.css`). Si una
   versión nueva de Radix cambia ese código, el build falla en lugar de dejar errores de CSP en la consola.
 - No se usa COEP (es opcional con la pestaña Python: ver [Cabeceras](#cabeceras) de Python).
@@ -455,7 +455,7 @@ el `tsc` de la app anfitriona.
 
 ```json
 "dependencies": {
-  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.13.0"
+  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.14.0"
 }
 ```
 
@@ -470,6 +470,17 @@ instala la del paquete aparte y la pestaña usa la suya.
 **Requisitos de compilación.** TypeScript con `"moduleResolution": "bundler"`, `"jsx": "react-jsx"` y
 `"allowImportingTsExtensions": true` (los imports llevan la extensión `.ts`/`.tsx`), y Vite con
 `@vitejs/plugin-react`.
+
+**CSP estricta.** Si la app anfitriona no permite elementos `<style>` en línea (`style-src-elem 'self'`), añade el plugin
+del paquete a su `vite.config.ts`, delante de los demás. Redirige `react-remove-scroll` a un bloqueo del scroll con la
+clase `scroll-locked` en `<html>` y quita el `<style>` de la lista de Radix Select; las dos reglas están en
+`ia-labs-comunidad/tokens.css`.
+
+```ts
+import { cspSafeRadix } from "ia-labs-comunidad/vite";
+
+export default defineConfig({ plugins: [cspSafeRadix(), react(), tailwindcss()] });
+```
 
 **Rutas y pestañas.** `LabsRoutes` se monta dentro del router de la app, en una ruta con comodín. Los enlaces de las
 pestañas se resuelven respecto a esa ruta, así que no hace falta pasar `basePath` (existe por si se monta fuera de una

@@ -307,3 +307,7 @@ const quick: ExamQuestion[] = buildExam(1, QUICK_BLUEPRINT);
 export const quickScore: number = scoreExam(quick, [], true).score;
 export const oneItem: ExamItem | null = examItem("calculo-integral", 1, "medio");
 export const noStore: ExamStore = { active: null, history: [] };
+
+// El plugin de Vite para la CSP estricta, como lo importaría el vite.config de la app anfitriona.
+import { cspSafeRadix } from "ia-labs-comunidad/vite";
+export const cspPlugin: import("vite").Plugin = cspSafeRadix();

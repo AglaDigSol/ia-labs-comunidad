@@ -1,5 +1,6 @@
+// Plugin de Vite en JS puro (con tipos en csp-safe-radix.d.mts) para que lo pueda importar el
+// vite.config de quien consume el paquete: Node no quita tipos de los .ts dentro de node_modules.
 import { fileURLToPath } from "node:url";
-import type { Plugin } from "vite";
 
 // Radix sin <style> en línea, para la CSP estricta (style-src-elem 'self'):
 // - react-remove-scroll (Dialog, Popover modal, Select) inserta un <style> para bloquear el scroll del
@@ -16,21 +17,27 @@ export const REMOVE_SCROLL_SHIM = fileURLToPath(new URL("../src/lib/remove-scrol
  * en la consola.
  */
 export const SELECT_STYLE_RE = /\/\* @__PURE__ \*\/ jsx\(\s*"style",\s*\{\s*dangerouslySetInnerHTML:\s*\{\s*__html: `\[data-radix-select-viewport\][^`]*`\s*\},\s*nonce\s*\}\s*\),/;
-export function cspSafeRadix(): Plugin {
+
+/** @returns {import("vite").Plugin} */
+export function cspSafeRadix() {
   return {
     name: "ia-labs:csp-safe-radix",
     enforce: "pre",
     config: () => ({ resolve: { alias: [{ find: /^react-remove-scroll$/, replacement: REMOVE_SCROLL_SHIM }] } }),
     transform(code, id) {
-      if (!/[\\/]@radix-ui[\\/]react-select[\\/]dist[\\/]index\.mjs$/.test(id.split("?")[0]!)) return null;
+      if (!/[\\/]@radix-ui[\\/]react-select[\\/]dist[\\/]index\.mjs$/.test(id.split("?")[0])) return null;
       const out = stripSelectStyle(code);
-      if (out === null) throw new Error("@radix-ui/react-select: no se encuentra el <style> del visor; revisa scripts/csp-safe-radix.ts");
+      if (out === null) throw new Error("@radix-ui/react-select: no se encuentra el <style> del visor; revisa ia-labs-comunidad/vite");
       return { code: out, map: null };
     },
   };
 }
 
-/** Quita el <style> del visor de Radix Select; null si el código ya no lo tiene. */
-export function stripSelectStyle(code: string): string | null {
+/**
+ * Quita el <style> del visor de Radix Select; null si el código ya no lo tiene.
+ * @param {string} code
+ * @returns {string | null}
+ */
+export function stripSelectStyle(code) {
   return SELECT_STYLE_RE.test(code) ? code.replace(SELECT_STYLE_RE, "") : null;
 }

@@ -7,7 +7,7 @@ import { PYODIDE_VERSION } from "./src/features/labs/python/packages.ts";
 import { PYODIDE_PACKAGES } from "./src/features/labs/python/pyodide-manifest.ts";
 import { trimLock, type Lock } from "./scripts/pyodide-lib.ts";
 import { pythonEnabled } from "./scripts/python-flag.ts";
-import { cspSafeRadix } from "./scripts/csp-safe-radix.ts";
+import { cspSafeRadix } from "./vite/csp-safe-radix.mjs";
 
 /** Normaliza VITE_BASE ("/", "/labs", "labs/") a la forma que espera Vite: "/labs/". */
 function normalizeBase(raw: string | undefined): string {

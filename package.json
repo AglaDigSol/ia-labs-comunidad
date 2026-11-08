@@ -1,6 +1,6 @@
 {
   "name": "ia-labs-comunidad",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
   "description": "Laboratorios interactivos para estudiantes del Máster en IA: simbología, lógica, combinatoria y complejidad, Markov, álgebra de Boole, álgebra lineal, cálculo, calendario, flashcards, calculadora de notas y Python opcional en el navegador.",
   "license": "MIT",
@@ -18,6 +18,10 @@
     "./shared/*": "./shared/*",
     "./content/*": "./content/*",
     "./tokens.css": "./src/styles/tokens.css",
+    "./vite": {
+      "types": "./vite/csp-safe-radix.d.mts",
+      "default": "./vite/csp-safe-radix.mjs"
+    },
     "./package.json": "./package.json"
   },
   "engines": {

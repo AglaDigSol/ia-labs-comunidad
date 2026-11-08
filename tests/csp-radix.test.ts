@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { REMOVE_SCROLL_SHIM, stripSelectStyle } from "../scripts/csp-safe-radix.ts";
+import { REMOVE_SCROLL_SHIM, stripSelectStyle } from "../vite/csp-safe-radix.mjs";
 
 describe("Radix sin <style> en línea (CSP style-src-elem 'self')", () => {
   it("quita el <style> del visor de la versión instalada de Radix Select", () => {
