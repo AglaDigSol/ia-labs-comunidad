@@ -230,8 +230,9 @@ export function GridShortcuts({
   const [open, setOpen] = useState(false);
   const yes = format === "10" ? "1" : "V";
   const no = format === "10" ? "0" : "F";
+  // En un dispositivo solo táctil no hay teclado: el aviso y el desplegable se ocultan (touch:hidden).
   return (
-    <div className="flex flex-col gap-1 text-[14px] text-muted">
+    <div className="flex flex-col gap-1 text-[14px] text-muted touch:hidden" data-keyboard-only="">
       <p id={id}>
         {`Atajos: ${answerKeysText(format)} para responder, flechas para moverte${clear ? ", Supr para borrar" : ""}.`}
       </p>

@@ -73,7 +73,9 @@ export function AnswerField({
           id={id}
           autoComplete="off"
           spellCheck={false}
-          inputMode="decimal"
+          inputMode="text"
+        autoCapitalize="off"
+        autoCorrect="off"
           aria-label={label}
           aria-invalid={invalid ? true : undefined}
           aria-describedby={describedBy}

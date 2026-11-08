@@ -72,13 +72,6 @@ export function GradesPage() {
   const liveValues = useDebounced(values, ANNOUNCE_DEBOUNCE_MS);
   const acc = useMemo(() => accumulate(course.components, liveValues), [course, liveValues]);
 
-  useEffect(() => {
-    const t = setTimeout(() => document.getElementById(`grade-${course.id}-${course.components[0]!.id}`)?.focus(), 0);
-    return () => clearTimeout(t);
-    // Focus the first field only on mount, not on every course change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const commit = useCallback((courseId: string, componentId: string, value100: number | null) => {
     const key = keys.grade(courseId, componentId);
     if (value100 === null) deleteKv(key);

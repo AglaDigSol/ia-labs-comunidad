@@ -1,6 +1,8 @@
 // Campo de respuesta numérica neutro, como el de Blackboard: una etiqueta, el campo y la indicación de
 // formato (coma decimal, redondeo), sin «Comprobar» ni marcas. Lo usa el simulacro de examen, que
 // recoge la respuesta y corrige al final. Nunca lleva un texto de ejemplo dentro del campo.
+// inputMode="text": el teclado decimal del iPad y del móvil no tiene signo menos ni «/», y muchas
+// respuestas son negativas (−20, −2,25) o fracciones.
 import { useId } from "react";
 import { MAX_NUMERIC_ANSWER } from "../../../shared/exam/numeric.ts";
 import { cn } from "../../lib/cn.ts";
@@ -32,7 +34,9 @@ export function NumericField({
         id={id}
         autoComplete="off"
         spellCheck={false}
-        inputMode="decimal"
+        inputMode="text"
+        autoCapitalize="off"
+        autoCorrect="off"
         maxLength={MAX_NUMERIC_ANSWER}
         className="w-full font-mono text-[18px] sm:w-64"
         aria-describedby={note ? `${id}-note` : undefined}

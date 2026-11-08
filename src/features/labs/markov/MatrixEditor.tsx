@@ -186,7 +186,7 @@ export function MatrixEditor(p: MatrixEditorProps) {
                         aria-label={`P(${i + 1},${j + 1})`}
                         aria-invalid={bad ? "true" : undefined}
                         aria-describedby={p.cellErrors.has(key) ? `markov-err-${key}` : undefined}
-                        inputMode="decimal"
+                        inputMode="text"
                         autoComplete="off"
                         maxLength={MAX_CELL}
                         value={val}
@@ -235,7 +235,7 @@ export function MatrixEditor(p: MatrixEditorProps) {
                 id={v0Id(j)}
                 aria-label={`v₀(${j + 1})`}
                 aria-invalid={bad ? "true" : undefined}
-                inputMode="decimal"
+                inputMode="text"
                 autoComplete="off"
                 maxLength={MAX_CELL}
                 value={val}

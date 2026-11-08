@@ -62,3 +62,14 @@ describe("hintsFor", () => {
     expect(hintsFor({ output: "45\n" })).toEqual([]);
   });
 });
+
+describe("classifyStderr", () => {
+  it("separa la caché de fuentes, los avisos de Python y el stderr de verdad", async () => {
+    const { classifyStderr } = await import("./messages.ts");
+    expect(classifyStderr("Matplotlib is building the font cache; this may take a moment.\n")).toBe("font-cache");
+    expect(classifyStderr("<exec>:3: FutureWarning: algo cambiará\n  df[0]\n")).toBe("warning");
+    expect(classifyStderr("/lib/python3.12/site-packages/x.py:10: UserWarning: FigureCanvasAgg is non-interactive\n")).toBe("warning");
+    expect(classifyStderr("DeprecationWarning: viejo\n")).toBe("warning");
+    expect(classifyStderr("mensaje de error propio\n")).toBe("stderr");
+  });
+});

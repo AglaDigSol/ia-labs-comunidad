@@ -73,6 +73,28 @@ export function Footer() {
   );
 }
 
+/** Enlace «Saltar al contenido»: el primer elemento enfocable; visible solo con el foco. */
+export const MAIN_ID = "contenido";
+
+function SkipLink() {
+  return (
+    <a
+      href={`#${MAIN_ID}`}
+      className="sr-only z-50 rounded-md bg-raised font-semibold text-accent shadow-md focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:px-4 focus:py-3"
+      onClick={(e) => {
+        const main = document.getElementById(MAIN_ID);
+        if (!main) return;
+        // Sin cambiar la URL (el enrutador no debe ver un #): foco y scroll al contenido.
+        e.preventDefault();
+        main.focus();
+        main.scrollIntoView({ block: "start" });
+      }}
+    >
+      {t.nav.skip}
+    </a>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const first = useRef(true);
@@ -87,6 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <TooltipProvider delayDuration={200}>
+      <SkipLink />
       <div className="min-h-dvh lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
         {/* Barra lateral >= 1024px */}
         <aside className="hidden border-r border-border bg-raised lg:block">
@@ -114,7 +137,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="font-display text-[20px] font-semibold">{t.app.name}</span>
         </header>
 
-        <main className="mx-auto w-full max-w-[1200px] px-4 py-6 pb-24 sm:max-w-[720px] lg:max-w-[1200px] lg:px-8 lg:pb-8">
+        <main id={MAIN_ID} tabIndex={-1} className="mx-auto outline-none w-full max-w-[1200px] px-4 py-6 pb-24 sm:max-w-[720px] lg:max-w-[1200px] lg:px-8 lg:pb-8">
           {children}
           <Footer />
         </main>
@@ -132,13 +155,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               aria-label={label}
               className={({ isActive }) =>
                 cn(
-                  "flex min-h-11 min-w-16 flex-1 flex-col items-center justify-center gap-1 text-[14px] font-semibold",
+                  "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-semibold leading-none sm:gap-1 sm:text-[14px]",
                   isActive ? "bg-accent-soft text-accent" : "text-muted",
                 )
               }
             >
               <I size={20} strokeWidth={1.75} aria-hidden="true" />
-              <span className="sr-only sm:not-sr-only" aria-hidden="true">
+              {/* Etiqueta corta visible también en el móvil; el nombre accesible es el largo (aria-label). */}
+              <span className="max-w-full truncate px-0.5" aria-hidden="true">
                 {short}
               </span>
             </NavLink>

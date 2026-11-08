@@ -208,3 +208,35 @@ describe("TruthPractice paso a paso", () => {
     expect(screen.getAllByRole("button", { name: /^Fila \d \(p = ., q = .\): / })).toHaveLength(4);
   });
 });
+
+describe("TruthPractice paso a paso en el móvil", () => {
+  it("las columnas de las variables quedan fijas y cada casilla del paso repite los valores de sus operandos", () => {
+    render(practice(BICOND));
+    const table = screen.getByRole("grid");
+    for (const name of ["p", "q"]) {
+      const th = screen.getAllByRole("columnheader").find((h) => h.textContent === `${name} (se usa en este paso)`)!;
+      expect(th.className).toMatch(/\bsticky\b/);
+      // Sigue resaltada como operando del paso.
+      expect(th.className).toMatch(/\bbg-accent-soft\b/);
+    }
+    const firstRow = within(table).getAllByRole("row")[1]!;
+    expect(firstRow.querySelector("td")!.className).toMatch(/\bsticky\b/);
+    // Paso 1, p → q: fila 2 (p = V, q = F) → «V → F».
+    const ops = () => [...table.querySelectorAll("[data-operands]")].map((e) => e.textContent);
+    expect(ops()).toEqual(["V → V", "V → F", "F → V", "F → F"]);
+    fill("p → q", "VFVV");
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar paso" }));
+    // Comprobado el paso, ya no se repiten (la columna está bloqueada).
+    expect(ops()).toEqual([]);
+    fireEvent.click(screen.getByRole("button", { name: "Siguiente paso: q → p" }));
+    fill("q → p", "VVFV");
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar paso" }));
+    fireEvent.click(screen.getByRole("button", { name: `Siguiente paso: ${BICOND}` }));
+    // El último paso combina dos columnas anteriores (las ya comprobadas).
+    expect(ops()).toEqual(["V ↔ V", "F ↔ V", "V ↔ F", "V ↔ V"]);
+    // Ocultos para el lector de pantalla (la etiqueta de la fila ya da los valores) y solo en pantallas estrechas.
+    const span = table.querySelector("[data-operands]")!;
+    expect(span.getAttribute("aria-hidden")).toBe("true");
+    expect(span.className).toMatch(/\bsm:hidden\b/);
+  });
+});

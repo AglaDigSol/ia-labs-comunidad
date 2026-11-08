@@ -223,7 +223,7 @@ export function DistributionExplorer() {
       <input
         id={`${id}-${label}`}
         value={value}
-        inputMode={numeric ? "numeric" : "decimal"}
+        inputMode={numeric ? "numeric" : "text"}
         autoComplete="off"
         spellCheck={false}
         onChange={(e) => set(e.target.value.slice(0, 12))}

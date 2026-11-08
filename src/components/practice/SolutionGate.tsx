@@ -1,5 +1,5 @@
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "../ui/button.tsx";
 
 export const REVEAL_LABEL = "Ver la solución completa";
@@ -14,11 +14,25 @@ export const INTEGRITY_NOTE =
 export function SolutionGate({ resetKey, children }: { resetKey?: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [resetKey]);
+  // El botón pulsado desaparece al abrir o cerrar: el foco pasa al que lo sustituye, en el mismo sitio,
+  // en lugar de perderse al principio de la página.
+  const moved = useRef(false);
+  const hideBtn = useRef<HTMLButtonElement>(null);
+  const showBtn = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!moved.current) return;
+    moved.current = false;
+    (open ? hideBtn : showBtn).current?.focus();
+  }, [open]);
+  const toggle = (next: boolean) => {
+    moved.current = true;
+    setOpen(next);
+  };
   if (open) {
     return (
       <div className="flex flex-col gap-4" data-testid="solution">
         <div>
-          <Button variant="ghost" onClick={() => setOpen(false)}>
+          <Button ref={hideBtn} variant="ghost" onClick={() => toggle(false)}>
             <EyeOff size={16} aria-hidden="true" />
             {HIDE_LABEL}
           </Button>
@@ -33,7 +47,7 @@ export function SolutionGate({ resetKey, children }: { resetKey?: string; childr
         <ShieldCheck size={16} strokeWidth={1.75} aria-hidden="true" className="mt-1 shrink-0" />
         {INTEGRITY_NOTE}
       </p>
-      <Button onClick={() => setOpen(true)}>
+      <Button ref={showBtn} onClick={() => toggle(true)}>
         <Eye size={16} aria-hidden="true" />
         {REVEAL_LABEL}
       </Button>

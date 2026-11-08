@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { activeModules, MODULES } from "../../config.ts";
@@ -50,5 +50,39 @@ describe("AppShell", () => {
       ),
     ).toBeTruthy();
     expect(screen.getAllByText("IA Labs · Comunidad").length).toBeGreaterThan(0);
+  });
+});
+
+describe("AppShell en el móvil y con teclado", () => {
+  const renderShell = () => {
+    vi.stubGlobal("matchMedia", (q: string) => ({ matches: false, media: q, addEventListener() {}, removeEventListener() {} }));
+    return render(
+      <MemoryRouter initialEntries={["/notas"]}>
+        <AppShell>
+          <h1>Página</h1>
+        </AppShell>
+      </MemoryRouter>,
+    );
+  };
+
+  it("«Saltar al contenido» es el primer enlace y lleva el foco al contenido", () => {
+    renderShell();
+    const skip = screen.getByRole("link", { name: "Saltar al contenido" });
+    expect(document.querySelector("a")).toBe(skip);
+    Element.prototype.scrollIntoView = () => {};
+    fireEvent.click(skip);
+    expect(document.activeElement).toBe(document.getElementById("contenido"));
+    expect(document.activeElement?.tagName).toBe("MAIN");
+  });
+
+  it("la barra inferior muestra la etiqueta corta (no solo el icono) y el nombre largo como nombre accesible", () => {
+    renderShell();
+    const bottom = screen.getAllByRole("navigation", { name: "Principal" })[1]!;
+    const links = within(bottom).getAllByRole("link");
+    expect(links.map((l) => l.getAttribute("aria-label"))).toContain("Calculadora de notas");
+    const notas = within(bottom).getByRole("link", { name: "Calculadora de notas" });
+    expect(notas.getAttribute("aria-current")).toBe("page");
+    const label = within(notas).getByText("Notas");
+    expect(label.className).not.toMatch(/sr-only/);
   });
 });

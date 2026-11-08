@@ -14,6 +14,7 @@ import { Button } from "../../../../components/ui/button.tsx";
 import { Chip } from "../../../../components/ui/chip.tsx";
 import { cn } from "../../../../lib/cn.ts";
 import { CodeEditor } from "../../python/CodeEditor.tsx";
+import { isSmartQuoteError, SmartQuotesHint } from "../../python/SmartQuotes.tsx";
 import { Figure } from "../../python/Figure.tsx";
 import { runTrace, TraceView, type TraceOutcome } from "../../python/Tracer.tsx";
 import type { ExerciseViewProps } from "../views.tsx";
@@ -145,13 +146,29 @@ function CaseChecks({ labels, result }: { labels: readonly string[]; result: Cas
   );
 }
 
-function CheckReport({ instance, result, figures }: { instance: PyCodeInstance; result: CheckResult; figures?: readonly string[] }) {
+function CheckReport({
+  instance,
+  result,
+  figures,
+  code,
+  onFixQuotes,
+}: {
+  instance: PyCodeInstance;
+  result: CheckResult;
+  figures?: readonly string[];
+  /** El código comprobado y cómo cambiarlo, para «Cambiar por comillas rectas». */
+  code?: string;
+  onFixQuotes?: (fixed: string) => void;
+}) {
   if (result.sintaxis) {
     return (
-      <p className="flex items-start gap-2 text-crit">
-        <OctagonAlert size={16} aria-hidden="true" className="mt-1 shrink-0" />
-        {`Tu código tiene un error de sintaxis${result.sintaxis.linea ? ` en la línea ${result.sintaxis.linea}` : ""}: ${result.sintaxis.mensaje}.`}
-      </p>
+      <>
+        <p className="flex items-start gap-2 text-crit">
+          <OctagonAlert size={16} aria-hidden="true" className="mt-1 shrink-0" />
+          {`Tu código tiene un error de sintaxis${result.sintaxis.linea ? ` en la línea ${result.sintaxis.linea}` : ""}: ${result.sintaxis.mensaje}.`}
+        </p>
+        {code !== undefined && onFixQuotes && isSmartQuoteError(result.sintaxis.mensaje, code) ? <SmartQuotesHint code={code} onFix={onFixQuotes} /> : null}
+      </>
     );
   }
   const passed = result.casos.filter((c) => c.ok).length;
@@ -328,7 +345,7 @@ function CodeExercise({ instance, onSolved }: ExerciseViewProps<PyCodeInstance>)
               {phase !== "ready" ? "Cargando Python…" : stage === "paquetes" ? `Preparando ${packagesLabel(pkgs)}…` : "Comprobando…"}
             </span>
           ) : null}
-          {!busy && outcome?.kind === "result" ? <CheckReport instance={instance} result={outcome.result} figures={outcome.figures} /> : null}
+          {!busy && outcome?.kind === "result" ? <CheckReport instance={instance} result={outcome.result} figures={outcome.figures} code={code} onFixQuotes={setCode} /> : null}
           {!busy && outcome?.kind === "timeout" ? <span className="text-crit">{copyTimeout(outcome.seconds)}</span> : null}
           {!busy && outcome?.kind === "failed" ? <span className="text-crit">{outcome.message}</span> : null}
         </div>

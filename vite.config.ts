@@ -7,6 +7,7 @@ import { PYODIDE_VERSION } from "./src/features/labs/python/packages.ts";
 import { PYODIDE_PACKAGES } from "./src/features/labs/python/pyodide-manifest.ts";
 import { trimLock, type Lock } from "./scripts/pyodide-lib.ts";
 import { pythonEnabled } from "./scripts/python-flag.ts";
+import { cspSafeRadix } from "./scripts/csp-safe-radix.ts";
 
 /** Normaliza VITE_BASE ("/", "/labs", "labs/") a la forma que espera Vite: "/labs/". */
 function normalizeBase(raw: string | undefined): string {
@@ -56,7 +57,7 @@ export default defineConfig(({ mode }) => {
   const python = pythonEnabled();
   return {
     base,
-    plugins: [react(), tailwindcss(), ...(python ? [devPyodide(base)] : [])],
+    plugins: [cspSafeRadix(), react(), tailwindcss(), ...(python ? [devPyodide(base)] : [])],
     define: process.env.VITEST ? {} : { __LABS_PYTHON__: JSON.stringify(python) },
     // Pyodide se sirve tal cual: el optimizador de dependencias de Vite no debe reempaquetarlo.
     optimizeDeps: { exclude: ["pyodide"] },
@@ -68,6 +69,8 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: "node",
       include: ["src/**/*.test.{ts,tsx}", "shared/**/*.test.ts", "content/**/*.test.ts", "tests/**/*.test.{ts,tsx}"],
+      // Radix pasa por Vite también en las pruebas, para que usen el mismo bloqueo de scroll sin <style>.
+      server: { deps: { inline: [/@radix-ui[\\/]/] } },
     },
   };
 });

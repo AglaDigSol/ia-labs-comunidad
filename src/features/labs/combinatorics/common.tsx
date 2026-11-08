@@ -132,7 +132,9 @@ export function ExamNumberField({ label, value, onChange, invalid = false, check
       </label>
       <Input
         id={id}
-        inputMode="decimal"
+        inputMode="text"
+        autoCapitalize="off"
+        autoCorrect="off"
         autoComplete="off"
         spellCheck={false}
         className={cn("max-w-full font-mono sm:max-w-sm", invalid && "border-2 border-crit")}

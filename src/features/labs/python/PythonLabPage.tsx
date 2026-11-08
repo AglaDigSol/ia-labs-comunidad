@@ -48,11 +48,15 @@ import {
   SelectValue,
 } from "../../../components/ui/select.tsx";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../../components/ui/tooltip.tsx";
+import { revealPanel, scrollIntoViewIfHidden } from "../../../lib/reveal.ts";
 import { readLabItem, writeLabItem } from "../labs-storage.ts";
 import { consumeFreshDraft, getDraft, listDrafts, updateDraftCode, type Draft, type DraftOrigin } from "./drafts.ts";
 import { baseName, checkHostFile, checkUpload, fmtBytes, mimeFor, UPLOAD_ACCEPT, type FileInfo } from "./files.ts";
 import { transformMagics } from "./magics.ts";
-import { hintsFor } from "./messages.ts";
+import { classifyStderr, COPY_FONT_CACHE, hintsFor } from "./messages.ts";
+import { isSmartQuoteError, SmartQuotesHint } from "./SmartQuotes.tsx";
+import { parseKernelValue, type KernelValue } from "../pyexam/kernel.ts";
+import { TableOutput } from "../pyexam/TableOutput.tsx";
 import { closureBytes, EXTRA_WHEELS } from "./packages.ts";
 import { PYODIDE_CORE, PYODIDE_PACKAGES } from "./pyodide-manifest.ts";
 import { createPyWorker, PyClient, type PyEvent, type RunOutcome } from "./py-client.ts";
@@ -144,7 +148,8 @@ type Phase =
   | { k: "error" };
 
 type OutItem =
-  | { k: "stdout" | "stderr" | "info"; text: string }
+  | { k: "stdout" | "stderr" | "info" | "warn"; text: string }
+  | { k: "value"; value: KernelValue }
   | { k: "hint"; text: string }
   | { k: "error"; line: number | null; text: string }
   | { k: "crit"; text: string }
@@ -248,6 +253,16 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
   const [confirmReset, setConfirmReset] = useState(false);
   // Último paso a paso, con el código que se trazó (si el editor cambia, deja de mostrarse).
   const [traced, setTraced] = useState<{ code: string; outcome: TraceOutcome } | null>(null);
+  // El paso a paso y la salida pueden abrirse por debajo de la pantalla (iPad en horizontal, móvil):
+  // al pulsar el botón se llevan a la vista; el paso a paso además recibe el foco en su título.
+  const traceRef = useRef<HTMLDivElement | null>(null);
+  const outputRef2 = useRef<HTMLDivElement | null>(null);
+  const revealTrace = useRef(false);
+  useEffect(() => {
+    if (!traced || !revealTrace.current) return;
+    revealTrace.current = false;
+    revealPanel(traceRef.current, traceRef.current?.querySelector<HTMLElement>("h2, [role=alert]"));
+  }, [traced]);
 
   const clientRef = useRef<PyClient | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -405,10 +420,10 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
   }
 
   function append(item: OutItem) {
-    if (item.k === "stdout" || item.k === "stderr") outputRef.current += item.text;
+    if (item.k === "stdout" || item.k === "stderr" || item.k === "warn") outputRef.current += item.text;
     setOut((prev) => {
       const last = prev[prev.length - 1];
-      if (last && (item.k === "stdout" || item.k === "stderr") && last.k === item.k) {
+      if (last && (item.k === "stdout" || item.k === "stderr" || item.k === "warn") && last.k === item.k) {
         return [...prev.slice(0, -1), { k: item.k, text: last.text + item.text }];
       }
       return [...prev, item];
@@ -416,7 +431,12 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
   }
 
   function onRunEvent(e: PyEvent) {
-    if (e.type === "stdout" || e.type === "stderr") append({ k: e.type, text: e.text });
+    if (e.type === "stdout") append({ k: "stdout", text: e.text });
+    else if (e.type === "stderr") {
+      // Los avisos (caché de fuentes de matplotlib, FutureWarning…) no son errores: no van en rojo.
+      const kind = classifyStderr(e.text);
+      append(kind === "font-cache" ? { k: "info", text: COPY_FONT_CACHE } : { k: kind === "warning" ? "warn" : "stderr", text: e.text });
+    }
     else if (e.type === "package") {
       const bytes = packageBytes(e.name);
       if (e.phase === "start") {
@@ -432,13 +452,17 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
 
   function showOutcome(o: RunOutcome) {
     switch (o.kind) {
-      case "done":
+      case "done": {
+        // El valor de la última expresión, como en Jupyter (tabla de pandas en texto o repr).
+        const shown = parseKernelValue(o.display);
+        if (shown) append({ k: "value", value: shown });
         o.figures.forEach((b64, i) => append({ k: "fig", b64, n: i + 1 }));
         for (const text of hintsFor({ output: outputRef.current })) append({ k: "hint", text });
         setFiles(o.files);
         setLastMs(o.ms);
         setAnnounce(`Ejecución terminada en ${seconds(o.ms)} s`);
         return;
+      }
       case "error":
         for (const text of hintsFor({ error: o.message, output: outputRef.current })) append({ k: "hint", text });
         append({ k: "error", line: o.line, text: o.message });
@@ -469,6 +493,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
     outputRef.current = "";
     setLastMs(null);
     setAnnounce("");
+    scrollIntoViewIfHidden(outputRef2.current);
     const magics = transformMagics(code);
     if (!magics.ok) {
       append({ k: "error", line: magics.line, text: magics.message });
@@ -479,7 +504,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
     setNow(started);
     setRunningSince(started);
     try {
-      const outcome = await client.run(magics.code, limit * 1000, onRunEvent, stdinLines(stdin));
+      const outcome = await client.run(magics.code, limit * 1000, onRunEvent, stdinLines(stdin), { display: true });
       if (aliveRef.current) showOutcome(outcome);
     } catch (e) {
       if (aliveRef.current) append({ k: "error", line: null, text: e instanceof Error ? e.message : String(e) });
@@ -496,6 +521,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
     if (!client || !ready || running) return;
     setAnnounce("");
     const magics = transformMagics(code);
+    revealTrace.current = true;
     if (!magics.ok || magics.code !== code) {
       setTraced({ code, outcome: { ok: false, message: "El paso a paso no admite órdenes mágicas (%time, %timeit…): quítalas para seguir el código." } });
       return;
@@ -765,6 +791,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
             </Tooltip>
           )}
           <Button
+            id="py-trace-button"
             onClick={() => void traceCode()}
             disabled={!ready || running}
             aria-describedby={ready ? undefined : "py-run-hint"}
@@ -935,12 +962,21 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
               </Button>
             </div>
             <div
+              ref={outputRef2}
               role="log"
               aria-live="off"
               aria-label="Salida"
               className="flex min-h-[240px] flex-col gap-2 overflow-auto rounded-lg border border-border bg-base p-3"
             >
-              <OutputBody phase={phase} out={out} onLoad={() => void loadPython()} onAbort={() => abortRef.current?.abort()} onRetry={retry} />
+              <OutputBody
+                phase={phase}
+                out={out}
+                code={code}
+                onFixQuotes={changeCode}
+                onLoad={() => void loadPython()}
+                onAbort={() => abortRef.current?.abort()}
+                onRetry={retry}
+              />
             </div>
             <div className="sr-only" aria-live="polite" role="status">
               {announce && <span className="sr-only">{announce}</span>}
@@ -949,16 +985,26 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
           </div>
         </div>
 
-        {traced && traced.code === code ? (
-          traced.outcome.ok ? (
-            <TraceView code={traced.code} trace={traced.outcome.trace} onClose={() => setTraced(null)} />
-          ) : (
-            <p role="alert" className="flex items-start gap-2 text-[14px] text-crit">
-              <OctagonAlert size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
-              <span>{traced.outcome.message}</span>
-            </p>
-          )
-        ) : null}
+        <div ref={traceRef} className="scroll-mt-28 lg:scroll-mt-4" data-trace-panel="">
+          {traced && traced.code === code ? (
+            traced.outcome.ok ? (
+              <TraceView
+                code={traced.code}
+                trace={traced.outcome.trace}
+                onClose={() => {
+                  setTraced(null);
+                  // El foco vuelve al botón que lo abrió.
+                  document.getElementById("py-trace-button")?.focus();
+                }}
+              />
+            ) : (
+              <p role="alert" className="flex items-start gap-2 text-[14px] text-crit">
+                <OctagonAlert size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
+                <span>{traced.outcome.message}</span>
+              </p>
+            )
+          ) : null}
+        </div>
 
         <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
           <DialogContent>
@@ -1055,12 +1101,17 @@ function FilesPanel({
 function OutputBody({
   phase,
   out,
+  code,
+  onFixQuotes,
   onLoad,
   onAbort,
   onRetry,
 }: {
   phase: Phase;
   out: OutItem[];
+  /** El código del editor y cómo cambiarlo, para «Cambiar por comillas rectas». */
+  code: string;
+  onFixQuotes: (fixed: string) => void;
   onLoad: () => void;
   onAbort: () => void;
   onRetry: () => void;
@@ -1138,6 +1189,20 @@ function OutputBody({
                 {item.text.replace(/\n$/, "")}
               </pre>
             );
+          case "warn":
+            return (
+              <pre key={i} aria-label="Aviso de Python (no es un error)" className="mono whitespace-pre-wrap break-words rounded-md bg-warn-bg px-2 py-1 text-[14px] text-warn">
+                {item.text.replace(/\n$/, "")}
+              </pre>
+            );
+          case "value":
+            return item.value.tipo === "tabla" ? (
+              <TableOutput key={i} value={item.value} />
+            ) : (
+              <pre key={i} aria-label="Valor de la última expresión" className="mono whitespace-pre-wrap break-words border-l-2 border-accent pl-2 text-[14px] text-fg">
+                {item.value.texto}
+              </pre>
+            );
           case "info":
             return (
               <p key={i} className="text-[14px] text-muted">
@@ -1166,6 +1231,7 @@ function OutputBody({
                   {item.line !== null ? `Error en la línea ${item.line}` : "Error"}
                 </span>
                 <pre className="mono whitespace-pre-wrap break-words text-[14px] text-crit">{item.text}</pre>
+                {isSmartQuoteError(item.text, code) ? <SmartQuotesHint code={code} onFix={onFixQuotes} /> : null}
               </div>
             );
           case "fig":

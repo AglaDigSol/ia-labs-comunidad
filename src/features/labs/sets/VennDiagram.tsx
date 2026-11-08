@@ -113,7 +113,9 @@ export function VennDiagram({
             pointerEvents="all"
             className={cn(
               bad ? "stroke-crit" : "stroke-transparent",
-              interactive && "cursor-pointer outline-none hover:opacity-80 focus-visible:stroke-accent",
+              // El foco se ve como borde de la propia región (venn-region en tokens.css quita el
+              // contorno rectangular del navegador, que rodeaba la caja de la región).
+              interactive && "venn-region cursor-pointer hover:opacity-80 focus-visible:stroke-accent focus-visible:[stroke-dasharray:none] focus-visible:[stroke-width:4]",
             )}
             strokeWidth={bad ? 2.5 : 3}
             strokeDasharray={bad ? "6 4" : undefined}

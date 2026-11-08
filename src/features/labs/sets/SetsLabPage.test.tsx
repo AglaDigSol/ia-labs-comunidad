@@ -21,6 +21,15 @@ function renderAt(url: string) {
 
 const heading = () => screen.findByRole("heading", { level: 1, name: "Conjuntos" }, { timeout: 5000 });
 const region = (name: string | RegExp) => screen.getByRole("checkbox", { name });
+const useOwn = (text: string) => {
+  fireEvent.change(screen.getByLabelText("Expresión"), { target: { value: "propia" } });
+  fireEvent.change(screen.getByLabelText("Tu expresión"), { target: { value: text } });
+  fireEvent.click(screen.getByRole("button", { name: "Usar esta expresión" }));
+};
+const addHypothesis = (text: string) => {
+  fireEvent.change(screen.getByLabelText("Nuevo supuesto"), { target: { value: text } });
+  fireEvent.click(screen.getByRole("button", { name: "Añadir supuesto" }));
+};
 
 describe("Diagrama de Venn", () => {
   it("sombrear A ∩ Bᶜ: marca las regiones mal sin decir cuáles van y la solución queda detrás del aviso", async () => {
@@ -253,15 +262,6 @@ describe("Partes y producto cartesiano", () => {
 });
 
 describe("Supuestos en el diagrama de Venn (sugerencias del grupo)", () => {
-  const useOwn = (text: string) => {
-    fireEvent.change(screen.getByLabelText("Expresión"), { target: { value: "propia" } });
-    fireEvent.change(screen.getByLabelText("Tu expresión"), { target: { value: text } });
-    fireEvent.click(screen.getByRole("button", { name: "Usar esta expresión" }));
-  };
-  const addHypothesis = (text: string) => {
-    fireEvent.change(screen.getByLabelText("Nuevo supuesto"), { target: { value: text } });
-    fireEvent.click(screen.getByRole("button", { name: "Añadir supuesto" }));
-  };
 
   it("A ⊆ B como expresión explica que es una relación; el teclado trae ⊆, ⊂, ⊇, = y ≠", async () => {
     renderAt("/laboratorios/conjuntos");
@@ -332,12 +332,51 @@ describe("Supuestos en el diagrama de Venn (sugerencias del grupo)", () => {
       "Aᶜ ∩ B ∩ Cᶜ: vacía por hipótesis",
     ]);
     expect(screen.queryByRole("checkbox", { name: /^Dibujar/ })).toBeNull();
+    // Y se explica por qué.
+    expect(document.querySelector("[data-no-nested]")?.textContent).toMatch(/^Sin dibujo anidado: solo lo hay para dos conjuntos/);
     // Errores al añadir y contradicciones.
     addHypothesis("A ∪ C");
     expect(screen.getByRole("alert").textContent).toMatch(/^A ∪ C es un conjunto, no una relación/);
     addHypothesis("A ⊊ A");
     expect(screen.getByText("Estos supuestos se contradicen: ningún diagrama los cumple. Quita alguno.")).toBeTruthy();
     expect(within(screen.getByRole("group", { name: "Tu diagrama de Venn para A ∪ B" })).queryAllByRole("img")).toHaveLength(0);
+  });
+});
+
+describe("Diagrama de Venn guardado en el dispositivo", () => {
+  it("la expresión propia y los supuestos vuelven al recargar", async () => {
+    renderAt("/laboratorios/conjuntos");
+    await heading();
+    useOwn("A ∪ B");
+    addHypothesis("A ∩ B = ∅");
+    addHypothesis("B ⊆ C");
+    cleanup();
+    renderAt("/laboratorios/conjuntos");
+    await heading();
+    expect((screen.getByLabelText("Expresión") as HTMLSelectElement).value).toBe("propia");
+    expect((screen.getByLabelText("Tu expresión") as HTMLInputElement).value).toBe("A ∪ B");
+    expect(screen.getByRole("group", { name: "Tu diagrama de Venn para A ∪ B" })).toBeTruthy();
+    expect(within(screen.getByRole("list", { name: "Supuestos" })).getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByText("Supuestos: A ∩ B = ∅, B ⊆ C.")).toBeTruthy();
+  });
+
+  it("lo guardado que no se lee se descarta", async () => {
+    localStorage.setItem("ia-labs.sets.v1", JSON.stringify({ v: 1, choice: "no-existe", own: "", expr: "", hyps: [] }));
+    renderAt("/laboratorios/conjuntos");
+    await heading();
+    expect((screen.getByLabelText("Expresión") as HTMLSelectElement).value).not.toBe("no-existe");
+    localStorage.setItem("ia-labs.sets.v1", "{roto");
+    cleanup();
+    renderAt("/laboratorios/conjuntos");
+    await heading();
+    expect(screen.getByText("Ninguno: cualquier región puede tener elementos.")).toBeTruthy();
+  });
+
+  it("la región enfocada no lleva el contorno rectangular del navegador", async () => {
+    renderAt("/laboratorios/conjuntos");
+    await heading();
+    const r = screen.getAllByRole("checkbox", { name: /∩/ })[0]!;
+    expect(r.getAttribute("class")).toMatch(/\bvenn-region\b/);
   });
 });
 

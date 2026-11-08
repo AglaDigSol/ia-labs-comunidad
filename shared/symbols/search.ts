@@ -1,7 +1,8 @@
 import { CATEGORY_LABELS, type SymbolCategory, type SymbolEntry } from "./types.ts";
 
 export function normalizeEs(s: string): string {
-  return s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+  // Solo los acentos de las letras: ≠ (= y una barra combinada) o ∉ no deben quedarse en = o ∈.
+  return s.normalize("NFD").replace(/(\p{L})\p{M}+/gu, "$1").normalize("NFC").toLowerCase().trim();
 }
 
 interface Index {
@@ -9,6 +10,36 @@ interface Index {
   aliases: string[];
   text: string;
   raw: string[];
+  /** Nombres de Python del código («np.sum», «sum», «math.factorial», «factorial»…). */
+  idents: Set<string>;
+}
+
+/** «numpy.» y «np.» son lo mismo. */
+const canonicalPy = (s: string) => s.replace(/\bnumpy\./g, "np.");
+
+/**
+ * Nombres de Python de un fragmento de código, normalizados: cada nombre con puntos completo
+ * («np.linalg.norm») y cada sufijo («linalg.norm», «norm»), para que «norm» o «numpy.linalg.norm»
+ * encuentren la misma ficha.
+ */
+export function pythonNames(code: string): string[] {
+  const out = new Set<string>();
+  // Sin comentarios ni cadenas: solo el código.
+  const bare = code.replace(/#.*$/gm, " ").replace(/"[^"\n]*"|'[^'\n]*'/g, " ");
+  for (const m of canonicalPy(bare.toLowerCase()).matchAll(/[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*/g)) {
+    const parts = m[0].split(".");
+    for (let i = 0; i < parts.length; i++) out.add(parts.slice(i).join("."));
+  }
+  return [...out];
+}
+
+/**
+ * Una palabra de la búsqueda como nombre de Python: sin «numpy.» (pasa a «np.») y sin la puntuación
+ * de alrededor («np.sum()» → «np.sum», «math.factorial(» → «math.factorial»). Null si no lo parece.
+ */
+export function pythonQuery(token: string): string | null {
+  const t = canonicalPy(token.toLowerCase()).replace(/^[^a-z_]+/, "").replace(/[^a-z0-9_]+$/, "");
+  return /^[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*$/.test(t) ? t : null;
 }
 
 const MAX_QUERY = 100;
@@ -34,6 +65,7 @@ function indexOf(e: SymbolEntry): Index {
         ...e.variants.flatMap((v) => [v.tex, v.text].filter((x): x is string => !!x)),
         ...e.aliases,
       ],
+      idents: new Set(e.code.flatMap((c) => pythonNames(c.code))),
     };
     cache.set(e, ix);
   }
@@ -58,6 +90,10 @@ function tokenScore(ix: Index, rawTok: string, tok: string): number {
     else if (wordBoundary(ix.text, tok)) best = 30;
     else if (ix.text.includes(tok)) best = 10;
   }
+  // Un nombre de Python del código (np.sum, numpy.sum, math.factorial…), con o sin paréntesis.
+  const py = pythonQuery(rawTok);
+  if (py && py.includes(".") && ix.idents.has(py)) best = Math.max(best, 90);
+  else if (py && ix.idents.has(py)) best = Math.max(best, 40);
   if (ix.raw.includes(rawTok)) best = Math.max(best, 100);
   else if (ix.raw.some((r) => r.includes(rawTok))) best = Math.max(best, 10);
   return best;

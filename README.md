@@ -14,10 +14,10 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 
 | Módulo | Qué hace | Interruptor |
 | --- | --- | --- |
-| Simbología | Diccionario de símbolos con búsqueda, fichas KaTeX, «lectura en clase» con voz (Web Speech) y el equivalente en Python/NumPy como texto. | siempre activo |
+| Simbología | Diccionario de símbolos (lógica, conjuntos, Boole, álgebra lineal, cálculo, combinatoria y probabilidad, y notación general) con búsqueda por nombre, símbolo o nombre de Python (`np.sum`, `math.factorial`…), fichas KaTeX, «lectura en clase» con voz (Web Speech) y el equivalente en Python/NumPy como texto. | siempre activo |
 | Lógica | Tablas de verdad (también paso a paso, una subfórmula cada vez) que se rellenan con el ratón o con el teclado (V/F o 1/0, flechas, Supr), comparar dos fórmulas, FND/FNC y el espacio F₁. | siempre activo |
 | Predicados | Evaluar fórmulas con ∀ y ∃ en un dominio finito (extensiones con casillas, paso a paso por instancias, testigos y contraejemplos), negar paso a paso con las leyes de la negación, comprobado en cada línea, y traducir frases a fórmulas. | siempre activo |
-| Conjuntos | Diagramas de Venn de 2 y 3 conjuntos (sombrear la expresión o calcularla con elementos) con «Supuestos» (A ⊆ B, A ∩ C = ∅…: las regiones vacías por hipótesis se marcan aparte y, con dos conjuntos, se pueden dibujar anidados o separados), igualdades demostradas paso a paso con una ley por línea, «¿Son iguales?» con contraejemplo, «Relaciones» (⊆, ⊂, ⊇, =, ≠: ¿siempre cierta, nunca cierta o depende?, con contraejemplo dibujado), problemas de inclusión–exclusión y conjunto de partes y producto cartesiano. | siempre activo |
+| Conjuntos | Diagramas de Venn de 2 y 3 conjuntos (sombrear la expresión o calcularla con elementos) con «Supuestos» (A ⊆ B, A ∩ C = ∅…: las regiones vacías por hipótesis se marcan aparte y, con dos conjuntos, se pueden dibujar anidados o separados; la expresión y los supuestos se recuerdan en el dispositivo), igualdades demostradas paso a paso con una ley por línea, «¿Son iguales?» con contraejemplo, «Relaciones» (⊆, ⊂, ⊇, =, ≠: ¿siempre cierta, nunca cierta o depende?, con contraejemplo dibujado), problemas de inclusión–exclusión y conjunto de partes y producto cartesiano. | siempre activo |
 | Combinatoria | «¿Qué fórmula es?»: problemas de recuento con una guía para decidir (¿importa el orden?, ¿se repiten?, ¿se usan todos?), el modelo (Pₙ, PR, V, VR, C o CR) y el número, los dos comprobados, con la respuesta escrita como en el examen (coma decimal, sin separador de miles); calculadora guiada con enteros exactos; funciones por cardinal (¿puede o es necesariamente inyectiva, sobreyectiva, biyectiva? ¿tiene inversa? ¿cuántas hay?), y complejidad: orden O grande de pseudocódigo y de costes, con cuatro opciones a)–d), y verdadero o falso sobre P, NP y NP-completo. | siempre activo |
 | Álgebra de Boole | ¿Es un álgebra de Boole? (axiomas B1–B5 sobre estructuras finitas, tablas y diagrama de Hasse), simplificación paso a paso con leyes, comprobada en cada línea, puertas y circuitos (circuito → función, función → circuito con solo NAND o solo NOR, y las siete puertas) los espacios F₁ y F₂, y mapas de Karnaugh de 2 a 4 variables con las formas Σm y ΠM. ⊕ es la suma, no el XOR (que se escribe ⊻). | siempre activo |
 | Álgebra lineal | Gauss-Jordan paso a paso (eliges cada operación elemental o escribes la matriz siguiente, y se comprueba antes de seguir; luego clasificas el sistema con Rouché–Frobenius y escribes su solución, también paramétrica), producto, determinante, rango e inversa celda a celda, independencia lineal y bases, autovalores y autovectores (comprobados con Av = λv), transformaciones del plano dibujadas con sus direcciones propias rango y dimensión de un tensor con la terminología del curso (frente a `ndim` y `shape`) y formas de tensores con las reglas de NumPy (emisión, `@`, `sum(axis)`, `reshape`, `.T`); «Propiedades y teoría»: propiedades del determinante, verdadero o falso sobre matrices regulares, simétricas, definidas positivas y diagonalizables, normas y sistemas tipo test. Con fracciones exactas. | siempre activo |
@@ -381,9 +381,11 @@ Sobre la CSP:
 - No hay scripts inline: el tema se aplica con `public/theme-init.js`, un fichero externo.
 - `style-src-attr 'unsafe-inline'` es necesario porque KaTeX dibuja las fórmulas con atributos `style` y React aplica
   props de estilo. No permite elementos `<style>` ni scripts.
-- Limitación conocida: algunos componentes de Radix (diálogos y selectores) intentan insertar un `<style>` pequeño
-  (bloqueo de scroll del fondo y ocultar la barra de scroll). La CSP lo bloquea y el navegador lo anota en la consola;
-  la app funciona igual, solo que la página de fondo puede desplazarse con un diálogo abierto.
+- Sin `<style>` en línea: Radix insertaría uno para bloquear el scroll del fondo con un diálogo abierto
+  (`react-remove-scroll`) y otro para ocultar la barra de la lista de un selector. `scripts/csp-safe-radix.ts` (un
+  plugin de Vite) redirige `react-remove-scroll` a `src/lib/remove-scroll.tsx`, que bloquea el scroll con una clase en
+  `<html>` definida en `tokens.css`, y quita el `<style>` del selector (la regla también está en `tokens.css`). Si una
+  versión nueva de Radix cambia ese código, el build falla en lugar de dejar errores de CSP en la consola.
 - No se usa COEP (es opcional con la pestaña Python: ver [Cabeceras](#cabeceras) de Python).
 - Los gráficos de matplotlib se dibujan en un `<canvas>`, así que `img-src` sigue sin `data:` ni `blob:`.
 
@@ -471,7 +473,9 @@ instala la del paquete aparte y la pestaña usa la suya.
 
 **Rutas y pestañas.** `LabsRoutes` se monta dentro del router de la app, en una ruta con comodín. Los enlaces de las
 pestañas se resuelven respecto a esa ruta, así que no hace falta pasar `basePath` (existe por si se monta fuera de una
-ruta con comodín).
+ruta con comodín). Desde 1024 px las pestañas pasan a otra fila; más estrechas, la barra se desplaza con un degradado y
+flechas, y la pestaña activa se lleva a la vista. En la primera visita, una orientación breve explica las pestañas y
+enlaza los simulacros; se cierra con «Entendido» y se recuerda con la clave `labsIntro` de los laboratorios.
 
 ```tsx
 import { lazy } from "react";
@@ -505,7 +509,7 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
 - `renderHeaderAction(tab)`: acción opcional junto al título «Laboratorios»; recibe la pestaña activa
   (`{ id, label }`) o `null`.
 - `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el
-  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises, python, exam, pyexam, gridAdvance })` guarda en localStorage con las
+  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises, python, exam, pyexam, gridAdvance, labsIntro, sets })` guarda en localStorage con las
   claves que elijas, por ejemplo las que ya usaba tu app; las que no pases usan `DEFAULT_LABS_KEYS`.
 - También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `SetsLabPage`, `CombinatoricsLabPage`, `MarkovLabPage`, `BooleLabPage`, `LinearAlgebraLabPage`, `CalculusLabPage`, `ProbabilityLabPage`,
   `ExercisesPage` (con `examPath={null}` no enseña la tarjeta del simulacro, ni con `pyExamPath={null}` la del de 01MIAR), `ExamSimulatorPage` (con `exercisesPath`, la ruta del banco para «Practicar este tipo»; por defecto `..`), `PythonLabPage` (con `examPath={null}` no enseña el botón del simulacro de 01MIAR) y `PyExamPage` (el simulacro de 01MIAR; `exercisesPath`, por defecto `../../ejercicios`) por separado, las piezas del simulacro de 01MIAR (`buildPyExam`, `pyExamCells`, `pyExamNotebookJson`, `scoreShort`, `scoreStep`, `parsePyExamStore`…), las piezas del simulacro (`buildExam`, `FULL_BLUEPRINT`, `QUICK_BLUEPRINT`, `topicsBlueprint`, `examItem`, `EXAM_TYPE_IDS`, `scoreExam`, `numericMatches`, `parseExamStore`…), la pregunta de opción múltiple (`ChoiceOptions`, `ChoicePractice`, `ChoiceSolution`, `arrangeChoices`, `gradeChoice`, `toggleChoice`) y el campo numérico `NumericField`, y los motores: banco de ejercicios (`EXERCISE_TYPES`, `exerciseType`, cada tipo con

@@ -6,7 +6,10 @@ export type SymbolCategory =
   | "boole-fn"
   | "primer-orden"
   | "markov-algebra"
-  | "tensorial";
+  | "tensorial"
+  | "calculo"
+  | "combinatoria-probabilidad"
+  | "notacion-general";
 
 export const SYMBOL_CATEGORIES: SymbolCategory[] = [
   "logica-proposicional",
@@ -15,6 +18,9 @@ export const SYMBOL_CATEGORIES: SymbolCategory[] = [
   "primer-orden",
   "markov-algebra",
   "tensorial",
+  "calculo",
+  "combinatoria-probabilidad",
+  "notacion-general",
 ];
 
 export const CATEGORY_LABELS: Record<SymbolCategory, string> = {
@@ -24,6 +30,9 @@ export const CATEGORY_LABELS: Record<SymbolCategory, string> = {
   "primer-orden": "Lógica de primer orden",
   "markov-algebra": "Markov y álgebra lineal",
   tensorial: "Cálculo tensorial",
+  calculo: "Cálculo",
+  "combinatoria-probabilidad": "Combinatoria, complejidad y probabilidad",
+  "notacion-general": "Notación general",
 };
 
 export interface NotationVariant {
