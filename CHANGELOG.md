@@ -4,7 +4,7 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.13)
+## [Próximamente] (0.14)
 
 - i18n completo: mover a `src/i18n/` los textos internos de los laboratorios, las flashcards, la calculadora y el
   calendario (hoy están en sus componentes) y añadir inglés.
@@ -12,6 +12,41 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 - Evitar los `<style>` que insertan los diálogos y selectores de Radix, para no generar avisos de CSP.
+
+## [0.13.0] - 2026-11-08
+
+Dos sugerencias del grupo: rellenar las tablas de verdad sin tanto clic y dibujar que un conjunto está dentro de otro.
+
+### Añadido
+
+- **Rellenar con el teclado** las tablas de verdad («Paso a paso» y «Solo el resultado», también en «Ejercicios»), las
+  instancias de predicados y «Cambiar su valor» del mapa de Karnaugh: `V`/`T`/`1` verdadero, `F`/`0` falso, `X`/`-`
+  indiferencia (solo en Karnaugh), `Retroceso`/`Supr` vacía; flechas, `Inicio`/`Fin` y `Re Pág`/`Av Pág` (8 filas).
+  Al escribir, el foco baja a la fila siguiente («Avanzar al escribir», encendido por defecto). Una sola parada del
+  tabulador por tabla, `role="grid"` y el aviso «Atajos: V/F (o 1/0) para responder, flechas para moverte, Supr para
+  borrar.» con el desplegable «Atajos de teclado». El ratón y el móvil, igual que antes; sin «rellenar todo».
+- En el diagrama de Venn, `V`/`1` marca una región y `F`/`0`/`Supr` la desmarca.
+- **Relaciones entre conjuntos** (`shared/sets/relations.ts`): ⊆, ⊂ o ⊊, ⊇, ⊃ o ⊋, =, ≠ y ⊈, con alternativas ASCII
+  (`<=`, `<`, `>=`, `>`, `!=`, `subseteq`, `subset`…) y cadenas como ∅ ≠ A ⊆ B; se deciden por regiones del diagrama
+  (siempre cierta, nunca cierta o depende) con contraejemplo.
+- **«Supuestos» en el diagrama de Venn**: relaciones que se dan por ciertas (A ⊆ B, A ∩ C = ∅…); las regiones vacías
+  por hipótesis llevan rayado cruzado, un ∅ y su nombre, y no cuentan al comprobar. Con dos conjuntos, «Dibujar
+  anidados» (A dentro de B o B dentro de A), «Dibujar separados» (disjuntos) o un solo círculo (A = B), con los mismos
+  nombres de región y el mismo teclado.
+- **«Relaciones»** en «Comprobar una igualdad»: una relación (de práctica o escrita) con supuestos opcionales; tras
+  responder, el contraejemplo dibujado. A × B ⊆ A ∪ B, como ejercicio fijo con su explicación.
+- ⊆, ⊂, ⊇, = y ≠ en el teclado de símbolos de Conjuntos, y «Cómo escribir relaciones».
+- Ejercicio **«Relaciones entre conjuntos»** en «Ejercicios → Conjuntos» (tres niveles, cuatro opciones a)–d): cuál es
+  siempre cierta o siempre falsa con unos supuestos) y en el bloque «Conjuntos y funciones» del simulacro de 02MIAR.
+- 15 relaciones de práctica en `content/conjuntos` (CC BY 4.0).
+- Clave nueva de los laboratorios `gridAdvance` (`ia-labs.grid-advance` por defecto), incluida en «Exportar mis datos».
+- API: el motor de relaciones (`parseSetRelation`, `parseSetHypotheses`, `checkRelation`, `analyzeHypotheses`,
+  `nestedShape`…) se exporta con los demás de conjuntos.
+
+### Cambiado
+
+- Escribir una relación donde va una expresión (por ejemplo, A ⊆ B en «Escribir la mía») ya no dice «No reconozco
+  «⊆»»: explica que «A ⊆ B es una relación (verdadera o falsa), no un conjunto» y dónde se usan las relaciones.
 
 ## [0.12.0] - 2026-11-05
 
@@ -474,7 +509,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.12.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.13.0
 [0.12.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.12.0
 [0.11.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.11.0
 [0.10.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.10.0
