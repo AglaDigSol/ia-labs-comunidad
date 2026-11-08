@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 import { DEFAULT_LABS_KEYS } from "../labs-storage.ts";
@@ -254,5 +255,37 @@ describe("Mapa de Karnaugh", () => {
     renderAt("/laboratorios/boole?s=karnaugh&v=mapa");
     expect((await screen.findByRole("grid", {}, { timeout: 5000 })).textContent).toContain("X");
     expect(screen.getByText("f(x, y): 0X01")).toBeTruthy();
+  });
+
+  it("mapa en blanco: los valores también se escriben con el teclado (0, 1, X) y el foco baja", async () => {
+    const user = userEvent.setup();
+    await choose("blanco-3", "mapa");
+    expect(screen.getByText("Atajos: 0, 1 o X para responder, flechas para moverte.")).toBeTruthy();
+    const first = cell("x=0, y=0, z=0");
+    expect(first.getAttribute("aria-describedby")).toBe(screen.getByText(/^Atajos: /).id);
+    first.focus();
+    await user.keyboard("1");
+    // Mapa de 3 variables: filas x, columnas yz. Baja a la fila x = 1, misma columna.
+    expect(cell("x=0, y=0, z=0").getAttribute("aria-label")).toBe("Celda x=0, y=0, z=0: 1");
+    expect(document.activeElement).toBe(cell("x=1, y=0, z=0"));
+    await user.keyboard("x");
+    expect(cell("x=1, y=0, z=0").getAttribute("aria-label")).toBe("Celda x=1, y=0, z=0: X (indiferencia)");
+    // Última fila: se queda. V y - también valen; Supr no hace nada (no hay celdas vacías).
+    expect(document.activeElement).toBe(cell("x=1, y=0, z=0"));
+    await user.keyboard("v{Delete}{Backspace}");
+    expect(cell("x=1, y=0, z=0").getAttribute("aria-label")).toBe("Celda x=1, y=0, z=0: 1");
+    await user.keyboard("{ArrowRight}-");
+    expect(cell("x=1, y=0, z=1").getAttribute("aria-label")).toBe("Celda x=1, y=0, z=1: X (indiferencia)");
+    await user.keyboard("f");
+    expect(cell("x=1, y=0, z=1").getAttribute("aria-label")).toBe("Celda x=1, y=0, z=1: 0");
+    expect(saved().kmap?.vector).toBe("10001000");
+    // Al agrupar, las teclas de valor no cambian nada (Intro y Espacio seleccionan, como siempre).
+    fireEvent.click(screen.getByRole("radio", { name: "Agrupar" }));
+    expect(screen.queryByText(/^Atajos: /)).toBeNull();
+    cell("x=0, y=0, z=0").focus();
+    await user.keyboard("0");
+    expect(cell("x=0, y=0, z=0").getAttribute("aria-label")).toBe("Celda x=0, y=0, z=0: 1");
+    await user.keyboard(" ");
+    expect(cell("x=0, y=0, z=0").getAttribute("aria-label")).toBe("Celda x=0, y=0, z=0: 1, seleccionada");
   });
 });
