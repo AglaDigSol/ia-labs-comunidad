@@ -103,6 +103,11 @@ h1:focus {
   outline-offset: 2px;
 }
 
+/* Regiones del diagrama de Venn: el foco es el borde de la región (stroke), no un rectángulo. */
+.venn-region:focus-visible {
+  outline: none;
+}
+
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums slashed-zero;

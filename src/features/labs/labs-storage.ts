@@ -9,7 +9,7 @@ import type { StorageAdapter } from "../../lib/storage-adapter.ts";
 import { setPythonConfig, type PythonLabConfig } from "./python/python-config.ts";
 
 /** Valores que guardan los laboratorios. Todos son cadenas (JSON en el caso de Markov, Boole, los ejercicios, Python y el simulacro). */
-export type LabsStorageKey = "markov" | "logicFormat" | "boole" | "exercises" | "python" | "exam" | "pyexam" | "gridAdvance" | "labsIntro";
+export type LabsStorageKey = "markov" | "logicFormat" | "boole" | "exercises" | "python" | "exam" | "pyexam" | "gridAdvance" | "labsIntro" | "sets";
 
 /** Claves de localStorage de la app independiente. */
 export const DEFAULT_LABS_KEYS = {
@@ -22,6 +22,7 @@ export const DEFAULT_LABS_KEYS = {
   pyexam: "ia-labs.pyexam.v1",
   gridAdvance: "ia-labs.grid-advance",
   labsIntro: "ia-labs.labs-intro",
+  sets: "ia-labs.sets.v1",
 } as const satisfies Record<LabsStorageKey, string>;
 
 const LAB_KEYS = Object.keys(DEFAULT_LABS_KEYS) as LabsStorageKey[];
@@ -40,7 +41,8 @@ function getStorage(): Storage | null {
  * usan las de DEFAULT_LABS_KEYS (por ejemplo, `boole`, añadida en 0.4.0, `exercises`, en 0.7.0,
  * `python`, en 0.8.0, `exam`, la del simulacro de examen, `pyexam`, la del simulacro de 01MIAR,
  * `gridAdvance`, en 0.13.0, la opción «Avanzar al escribir» de las tablas: "0" apagada, "1" o nada encendida,
- * o `labsIntro`, la orientación de la primera visita: "0" cerrada).
+ * `labsIntro`, la orientación de la primera visita: "0" cerrada, o `sets`, la expresión y los supuestos del
+ * diagrama de Venn de Conjuntos, en JSON).
  */
 export function createLocalStorageLabsAdapter(keys: Partial<Record<LabsStorageKey, string>> = {}): StorageAdapter {
   const map: Record<LabsStorageKey, string> = { ...DEFAULT_LABS_KEYS, ...keys };

@@ -7,10 +7,11 @@
 // - «Con elementos»: el universo y A, B, C por extensión; calculas el conjunto resultado y la app lo
 //   corrige: marca los elementos que sobran y dice cuántos faltan, nunca cuáles.
 import { Check, Eraser, Lightbulb } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   analyzeHypotheses,
   nestedShape,
+  parseSetRelation,
   relationToPlain,
   relationVars,
   type SetRelation,
@@ -44,6 +45,7 @@ import { HOW_TO_WRITE, operationRules, plural, SetExprField, Status, subexpressi
 import { EmptyLegend, HypothesesEditor, NESTED_LABEL } from "./Hypotheses.tsx";
 import { drawnRegions, regionOrder } from "./venn-geometry.ts";
 import { VennDiagram } from "./VennDiagram.tsx";
+import { loadVennDraft, saveVennDraft } from "./venn-storage.ts";
 
 type Mode = "regiones" | "elementos";
 const LEVELS = ["básico", "medio", "avanzado"] as const;
@@ -71,15 +73,33 @@ export function VennSection() {
 
 // ---------------------------------------------------------------- Sombrear regiones
 
-function RegionsPractice() {
-  const [choice, setChoice] = useState<string>(SETS_PACK.venn[0]!.id);
-  const [own, setOwn] = useState("");
-  const [ownError, setOwnError] = useState<ParseError | null>(null);
-  const [expr, setExpr] = useState<SetExpr | null>(() => {
-    const r = parseSetExpr(SETS_PACK.venn[0]!.expr);
-    return r.ok ? r.expr : null;
+/** Lo guardado (expresión y supuestos), ya leído; lo que no se lea se descarta. */
+function initialRegions(): { choice: string; own: string; expr: SetExpr | null; hypotheses: SetRelation[] } {
+  const first = parseSetExpr(SETS_PACK.venn[0]!.expr);
+  const fallback = { choice: SETS_PACK.venn[0]!.id, own: "", expr: first.ok ? first.expr : null, hypotheses: [] };
+  const d = loadVennDraft();
+  if (!d) return fallback;
+  const listed = SETS_PACK.venn.find((v) => v.id === d.choice);
+  if (!listed && d.choice !== "propia") return fallback;
+  const parsed = parseSetExpr(listed ? listed.expr : d.expr);
+  const hypotheses = d.hyps.flatMap((h) => {
+    const r = parseSetRelation(h);
+    return r.ok ? r.relations : [];
   });
-  const [hypotheses, setHypotheses] = useState<SetRelation[]>([]);
+  return { choice: d.choice, own: d.own, expr: parsed.ok ? parsed.expr : fallback.expr, hypotheses };
+}
+
+function RegionsPractice() {
+  const [initial] = useState(initialRegions);
+  const [choice, setChoice] = useState<string>(initial.choice);
+  const [own, setOwn] = useState(initial.own);
+  const [ownError, setOwnError] = useState<ParseError | null>(null);
+  const [expr, setExpr] = useState<SetExpr | null>(initial.expr);
+  const [hypotheses, setHypotheses] = useState<SetRelation[]>(initial.hypotheses);
+  // Se recuerda en el dispositivo: al recargar vuelven la expresión y los supuestos.
+  useEffect(() => {
+    saveVennDraft({ choice, own, expr: expr ? setToPlain(expr) : "", hyps: hypotheses.map(relationToPlain) });
+  }, [choice, own, expr, hypotheses]);
   const consistent = useMemo(() => analyzeHypotheses(hypotheses).consistent, [hypotheses]);
   const vars = expr ? relationVars(hypotheses, expr) : [];
 
@@ -222,6 +242,13 @@ export function ShadePractice({ expr, hypotheses = [], onSolved }: { expr: SetEx
             <input type="checkbox" className="h-5 w-5" checked={nested} onChange={(e) => setNested(e.target.checked)} />
             {NESTED_LABEL[shape]}
           </label>
+        ) : emptyNames.length > 0 ? (
+          // Por qué no aparece «Dibujar anidados»: solo hay dibujos anidados de dos conjuntos.
+          <p className="text-[14px] text-muted" data-no-nested="">
+            {n === 3
+              ? "Sin dibujo anidado: solo lo hay para dos conjuntos (A dentro de B, separados o iguales). Con tres, los supuestos se ven en el diagrama de siempre: las regiones vacías llevan rayado cruzado y ∅."
+              : "Sin dibujo anidado: estos supuestos no dejan A dentro de B, B dentro de A, A y B separados ni A = B, sino otra combinación de regiones vacías. Se ven en el diagrama de siempre, con rayado cruzado y ∅."}
+          </p>
         ) : null}
         <VennDiagram
           n={n}
