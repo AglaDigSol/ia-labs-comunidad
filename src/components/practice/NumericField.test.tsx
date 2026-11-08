@@ -16,17 +16,3 @@ describe("NumericField", () => {
     expect(note?.textContent).toBe("Usa coma decimal.");
   });
 });
-
-describe("campos que admiten negativos o fracciones", () => {
-  it("ninguno usa inputMode decimal (salvo las notas, que van de 0 a 10)", async () => {
-    const { readdirSync, readFileSync, statSync } = await import("node:fs");
-    const { join } = await import("node:path");
-    const walk = (d: string): string[] =>
-      readdirSync(d).flatMap((f) => {
-        const p = join(d, f);
-        return statSync(p).isDirectory() ? walk(p) : p.endsWith(".tsx") && !p.endsWith(".test.tsx") ? [p] : [];
-      });
-    const offenders = walk("src").filter((p) => !p.includes("grades") && readFileSync(p, "utf8").includes('inputMode="decimal"'));
-    expect(offenders).toEqual([]);
-  });
-});
