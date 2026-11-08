@@ -7,7 +7,7 @@
 // V/F o 1/0, flechas, Supr), con una sola parada de tabulación por tabla.
 // La app solo corrige y da pistas; nunca rellena ni muestra los valores correctos.
 import { Check, Lightbulb, RotateCcw, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toPlain, type Node } from "../../../../shared/logic/ast.ts";
 import { classify, type Table } from "../../../../shared/logic/truth-table.ts";
 import { Button } from "../../../components/ui/button.tsx";
@@ -100,14 +100,14 @@ const OP: Record<Exclude<Node["kind"], "var" | "const">, string> = {
 const operandText = (n: Node) => (isBinary(n) ? `(${toPlain(n)})` : toPlain(n));
 
 /** Columna de la que sale un operando: una variable, un paso anterior o una constante (sin columna). */
-type Source = { col: string | null; text: string };
+type Source = { col: string | null; text: string; value?: boolean };
 
 function operands(node: Node, vars: string[], keys: string[]): Source[] {
   const list = node.kind === "not" ? [node.arg] : isBinary(node) ? [node.left, node.right] : [];
   return list.map((n) => {
     const text = operandText(n);
     if (n.kind === "var") return { col: vars.includes(n.name) ? `v:${n.name}` : null, text };
-    if (n.kind === "const") return { col: null, text };
+    if (n.kind === "const") return { col: null, text, value: n.value };
     const j = keys.indexOf(toPlain(n));
     return { col: j >= 0 ? `s:${j}` : null, text };
   });
@@ -205,11 +205,46 @@ function StepPractice({ table, format, formula, onSolved }: PartProps) {
     setKindChecked(false);
   };
 
+  // En el móvil la tabla se desplaza: las columnas de las variables quedan fijas a la izquierda
+  // (sticky, con su desplazamiento medido) y, junto a cada casilla del paso actual, se repiten los
+  // valores de sus operandos, que pueden haber quedado fuera de la vista.
+  const varHeads = useRef<Array<HTMLTableCellElement | null>>([]);
+  const [lefts, setLefts] = useState<number[]>([]);
+  useLayoutEffect(() => {
+    let x = 0;
+    const offsets = table.vars.map((_, k) => {
+      const left = x;
+      x += varHeads.current[k]?.offsetWidth ?? 0;
+      return left;
+    });
+    setLefts((prev) => (prev.length === offsets.length && prev.every((v, k) => v === offsets[k]) ? prev : offsets));
+  }, [table.vars, step]);
+  const stickyWidth = (lefts.at(-1) ?? 0) + (varHeads.current[table.vars.length - 1]?.offsetWidth ?? 0);
+  const stickyCell = (k: number) => ({
+    className: cn("sticky z-10 bg-raised", k === table.vars.length - 1 && "border-r border-border"),
+    style: { left: lefts[k] ?? 0 },
+  });
+  const operandValue = (o: Source, i: number): boolean | null => {
+    if (o.value !== undefined) return o.value;
+    if (o.col?.startsWith("v:")) return table.rows[i]!.values[table.vars.indexOf(o.col.slice(2))] ?? null;
+    if (o.col?.startsWith("s:")) return table.rows[i]!.sub[Number(o.col.slice(2))] ?? null;
+    return null;
+  };
+  /** «1 ↔ 0» o «¬ 1»: los valores que combina el paso actual en la fila i. */
+  const operandValues = (i: number): string | null => {
+    if (current.kind === "var" || current.kind === "const") return null;
+    const vals = ops.map((o) => operandValue(o, i));
+    if (vals.some((v) => v === null)) return null;
+    const [a, b] = vals.map((v) => fmt(v!, format));
+    return current.kind === "not" ? `¬ ${a}` : `${a} ${OP[current.kind]} ${b}`;
+  };
+
   const rowLabel = (i: number) =>
     `Fila ${i + 1} (${table.vars.map((v, k) => `${v} = ${fmt(table.rows[i]!.values[k]!, format)}`).join(", ")})`;
   const headClass = (col: string) =>
     cn(
-      "px-3 py-2 font-mono font-normal whitespace-nowrap",
+      // En el móvil los títulos largos pasan a otra línea en lugar de quedar cortados.
+      "px-3 py-2 font-mono font-normal whitespace-nowrap max-sm:max-w-40 max-sm:whitespace-normal max-sm:break-words",
       highlighted.has(col) && !allDone && "border-b-2 border-b-accent bg-accent-soft",
     );
   const operandMark = (col: string) =>
@@ -227,13 +262,21 @@ function StepPractice({ table, format, formula, onSolved }: PartProps) {
         {`Paso ${step + 1} de ${n}: `}
         <span className="font-mono font-normal">{keys[step]}</span>
       </p>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" style={{ scrollPaddingLeft: stickyWidth }} data-truth-steps="">
         <table role="grid" className="border-separate border-spacing-0 text-center">
           <caption className="sr-only">{`Tu tabla de verdad de ${formula}, paso a paso`}</caption>
           <thead>
             <tr>
-              {table.vars.map((v) => (
-                <th key={v} scope="col" className={headClass(`v:${v}`)}>
+              {table.vars.map((v, k) => (
+                <th
+                  key={v}
+                  ref={(el) => {
+                    varHeads.current[k] = el;
+                  }}
+                  scope="col"
+                  className={cn(stickyCell(k).className, headClass(`v:${v}`))}
+                  style={stickyCell(k).style}
+                >
                   {v}
                   {operandMark(`v:${v}`)}
                 </th>
@@ -254,7 +297,7 @@ function StepPractice({ table, format, formula, onSolved }: PartProps) {
             {table.rows.map((r, i) => (
               <tr key={r.minterm} className="border-t border-border">
                 {r.values.map((v, k) => (
-                  <td key={k} className="px-3 py-1 font-mono text-muted">
+                  <td key={k} className={cn("px-3 py-1 font-mono text-muted", stickyCell(k).className)} style={stickyCell(k).style}>
                     {fmt(v, format)}
                   </td>
                 ))}
@@ -268,9 +311,16 @@ function StepPractice({ table, format, formula, onSolved }: PartProps) {
                       </td>
                     );
                   const bad = checked && wrong[i]!;
+                  const inline = j === step && !stepDone ? operandValues(i) : null;
                   return (
                     <td key={j} className="px-2 py-1">
                       <span className="inline-flex items-center gap-1">
+                        {inline ? (
+                          // Solo en pantallas estrechas, donde las columnas de los operandos pueden no verse.
+                          <span aria-hidden="true" data-operands="" className="whitespace-nowrap font-mono text-[14px] text-muted sm:hidden">
+                            {inline}
+                          </span>
+                        ) : null}
                         <button
                           {...grid.cellProps({ row: i, col: j })}
                           type="button"
