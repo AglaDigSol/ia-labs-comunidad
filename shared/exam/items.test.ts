@@ -134,3 +134,26 @@ describe("respuestas numéricas", () => {
     expect(multi).not.toBeNull();
   });
 });
+
+describe("conjuntos-relaciones en el simulacro (muchas semillas)", () => {
+  it("una sola correcta, la que dice el motor, con el porqué de cada opción y TeX en todas", () => {
+    const many = Array.from({ length: 150 }, (_, i) => (i * 40503 + 11) >>> 0);
+    for (const level of examLevels("conjuntos-relaciones")) {
+      for (const seed of many) {
+        const item = examItem("conjuntos-relaciones", seed, level);
+        expect(item, `${level} ${seed}`).not.toBeNull();
+        if (item!.kind !== "choice") throw new Error("se esperaba opción múltiple");
+        expect(item!.prompt).toMatch(/^¿Cuál de estas afirmaciones es siempre (verdadera|falsa)\?$/);
+        expect(item!.options.filter((o) => o.correct)).toHaveLength(1);
+        for (const o of item!.options) {
+          expect(o.tex).toBeTruthy();
+          expect((o.why ?? "").length).toBeGreaterThan(20);
+          // La correcta es la del veredicto pedido.
+          const want = item!.prompt.endsWith("verdadera?") ? /^Siempre cierta/ : /^(Siempre falsa|Los elementos de A × B)/;
+          if (o.correct) expect(o.why).toMatch(want);
+          else expect(o.why).not.toMatch(want);
+        }
+      }
+    }
+  });
+});
