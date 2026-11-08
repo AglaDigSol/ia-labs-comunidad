@@ -5,10 +5,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { COMB_PACK } from "../../../../content/combinatoria/practica.ts";
 import { algorithmGrowth } from "../../../../shared/discrete/algorithms.ts";
 import { isConstantTrap, optionIsCorrect } from "../../../../shared/discrete/bigo.ts";
-import { GUIDE_TEXT } from "../../../../shared/discrete/count.ts";
+import { acceptedFormulas, countingFormula, countModel, FORMULA_IDS, FORMULAS, GUIDE_TEXT } from "../../../../shared/discrete/count.ts";
 import { pnpStatement } from "../../../../shared/discrete/pnp.ts";
-import { bigOOptions, COMB_COMPLEXITY, COMB_PNP, COMB_PROBLEM, complexityGrowth, problemAnswer } from "../../../../shared/exercises/discrete.ts";
-import { rngFor, seedFromText } from "../../../../shared/exercises/random.ts";
+import { bigOOptions, COMB_COMPLEXITY, COMB_MODEL, COMB_PNP, COMB_PROBLEM, complexityGrowth, problemAnswer } from "../../../../shared/exercises/discrete.ts";
+import { rngFor, seedFromText, seedToText } from "../../../../shared/exercises/random.ts";
 import { LabsRoutes } from "../labs.tsx";
 
 afterEach(() => {
@@ -161,6 +161,48 @@ describe("Complejidad", () => {
 });
 
 describe("en «Ejercicios»", () => {
+  it("¿Qué modelo es?: las pistas solo preguntan (sin el nombre del modelo) y un fallo explica la opción elegida", async () => {
+    renderAt("/laboratorios/ejercicios?t=combinatoria-modelo&n=medio&s=5");
+    const x = COMB_MODEL.generate(seedFromText("5")!, "medio");
+    await screen.findByText(x.text, undefined, { timeout: 5000 });
+    for (let i = 0; i < 6; i++) {
+      const b = screen.queryByRole("button", { name: i === 0 ? "Dame una pista" : "Otra pista" });
+      if (!b || (b as HTMLButtonElement).disabled) break;
+      fireEvent.click(b);
+    }
+    const hints = screen.getAllByRole("listitem").map((li) => li.textContent ?? "").join(" ");
+    expect(hints).toMatch(/orden/);
+    for (const id of FORMULA_IDS) expect(hints).not.toContain(`${FORMULAS[id].name}:`);
+    expect(hints).not.toMatch(/Quedan (permutaciones|combinaciones)/);
+    const accepted = acceptedFormulas(x.model);
+    const wrong = x.options.find((id) => !accepted.includes(id))!;
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(`${FORMULAS[wrong].name} ${FORMULAS[wrong].spoken.slice(0, 10)}`) }));
+    click("Comprobar");
+    expect(status()).toMatch(/Ese no es el modelo\./);
+    expect(status()).toContain(`Las ${FORMULAS[wrong].name.toLowerCase()} se usan cuando`);
+    // Sin decir cuál es el bueno.
+    for (const id of accepted) expect(status()).not.toContain(`Las ${FORMULAS[id].name.toLowerCase()} se usan`);
+  });
+
+  it("un número que es el de otro modelo lo dice (72 = V₉,₂ en vez de C₉,₂), sin dar el bueno", async () => {
+    // Una semilla con combinaciones sin repetición y V distinto de C.
+    const level = "básico" as const;
+    const seed = Array.from({ length: 400 }, (_, i) => i).find((s) => {
+      const p = COMB_PROBLEM.generate(s, level);
+      return p.terms.length === 1 && countingFormula(p.terms[0]!.model) === "C" && p.terms[0]!.model.k >= 2;
+    })!;
+    const p = COMB_PROBLEM.generate(seed, level);
+    const m = p.terms[0]!.model;
+    const v = countModel({ n: m.n, k: m.k, order: true, repetition: false });
+    renderAt(`/laboratorios/ejercicios?t=combinatoria-problema&n=basico&s=${seedToText(seed)}`);
+    await screen.findByText(p.text, undefined, { timeout: 5000 });
+    fireEvent.change(screen.getByLabelText("Resultado"), { target: { value: v.toString() } });
+    click("Comprobar");
+    expect(status()).toMatch(/Ese no es el resultado\./);
+    expect(status()).toMatch(/Ese número es el que dan las variaciones, V\(\d+, \d+\)\. ¿Importa aquí el orden\?/);
+    expect(status()).not.toContain(problemAnswer(p).toString());
+  });
+
   it("el problema pide el número y acepta la respuesta exacta", async () => {
     renderAt("/laboratorios/ejercicios?t=combinatoria-problema&n=medio&s=abc");
     const p = COMB_PROBLEM.generate(seedFromText("abc")!, "medio");

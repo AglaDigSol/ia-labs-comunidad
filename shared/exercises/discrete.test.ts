@@ -3,7 +3,7 @@
 // de la O), funciones con una sola verdadera (o varias, en avanzado) y P y NP con verdaderas y falsas.
 import { describe, expect, it } from "vitest";
 import { costOf, growthLE, growthOf, isConstantTrap, isLooseBound, optionIsCorrect } from "../discrete/bigo.ts";
-import { acceptedFormulas, countingFormula, countModel, FORMULA_IDS } from "../discrete/count.ts";
+import { acceptedFormulas, countingFormula, countModel, FORMULA_IDS, FORMULAS, modelQuestionHints, wrongModelHint } from "../discrete/count.ts";
 import { statementText, statementTrue } from "../discrete/functions.ts";
 import { pnpStatement } from "../discrete/pnp.ts";
 import {
@@ -15,6 +15,7 @@ import {
   complexityGrowth,
   DISCRETE_EXERCISES,
   problemAnswer,
+  problemMistake,
 } from "./discrete.ts";
 import { seedFromText } from "./random.ts";
 import { exerciseTopics, exercisesOfTopic, mixedType } from "./registry.ts";
@@ -162,6 +163,28 @@ describe("generadores", () => {
     expect(isLooseBound({ growth: growthOf(costOf("n^9")) }, g)).toBe(true);
     expect(isLooseBound({ growth: growthOf(costOf("n^7")) }, g)).toBe(false);
     expect(isLooseBound({ growth: g }, g)).toBe(false);
+  });
+
+  it("errores típicos de recuento: otro modelo, el total sin restar, lo que se resta, la suma", () => {
+    const c92 = { n: 9, k: 2, order: false, repetition: false };
+    expect(wrongModelHint(c92, 72n)).toBe("Ese número es el que dan las variaciones, V(9, 2). ¿Importa aquí el orden?");
+    expect(wrongModelHint(c92, 45n)).toMatch(/combinaciones con repetición, CR\(9, 2\)\. ¿Se pueden repetir/);
+    expect(wrongModelHint(c92, 36n)).toBeNull();
+    expect(wrongModelHint(c92, 37n)).toBeNull();
+    const p = { text: "", terms: [{ sign: 1 as const, model: { n: 10, k: 3, order: true, repetition: true } }, { sign: -1 as const, model: { n: 10, k: 3, order: true, repetition: false } }] };
+    expect(problemMistake(p, 1000n)).toMatch(/total de casos posibles/);
+    expect(problemMistake(p, 720n)).toMatch(/no cumplen la condición, los que hay que quitar/);
+    expect(problemMistake(p, 1720n)).toMatch(/Has sumado/);
+    expect(problemMistake(p, 280n)).toBeNull();
+    // Nunca el número bueno.
+    for (const v of [1000n, 720n, 1720n]) expect(problemMistake(p, v)).not.toContain("280");
+  });
+
+  it("«¿Qué modelo es?»: las pistas que solo preguntan no nombran ningún modelo", () => {
+    each((s, level) => {
+      const x = COMB_MODEL.generate(s, level);
+      for (const h of modelQuestionHints(x.model)) for (const id of FORMULA_IDS) expect(h.toLowerCase()).not.toContain(FORMULAS[id].name.toLowerCase());
+    });
   });
 
   it("P y NP: afirmaciones del banco, sin repetir, con verdaderas y falsas", () => {

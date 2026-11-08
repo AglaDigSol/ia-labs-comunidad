@@ -6,7 +6,7 @@
 // shared/discrete al corregir, nunca están escritas en la instancia.
 import { algorithmGrowth, type Algorithm, type AlgoStmt } from "../discrete/algorithms.ts";
 import { costOf, distractors, growthLE, growthOf, type BigOOption, type Growth } from "../discrete/bigo.ts";
-import { acceptedFormulas, countModel, FORMULA_IDS, modelProblem, type CountingModel, type FormulaId } from "../discrete/count.ts";
+import { acceptedFormulas, countModel, FORMULA_IDS, modelProblem, wrongModelHint, type CountingModel, type FormulaId } from "../discrete/count.ts";
 import { countFunctions, FN_MODES, statementTrue, type FnProp, type FnSetting, type FnStatement } from "../discrete/functions.ts";
 import { pnpPool } from "../discrete/pnp.ts";
 import { generateUntil, rngFor, type Rng } from "./random.ts";
@@ -25,6 +25,25 @@ export type CombPnpInstance = { ids: string[] };
 
 /** La respuesta exacta de un problema. */
 export const problemAnswer = (p: CombProblemInstance): bigint => p.terms.reduce((acc, t) => acc + BigInt(t.sign) * countModel(t.model), 0n);
+
+/**
+ * Por qué puede estar mal un número, si coincide con un error típico: el de otro modelo con los mismos
+ * datos (variaciones en vez de combinaciones, con o sin repetición), o, en «al menos uno», el total sin
+ * restar, lo que se resta o la suma. Nunca dice el número bueno ni el modelo bueno. null si no se sabe.
+ */
+export function problemMistake(p: CombProblemInstance, value: bigint): string | null {
+  if (value === problemAnswer(p)) return null;
+  if (p.terms.length === 1) return wrongModelHint(p.terms[0]!.model, value);
+  const values = p.terms.map((t) => countModel(t.model));
+  if (value === values[0]) return "Ese número es el total de casos posibles: falta quitar los que no cumplen la condición.";
+  if (p.terms.slice(1).some((t, i) => t.sign < 0 && values[i + 1] === value)) return "Ese número es el de los casos que no cumplen la condición, los que hay que quitar del total.";
+  if (value === values.reduce((a, b) => a + b, 0n)) return "Has sumado los recuentos: los casos que no cumplen la condición se restan del total.";
+  for (const t of p.terms) {
+    const hint = wrongModelHint(t.model, value);
+    if (hint) return hint;
+  }
+  return null;
+}
 
 /** El orden correcto de un ejercicio de complejidad. */
 export const complexityGrowth = (x: { kind: "algo"; algo: Algorithm } | { kind: "cost"; cost: string }): Growth =>

@@ -2,7 +2,9 @@
 // orden?, ¿se repiten?, ¿se usan todos?), se elige el modelo entre las seis fórmulas y se escribe el
 // número; «Comprobar» marca lo que está mal sin decir lo correcto. En el banco de ejercicios, solo el
 // número («Problema de combinatoria») o solo el modelo entre cuatro opciones («¿Qué modelo es?»).
-// Las pistas dicen qué fórmula encaja y por qué, nunca el número; la solución, detrás de SolutionGate.
+// Las pistas dicen qué fórmula encaja y por qué, nunca el número (en «¿Qué modelo es?», solo
+// preguntas); un número que es el de otro modelo, o el total sin restar, se explica sin dar el bueno.
+// La solución, detrás de SolutionGate.
 import { Check } from "lucide-react";
 import { useState } from "react";
 import { equalsInteger, integerText, parseExamNumber } from "../../../../shared/discrete/answer.ts";
@@ -16,13 +18,14 @@ import {
   guideFor,
   guideFormula,
   modelHints,
+  modelQuestionHints,
   substitutedTex,
   substitutedText,
   thirdQuestion,
   type CountingModel,
   type FormulaId,
 } from "../../../../shared/discrete/count.ts";
-import { problemAnswer, type CombProblemInstance } from "../../../../shared/exercises/discrete.ts";
+import { problemAnswer, problemMistake, type CombProblemInstance } from "../../../../shared/exercises/discrete.ts";
 import { SolutionGate } from "../../../components/practice/SolutionGate.tsx";
 import { Button } from "../../../components/ui/button.tsx";
 import { Tex } from "../../../lib/tex.tsx";
@@ -41,7 +44,11 @@ export function FormulaChoice({ id }: { id: FormulaId }) {
   );
 }
 
-function problemHints(p: CombProblemInstance): string[] {
+const lowerFirst = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+
+function problemHints(p: CombProblemInstance, ask: CountingAsk): string[] {
+  // Si lo que se pide es el modelo, las pistas solo preguntan: nombrarlo sería dar la respuesta.
+  if (ask === "model") return modelQuestionHints(p.terms[0]!.model);
   if (p.terms.length === 1) return modelHints(p.terms[0]!.model);
   return [
     "«Al menos uno» se cuenta mejor por el complementario: todos los casos posibles menos los que no tienen ninguno.",
@@ -102,6 +109,8 @@ export function CountingPractice({
 
   const parsed = number.trim() === "" ? null : parseExamNumber(number);
   const numberOk = parsed?.ok === true && equalsInteger(parsed.value, problemAnswer(problem));
+  // Un número entero equivocado que coincide con un error típico (otro modelo, el total sin restar…).
+  const mistake = askNumber && parsed?.ok === true && !numberOk && parsed.value.units % 10n ** BigInt(parsed.value.scale) === 0n ? problemMistake(problem, parsed.value.units / 10n ** BigInt(parsed.value.scale)) : null;
   const modelOk = formula !== null && accepted.includes(formula);
   // La guía solo se corrige en lo que se ha contestado (es una ayuda, no una pregunta obligatoria).
   const orderBad = ask === "lab" && order !== null && order !== guide.order;
@@ -152,7 +161,7 @@ export function CountingPractice({
           <Check size={16} aria-hidden="true" />
           Comprobar
         </Button>
-        <Hints hints={problemHints(problem)} />
+        <Hints hints={problemHints(problem, ask)} />
       </div>
       {checked ? (
         <Status>
@@ -163,9 +172,13 @@ export function CountingPractice({
             </Verdict>
           ) : (
             <>
-              <Verdict tone="warn">{parts.length > 1 ? `${parts.filter(Boolean).length} de ${parts.length} bien. Revisa lo marcado.` : "Todavía no. Revisa lo marcado."}</Verdict>
+              <Verdict tone="warn">
+                {parts.length > 1 ? `${parts.filter(Boolean).length} de ${parts.length} bien. Revisa lo marcado.` : askModel ? "Ese no es el modelo." : "Ese no es el resultado."}
+              </Verdict>
+              {askModel && formula !== null && !modelOk ? <span>{`Las ${FORMULAS[formula].name.toLowerCase()} se usan cuando ${lowerFirst(FORMULAS[formula].when)} ¿Pasa eso en este enunciado?`}</span> : null}
               {askModel && formula === null ? <span>Elige un modelo.</span> : null}
               {askNumber && parsed === null ? <span>Escribe el resultado.</span> : null}
+              {mistake ? <span>{mistake}</span> : null}
               {orderBad || repBad || thirdBad ? <span>Alguna respuesta de la guía no encaja con el enunciado (está marcada).</span> : null}
             </>
           )}

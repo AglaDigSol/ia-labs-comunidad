@@ -313,3 +313,54 @@ export function modelHints(m: CountingModel): string[] {
   if (id === "PR") out.push("n es el total de posiciones, y cada nᵢ, cuántos elementos iguales hay de cada tipo (suman n).");
   return out;
 }
+
+/**
+ * Pistas para «¿Qué modelo es?», donde la respuesta es la fórmula: solo preguntas que guían, sin el
+ * nombre del modelo ni lo que contesta la guía (eso va en la solución).
+ */
+export function modelQuestionHints(m: CountingModel): string[] {
+  return [
+    "Imagina dos resultados con los mismos elementos en distinto orden: ¿el enunciado los cuenta como distintos?",
+    m.groups && m.groups.length > 0
+      ? "¿Hay elementos iguales entre sí? ¿Qué pasa si intercambias dos de ellos?"
+      : "¿Puede aparecer el mismo elemento más de una vez en un resultado?",
+    "¿Se usan todos los elementos o solo una parte? ¿Entre cuántos eliges (n) y cuántos eliges (k)?",
+    "Con esas respuestas, la «Guía para decidir» del laboratorio de Combinatoria lleva a un solo modelo.",
+  ];
+}
+
+/** Lo que distingue a un modelo de otro, como pregunta de la guía. */
+const GUIDE_CLUE: Record<"order" | "repetition" | "all", string> = {
+  order: "¿Importa aquí el orden?",
+  repetition: "¿Se pueden repetir aquí los elementos?",
+  all: "¿Se usan aquí todos los elementos o solo k?",
+};
+
+/**
+ * Si un número equivocado es el que da otro modelo con los mismos datos (72 = V₉,₂ cuando se piden
+ * combinaciones), dice qué modelo lo da y qué pregunta de la guía revisar, sin decir cuál es el bueno.
+ * null si el número no coincide con ninguno (o coincide con el correcto).
+ */
+export function wrongModelHint(m: CountingModel, value: bigint): string | null {
+  const right = countModel(m);
+  if (value === right) return null;
+  const { n, k } = m;
+  const candidates: CountingModel[] = [
+    { n, k, order: true, repetition: false },
+    { n, k, order: true, repetition: true },
+    { n, k, order: false, repetition: false },
+    { n, k, order: false, repetition: true },
+    { n, k: n, order: true, repetition: false },
+  ];
+  const mine = guideFor(m);
+  for (const c of candidates) {
+    if (modelProblem(c) !== null || countingFormula(c) === countingFormula(m)) continue;
+    const v = countModel(c);
+    if (v !== value || v === right) continue;
+    const g = guideFor(c);
+    const id = countingFormula(c);
+    const clue = g.order !== mine.order ? GUIDE_CLUE.order : g.repetition !== mine.repetition ? GUIDE_CLUE.repetition : GUIDE_CLUE.all;
+    return `Ese número es el que dan las ${FORMULAS[id].name.toLowerCase()}, ${substitutedText(c).split(" = ")[0]}. ${clue}`;
+  }
+  return null;
+}
