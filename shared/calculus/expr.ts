@@ -319,6 +319,9 @@ export function toPlain(e: Expr): string {
           })
           .join("");
       case "mul": {
+        // 1·x se escribe x y (−1)·x, −x.
+        const unit = unitCoefficient(x);
+        if (unit) return unit.sign > 0 ? wrap(unit.rest, PREC.mul) : `−${wrap(unit.rest, PREC.mul)}`;
         let out = "";
         x.args.forEach((f, i) => {
           const s = f.k === "num" && f.v.d !== 1n ? `(${plain(f)})` : wrap(f, PREC.pow);
@@ -354,6 +357,16 @@ export function toPlain(e: Expr): string {
   }
 }
 
+/**
+ * Un producto con coeficiente 1 o −1 delante de algo que no es un número (1·x, −1·sen x): el signo y
+ * el resto, para escribir x y −x en vez de 1x y −1x. null en otro caso (2x, 1·2).
+ */
+function unitCoefficient(e: Expr & { k: "mul" }): { sign: 1 | -1; rest: Expr } | null {
+  const [c, ...rest] = e.args;
+  if (!c || c.k !== "num" || c.v.d !== 1n || (c.v.n !== 1n && c.v.n !== -1n) || rest.length === 0 || rest[0]!.k === "num") return null;
+  return { sign: c.v.n > 0n ? 1 : -1, rest: rest.length === 1 ? rest[0]! : { k: "mul", args: rest } };
+}
+
 const isLetterAtom = (e: Expr) => e.k === "var" || (e.k === "pow" && e.a.k === "var");
 /** El texto empieza por una letra que no se puede pegar a un número de forma ambigua. */
 function startsWithLetter(e: Expr): boolean {
@@ -378,7 +391,12 @@ function fracTexOf(v: Frac): string {
 }
 
 /** ¿El argumento de una función se puede escribir sin paréntesis? (sen x, ln 2x no: ln(2x)). */
-const bareArg = (a: Expr) => a.k === "var" || a.k === "const" || (a.k === "num" && a.v.n >= 0n && a.v.d === 1n);
+const bareArg = (e: Expr): boolean => {
+  // 1·x se escribe x: también va sin paréntesis (cos x, no cos(x)).
+  const u = e.k === "mul" ? unitCoefficient(e) : null;
+  const a = u && u.sign > 0 ? u.rest : e;
+  return a.k === "var" || a.k === "const" || (a.k === "num" && a.v.n >= 0n && a.v.d === 1n);
+};
 
 /** Escritura de libro en KaTeX: 3x^{2} - 2\operatorname{sen} x + \frac{1}{x}. */
 export function toTex(e: Expr): string {
@@ -406,6 +424,8 @@ export function toTex(e: Expr): string {
           })
           .join("");
       case "mul": {
+        const unit = unitCoefficient(x);
+        if (unit) return unit.sign > 0 ? wrap(unit.rest, PREC.mul) : `-${wrap(unit.rest, PREC.mul)}`;
         let out = "";
         x.args.forEach((f, i) => {
           let s = wrap(f, PREC.pow);
