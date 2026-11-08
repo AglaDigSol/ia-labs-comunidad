@@ -54,6 +54,7 @@ import { consumeFreshDraft, getDraft, listDrafts, updateDraftCode, type Draft, t
 import { baseName, checkHostFile, checkUpload, fmtBytes, mimeFor, UPLOAD_ACCEPT, type FileInfo } from "./files.ts";
 import { transformMagics } from "./magics.ts";
 import { classifyStderr, COPY_FONT_CACHE, hintsFor } from "./messages.ts";
+import { isSmartQuoteError, SmartQuotesHint } from "./SmartQuotes.tsx";
 import { parseKernelValue, type KernelValue } from "../pyexam/kernel.ts";
 import { TableOutput } from "../pyexam/TableOutput.tsx";
 import { closureBytes, EXTRA_WHEELS } from "./packages.ts";
@@ -970,6 +971,8 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
               <OutputBody
                 phase={phase}
                 out={out}
+                code={code}
+                onFixQuotes={changeCode}
                 onLoad={() => void loadPython()}
                 onAbort={() => abortRef.current?.abort()}
                 onRetry={retry}
@@ -1098,12 +1101,17 @@ function FilesPanel({
 function OutputBody({
   phase,
   out,
+  code,
+  onFixQuotes,
   onLoad,
   onAbort,
   onRetry,
 }: {
   phase: Phase;
   out: OutItem[];
+  /** El código del editor y cómo cambiarlo, para «Cambiar por comillas rectas». */
+  code: string;
+  onFixQuotes: (fixed: string) => void;
   onLoad: () => void;
   onAbort: () => void;
   onRetry: () => void;
@@ -1223,6 +1231,7 @@ function OutputBody({
                   {item.line !== null ? `Error en la línea ${item.line}` : "Error"}
                 </span>
                 <pre className="mono whitespace-pre-wrap break-words text-[14px] text-crit">{item.text}</pre>
+                {isSmartQuoteError(item.text, code) ? <SmartQuotesHint code={code} onFix={onFixQuotes} /> : null}
               </div>
             );
           case "fig":

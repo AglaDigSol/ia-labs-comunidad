@@ -192,6 +192,14 @@ describe.skipIf(!hasPython3)("ejercicio de código con python3", () => {
     expect(await screen.findByText(/error de sintaxis en la línea 1/, undefined, { timeout: 30_000 })).toBeTruthy();
   }, 90_000);
 
+  it("comillas tipográficas: el aviso en español las cambia por rectas con un toque", async () => {
+    const inst = await openCode("py-cadenas", "básico", 3);
+    await submit(`def ${inst.fn}(*args):\n    return “hola”\n`);
+    expect(await screen.findByText(/^Tus comillas son tipográficas/, undefined, { timeout: 30_000 })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Cambiar por comillas rectas" }));
+    expect((screen.getByLabelText("Tu código") as HTMLTextAreaElement).value).toBe(`def ${inst.fn}(*args):\n    return "hola"\n`);
+  }, 60_000);
+
   it("ficheros: escribe los archivos de cada caso con la API de archivos y los borra al terminar", async () => {
     // Una semilla cuyo ejercicio tenga archivos de entrada.
     const seed = [...Array(50).keys()].find((s) => Object.keys(typeOf("py-ficheros").generate(s, "básico").cases[0]!.files ?? {}).length > 0)!;

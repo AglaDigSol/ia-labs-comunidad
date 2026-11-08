@@ -15,6 +15,7 @@ import { Chip } from "../../../components/ui/chip.tsx";
 import { cn } from "../../../lib/cn.ts";
 import { FIRST_DOWNLOAD_BYTES, usePythonRuntime } from "../exercises/python/runtime.ts";
 import { CodeEditor } from "../python/CodeEditor.tsx";
+import { isSmartQuoteError, SmartQuotesHint } from "../python/SmartQuotes.tsx";
 import { Figure } from "../python/Figure.tsx";
 import type { PyClient, PyEvent } from "../python/py-client.ts";
 import { CELL_TIMEOUT_MS, cellProgram, newKernelId, parseKernelReply, type KernelValue } from "./kernel.ts";
@@ -59,7 +60,7 @@ export type CellRun = { count: number; stream: string; value: KernelValue | null
 
 export { TableOutput };
 
-function CellOutput({ run, test }: { run: CellRun; test: boolean }) {
+function CellOutput({ run, test, code, onFixQuotes }: { run: CellRun; test: boolean; code?: string; onFixQuotes?: (fixed: string) => void }) {
   return (
     <div className="flex flex-col gap-2" aria-label={`Salida [${run.count}]`} role="group">
       {run.notice ? <p className="text-[14px] font-semibold text-warn">{run.notice}</p> : null}
@@ -70,6 +71,7 @@ function CellOutput({ run, test }: { run: CellRun; test: boolean }) {
           {run.error}
         </Pre>
       ) : null}
+      {run.error && code !== undefined && onFixQuotes && isSmartQuoteError(run.error, code) ? <SmartQuotesHint code={code} onFix={onFixQuotes} /> : null}
       {run.figures.map((b64, i) => (
         <Figure key={i} b64={b64} n={i + 1} label={run.figures.length > 1 ? `Figura ${i + 1} de la celda [${run.count}]` : `Figura de la celda [${run.count}]`} />
       ))}
@@ -261,7 +263,13 @@ export function Notebook({
             ) : (
               <Pre label={label}>{c.code}</Pre>
             )}
-            {run ? <CellOutput run={run} test={c.kind === "test"} /> : null}
+            {run ? (
+              <CellOutput
+                run={run}
+                test={c.kind === "test"}
+                {...(c.kind === "code" ? { code: textOf(c), onFixQuotes: (v: string) => onCode(c.slot, v) } : {})}
+              />
+            ) : null}
           </li>
         );
       })}

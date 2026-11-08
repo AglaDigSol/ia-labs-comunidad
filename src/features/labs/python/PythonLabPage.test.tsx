@@ -341,6 +341,17 @@ describe("PythonLabPage: salida", () => {
     expect(screen.getByText("PyTorch no funciona en el navegador. Usa Google Colab o un entorno local con Python 3.12")).toBeTruthy();
   });
 
+  it("comillas tipográficas: aviso en español y «Cambiar por comillas rectas» corrige el editor", async () => {
+    await renderReady();
+    fireEvent.change(editor(), { target: { value: "print(“hola”)" } });
+    const run = await startRun();
+    const message = "  File \"<exec>\", line 1\n    print(“hola”)\n          ^\nSyntaxError: invalid character '“' (U+201C)";
+    await act(async () => run.resolve({ kind: "error", message, line: 1, ms: 5, files: null }));
+    expect(screen.getByRole("note").textContent).toMatch(/^Tus comillas son tipográficas/);
+    fireEvent.click(screen.getByRole("button", { name: "Cambiar por comillas rectas" }));
+    expect(editor().value).toBe('print("hola")');
+  });
+
   it("sin internet: el aviso aparece también si el error solo está en la salida (nltk.download)", async () => {
     await renderReady();
     const run = await startRun();
