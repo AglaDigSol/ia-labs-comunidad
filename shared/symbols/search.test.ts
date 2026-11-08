@@ -8,6 +8,12 @@ describe("normalizeEs", () => {
   it("strips accents and lower-cases", () => {
     expect(normalizeEs("  Implicación ")).toBe("implicacion");
   });
+
+  it("keeps ≠ and ∉ (they decompose into = and ∈ plus a combining stroke)", () => {
+    expect(normalizeEs("≠")).toBe("≠");
+    expect(normalizeEs("∉")).toBe("∉");
+    expect(normalizeEs("Ñandú")).toBe("nandu");
+  });
 });
 
 describe("searchSymbols", () => {

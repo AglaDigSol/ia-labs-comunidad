@@ -1,7 +1,8 @@
 import { CATEGORY_LABELS, type SymbolCategory, type SymbolEntry } from "./types.ts";
 
 export function normalizeEs(s: string): string {
-  return s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+  // Solo los acentos de las letras: ≠ (= y una barra combinada) o ∉ no deben quedarse en = o ∈.
+  return s.normalize("NFD").replace(/(\p{L})\p{M}+/gu, "$1").normalize("NFC").toLowerCase().trim();
 }
 
 interface Index {
