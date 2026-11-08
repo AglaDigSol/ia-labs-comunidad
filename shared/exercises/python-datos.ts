@@ -24,6 +24,7 @@ import {
   type PyCheck,
   type PyCheckKind,
   type PyCodeInstance,
+  type PyCompareOptions,
   type PyRule,
   type PyVal,
   type Tpl,
@@ -324,7 +325,8 @@ const UNA_LINEA: Tpl = {
           `\`aprobados_larga\` recibe un diccionario de nombre a lista de notas y devuelve la media (redondeada a un decimal) de quienes tienen alguna nota y media de ${min} o más. Escribe \`aprobados(notas)\` con una sola línea: un \`return\` con una comprensión de diccionario.`,
         ],
         fn: "aprobados", starter: tail("aprobados", "notas", long),
-        cases: [data(), data(), {}, { [ns[0]!]: [], [ns[1]!]: [min, min] }].map((d) => ({ code: call("aprobados", d) })),
+        // [min, min + 1, min + 1] tiene media min + 2/3: sin redondear no pasa.
+        cases: [data(), data(), {}, { [ns[0]!]: [], [ns[1]!]: [min, min], [ns[2]!]: [min, min + 1, min + 1] }].map((d) => ({ code: call("aprobados", d) })),
         rules: [enUnaLinea("aprobados")],
         hints: ["Recorre notas.items() en la comprensión: dos variables a la vez.", "Las dos condiciones se pueden unir con and en un solo if; and no evalúa la segunda si la primera es falsa (así no divides entre cero).", "La media se calcula dos veces (en el if y en el valor): en una línea no hay sitio para una variable."],
         solution: `${long}\n\ndef aprobados(notas):\n    return {n: round(sum(l) / len(l), 1) for n, l in notas.items() if len(l) > 0 and sum(l) / len(l) >= ${min}}\n`,
@@ -695,6 +697,8 @@ const AVANZADO: Tpl = {
 
 /** Matriz de enteros al azar como literal de NumPy. */
 const matrix = (rng: Rng, rows: number, cols: number, min: number, max: number) => Array.from({ length: rows }, () => ints(rng, cols, min, max));
+/** Comparación más fina que el redondeo a 6 decimales que pide el enunciado. */
+const EXACT_6: PyCompareOptions = { tolerance: 1e-9 };
 const npArray = (m: number[][]) => `np.array(${lit(m)})`;
 
 const NP_MASCARAS: Tpl = {
@@ -839,8 +843,12 @@ const NP_SISTEMAS: Tpl = {
     }
     const cases = [2, 3, 3, 4].map((n, i) => {
       const s = i === 1 || i === 3 ? { a: singular(rng, n), b: ints(rng, n, -9, 9) } : system(n);
-      return { code: `${HEAD_NP}A = ${npArray(s.a)}\nb = np.array(${lit(s.b)})\nresolver_o_nada(A, b)` };
+      return { code: `${HEAD_NP}A = ${npArray(s.a)}\nb = np.array(${lit(s.b)})\nresolver_o_nada(A, b)`, options: EXACT_6 };
     });
+    // Con det = 3, la solución tiene infinitos decimales (2/3, −1/3): sin redondear a 6 no pasa (con la
+    // tolerancia de siempre, 1e-6, la diferencia de 3·10⁻⁷ no se notaría).
+    const k = rng.pick([1, 2, 4, 5]);
+    cases.push({ code: `${HEAD_NP}A = ${npArray([[2, 1], [1, 2]])}\nb = np.array(${lit([k, 0])})\nresolver_o_nada(A, b)`, options: EXACT_6 });
     return {
       kind: "code", tema: 8, template: "numpy-sistemas", title: "Sistemas que no tienen solución única",
       statement: [
@@ -931,6 +939,9 @@ const NULOS: Tpl = {
 
 // ---------------------------------------------------------------- Tema 12: limpiar y convertir
 
+/** Requisito: redondear con round() (función o método de pandas y NumPy). */
+const USA_ROUND: PyRule = { kind: "usa", what: "llamada:round", label: "Redondea con round()" };
+
 const SALES_HEAD =
   "`ventas.csv` tiene un ticket por fila: `ticket, articulo, cantidad, precio, total, pago, local, fecha`. Algunas celdas están vacías, valen `ERROR` o `UNKNOWN`, o tienen números mal escritos (como `2,75`, `3.00€` o `dos`).";
 /** Lectura con los tokens ya convertidos en NaN y las columnas numéricas convertidas (para los pasos siguientes). */
@@ -1008,6 +1019,8 @@ const LIMPIAR: Tpl = {
         "1) los precios que faltan, con el precio habitual del artículo (la moda de sus precios válidos); 2) los totales que faltan, con precio × cantidad; 3) las cantidades que faltan, con total / precio redondeado al entero (con `round()`); 4) sin las filas a las que les faltan a la vez la cantidad y el total. El orden de las filas no cambia.",
       ],
       fn: "completar", starter: starterWith(HEAD_PD, "completar", "df"), cases, packages: PANDAS, seconds: DATA_SECONDS,
+      // total / precio da la cantidad salvo el ruido del float: el round() que pide el enunciado, como requisito.
+      rules: [USA_ROUND],
       hints: [
         "Calcula primero el precio habitual de cada artículo (una Series indexada por artículo) y úsalo con map para rellenar con fillna.",
         "Una máscara como total.isna() & cantidad.notna() dice qué filas rellenar; df.loc[mascara, \"total\"] = … las cambia solo a ellas.",
@@ -1066,6 +1079,9 @@ const AGRUPAR: Tpl = {
             kind: "code", tema: 10, template: "pandas-agrupar", title: "Total vendido por local",
             statement: [SALES_HEAD, "El caso lee la tabla con los NaN puestos y las columnas numéricas convertidas. Escribe `total_por_local(df)`, que devuelva una Series con la suma de `total` de cada local, redondeada a dos decimales y ordenada por el nombre del local (como la deja `groupby`). Los locales vacíos no cuentan."],
             fn: "total_por_local", starter: starterWith(HEAD_PD, "total_por_local", "df"), cases, packages: PANDAS, seconds: DATA_SECONDS,
+            // Los totales ya tienen dos decimales: lo que cambia el redondeo es el ruido del float (0,1 + 0,2), que la
+            // comparación tolera; por eso el redondeo que pide el enunciado se comprueba como requisito.
+            rules: [USA_ROUND],
             hints: ["groupby(\"local\") agrupa las filas por local y deja fuera los NaN.", "Elige la columna total del grupo y súmala.", "round(2) redondea toda la Series."],
             solution: `${HEAD_PD}\n\ndef total_por_local(df):\n    return df.groupby("local")["total"].sum().round(2)\n`,
           }

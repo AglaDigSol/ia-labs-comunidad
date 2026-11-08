@@ -117,7 +117,9 @@ const TEMPERATURA: Tpl = {
         `,
       };
     }
-    const args: PyVal[][] = [[0, "C"], [212, "F"], [rng.int(-20, 40), "C"], [rng.int(0, 100), "F"], [quarter(rng, 0, 30), "C"], [rng.int(1, 50), "K"]];
+    // Un Fahrenheit con (F − 32) que no es múltiplo de 9: su Celsius tiene infinitos decimales y se nota si no se redondea.
+    const fNoRound = 33 + 9 * rng.int(0, 7) + rng.int(0, 7);
+    const args: PyVal[][] = [[0, "C"], [212, "F"], [rng.int(-20, 40), "C"], [fNoRound, "F"], [quarter(rng, 0, 30), "C"], [rng.int(1, 50), "K"]];
     return {
       kind: "code", tema: 2, template: "temperatura", title: "Conversor de temperaturas",
       statement: [
@@ -1389,7 +1391,9 @@ const ARGS_KWARGS: Tpl = {
       };
     }
     if (level === "medio") {
-      const cases = [raw("media", ints(rng, 3, 0, 10)), raw("media", ints(rng, 5, 0, 10)), raw("media", []), raw("media", [rng.int(1, 9)])];
+      // x, x + 1, x + 1 tiene media x + 2/3: sin redondear no pasa.
+      const x = rng.int(0, 8);
+      const cases = [raw("media", ints(rng, 3, 0, 10)), raw("media", ints(rng, 5, 0, 10)), raw("media", [x, x + 1, x + 1]), raw("media", []), raw("media", [rng.int(1, 9)])];
       return {
         kind: "code", tema: 4, template: "args-kwargs", title: "Media de los argumentos",
         statement: ["Escribe la función `media` que acepte cualquier número de argumentos y devuelva su media redondeada a dos decimales, o 0 si no recibe ninguno."],
@@ -1782,15 +1786,15 @@ const CSV: Tpl = {
       const cases: PyCase[] = [table(4), table(6), "nombre,grupo,nota\n"].map((t) => ({ code: "suma_columna('notas.csv', 'nota')", files: { "notas.csv": t } }));
       return {
         kind: "code", tema: 5, template: "csv", title: "Sumar una columna de un CSV",
-        statement: ["Escribe la función `suma_columna(ruta, columna)` que lea un CSV con cabecera (como `nombre,grupo,nota`) con el módulo `csv` y devuelva la suma de los valores de esa columna como float, redondeada a dos decimales."],
+        statement: ["Escribe la función `suma_columna(ruta, columna)` que lea un CSV con cabecera (como `nombre,grupo,nota`) con el módulo `csv` y devuelva la suma de los valores de esa columna como float."],
         fn: "suma_columna", starter: `import csv\n\n\n${starterOf("suma_columna", "ruta, columna")}`, cases, rules: [USA_CSV, USA_WITH],
-        hints: ["csv.DictReader da cada fila como un diccionario cuyas claves son los nombres de la cabecera.", "Los valores llegan como texto: conviértelos con float().", "Redondea solo al final."],
+        hints: ["csv.DictReader da cada fila como un diccionario cuyas claves son los nombres de la cabecera.", "Los valores llegan como texto: conviértelos con float().", "sum() suma los valores que le des, también los de un bucle dentro de los paréntesis."],
         solution: py`
           import csv
 
           def suma_columna(ruta, columna):
               with open(ruta, encoding="utf-8", newline="") as f:
-                  return round(sum(float(fila[columna]) for fila in csv.DictReader(f)), 2)
+                  return sum(float(fila[columna]) for fila in csv.DictReader(f))
         `,
       };
     }

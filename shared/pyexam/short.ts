@@ -594,10 +594,11 @@ function sistemas(rng: Rng, level: PyExamLevel): PyExamShort {
                 return None
             return np.round(x, 6)
       `,
-      cases: [2, 3, 3, 4].map((n, i) => {
-        const t = i % 2 === 1 ? singular(rng, n) : system(rng, n);
-        return { code: `${HEAD_NP}${fn}(${npArray(t.a)}, np.array(${lit(t.b)}))` };
-      }),
+      // Con det = 3 la solución tiene infinitos decimales: sin el redondeo a 6 no pasa (tolerancia 1e-9).
+      cases: [...[2, 3, 3, 4].map((n, i) => (i % 2 === 1 ? singular(rng, n) : system(rng, n))), { a: [[2, 1], [1, 2]], b: [rng.pick([1, 2, 4, 5]), 0] }].map((t) => ({
+        code: `${HEAD_NP}${fn}(${npArray(t.a)}, np.array(${lit(t.b)}))`,
+        options: { tolerance: 1e-9 },
+      })),
       rules: [{ kind: "usa", what: "llamada:allclose", label: "Comprueba la solución con np.allclose" }],
       packages: NUMPY, seconds: DATA_SECONDS,
     }),
