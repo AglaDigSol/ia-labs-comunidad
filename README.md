@@ -14,7 +14,7 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 
 | Módulo | Qué hace | Interruptor |
 | --- | --- | --- |
-| Simbología | Diccionario de símbolos con búsqueda, fichas KaTeX, «lectura en clase» con voz (Web Speech) y el equivalente en Python/NumPy como texto. | siempre activo |
+| Simbología | Diccionario de símbolos (lógica, conjuntos, Boole, álgebra lineal, cálculo, combinatoria y probabilidad, y notación general) con búsqueda por nombre, símbolo o nombre de Python (`np.sum`, `math.factorial`…), fichas KaTeX, «lectura en clase» con voz (Web Speech) y el equivalente en Python/NumPy como texto. | siempre activo |
 | Lógica | Tablas de verdad (también paso a paso, una subfórmula cada vez) que se rellenan con el ratón o con el teclado (V/F o 1/0, flechas, Supr), comparar dos fórmulas, FND/FNC y el espacio F₁. | siempre activo |
 | Predicados | Evaluar fórmulas con ∀ y ∃ en un dominio finito (extensiones con casillas, paso a paso por instancias, testigos y contraejemplos), negar paso a paso con las leyes de la negación, comprobado en cada línea, y traducir frases a fórmulas. | siempre activo |
 | Conjuntos | Diagramas de Venn de 2 y 3 conjuntos (sombrear la expresión o calcularla con elementos) con «Supuestos» (A ⊆ B, A ∩ C = ∅…: las regiones vacías por hipótesis se marcan aparte y, con dos conjuntos, se pueden dibujar anidados o separados; la expresión y los supuestos se recuerdan en el dispositivo), igualdades demostradas paso a paso con una ley por línea, «¿Son iguales?» con contraejemplo, «Relaciones» (⊆, ⊂, ⊇, =, ≠: ¿siempre cierta, nunca cierta o depende?, con contraejemplo dibujado), problemas de inclusión–exclusión y conjunto de partes y producto cartesiano. | siempre activo |

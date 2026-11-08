@@ -200,7 +200,7 @@ export const PREDICADOS_CONJUNTOS_SYMBOLS: SymbolEntry[] = [
     category: CJ,
     session: 2,
     name: "Subconjunto propio",
-    aliases: ["⊂", "inclusion estricta", "contenido estrictamente"],
+    aliases: ["⊂", "⊊", "inclusion estricta", "contenido estrictamente"],
     tex: T`A \subset B`,
     variants: [{ tex: T`A \subsetneq B`, convention: "Estricta" }],
     reading: "A está estrictamente contenido en B",

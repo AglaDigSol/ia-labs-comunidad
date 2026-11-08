@@ -235,7 +235,7 @@ export const MARKOV_TENSORIAL_SYMBOLS: SymbolEntry[] = [
     category: MA,
     session: S,
     name: "Probabilidad condicional",
-    aliases: ["P(A|B)", "probabilidad de A dado B"],
+    aliases: ["P(A|B)", "P(A | B)", "probabilidad de A dado B", "probabilidad condicionada", "condicionada", "sabiendo que"],
     tex: T`P(A \mid B)`,
     variants: [{ tex: T`P(A \mid B) = \dfrac{P(A \cap B)}{P(B)}`, convention: "Definición" }],
     reading: "probabilidad de A dado B",

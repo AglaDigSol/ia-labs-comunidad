@@ -27,12 +27,16 @@ const REQUIRED: Record<SymbolCategory, string[]> = {
   "markov-algebra": [
     "matriz-transicion", "matriz-estocastica", "vector-estado", "evolucion", "potencia-matriz",
     "distribucion-estacionaria", "problema-inverso", "transpuesta", "inversa", "determinante",
-    "identidad", "sistema-lineal",
+    "identidad", "sistema-lineal", "producto-escalar", "norma", "rango",
   ],
   tensorial: [
     "tensor", "convencion-einstein", "delta-kronecker", "traza", "producto-tensorial",
     "producto-hadamard", "einsum", "derivada-parcial", "gradiente", "jacobiano",
   ],
+  // Notación que usan los otros laboratorios (Cálculo, Combinatoria, Probabilidad, Álgebra lineal).
+  calculo: ["sumatorio", "productorio", "integral-definida", "limite", "infinito", "derivada"],
+  "combinatoria-probabilidad": ["factorial", "numero-combinatorio", "esperanza", "varianza", "o-grande", "theta"],
+  "notacion-general": ["distinto", "aproximadamente", "igual-por-definicion", "valor-absoluto", "menor-o-igual"],
 };
 
 describe("SYM-04 coverage of Sesiones 1-2", () => {

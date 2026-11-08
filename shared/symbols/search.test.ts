@@ -84,3 +84,48 @@ describe("dictionary invariants", () => {
     expect(all).not.toMatch(/\w@\w+\.[a-z]/i);
   });
 });
+
+describe("búsqueda por nombres de Python y notación de otros laboratorios", () => {
+  it.each([
+    ["np.sum", "sumatorio"],
+    ["numpy.sum", "sumatorio"],
+    ["np.sum()", "sumatorio"],
+    ["math.prod", "productorio"],
+    ["math.factorial", "factorial"],
+    ["math.factorial(n)", "factorial"],
+    ["itertools.combinations", "numero-combinatorio"],
+    ["math.comb", "numero-combinatorio"],
+    ["np.linalg.norm", "norma"],
+    ["numpy.linalg.matrix_rank", "rango"],
+    ["np.var", "varianza"],
+    ["np.isclose", "aproximadamente"],
+    ["!=", "distinto"],
+    ["≠", "distinto"],
+    ["≈", "aproximadamente"],
+    ["Σ", "sumatorio"],
+    ["Π", "productorio"],
+    ["∫", "integral-definida"],
+    ["∞", "infinito"],
+    ["lim", "limite"],
+    ["n!", "factorial"],
+    ["E[X]", "esperanza"],
+    ["Var(X)", "varianza"],
+    ["condicionada", "probabilidad-condicional"],
+    ["producto escalar", "producto-escalar"],
+    ["Θ", "theta"],
+    ["‖v‖", "norma"],
+    ["rg", "rango"],
+    ["⊊", "subconjunto-propio"],
+  ])("«%s» encuentra %s primero", (q, id) => {
+    expect(first(q)).toBe(id);
+  });
+
+  it("los nombres de Python salen del código, sin comentarios ni cadenas, con sus sufijos", async () => {
+    const { pythonNames, pythonQuery } = await import("./search.ts");
+    expect(pythonNames("np.linalg.norm(v)  # la norma")).toEqual(expect.arrayContaining(["np.linalg.norm", "linalg.norm", "norm", "v"]));
+    expect(pythonNames('float("inf")  # infinito')).not.toContain("infinito");
+    expect(pythonNames("numpy.sum(x)")).toContain("np.sum");
+    expect(pythonQuery("np.sum()")).toBe("np.sum");
+    expect(pythonQuery("≠")).toBeNull();
+  });
+});

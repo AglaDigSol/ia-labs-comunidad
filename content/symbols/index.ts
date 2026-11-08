@@ -3,6 +3,7 @@
 // tests/content.test.ts valida cada paquete con SymbolPackSchema (shared/symbols/schema.ts).
 import type { ContentMeta } from "../../shared/content/meta.ts";
 import type { SymbolEntry } from "../../shared/symbols/types.ts";
+import { CALCULO_PROBABILIDAD_SYMBOLS } from "./calculo-probabilidad.ts";
 import { LOGICA_SYMBOLS } from "./logica.ts";
 import { MARKOV_TENSORIAL_SYMBOLS } from "./markov-tensorial.ts";
 import { PREDICADOS_CONJUNTOS_SYMBOLS } from "./predicados-conjuntos.ts";
@@ -30,5 +31,10 @@ export const SYMBOL_PACKS: SymbolPack[] = [
     file: "markov-tensorial.ts",
     meta: { ...BASE, topic: "Cadenas de Markov, álgebra lineal y cálculo tensorial" },
     entries: MARKOV_TENSORIAL_SYMBOLS,
+  },
+  {
+    file: "calculo-probabilidad.ts",
+    meta: { ...BASE, topic: "Cálculo, combinatoria, probabilidad, álgebra lineal y notación general", updated: "2026-11-08" },
+    entries: CALCULO_PROBABILIDAD_SYMBOLS,
   },
 ];
