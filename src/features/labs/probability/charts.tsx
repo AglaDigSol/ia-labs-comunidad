@@ -17,6 +17,9 @@ export type TreeEdge = { text: string; state: EdgeState };
 
 const EDGE_COLOR: Record<EdgeState, string> = { dato: "var(--text)", respuesta: "var(--accent)", mal: "var(--crit)", vacío: "var(--text-muted)" };
 
+/** Ancho del dibujo del árbol (unidades del viewBox): cuanto menor, más grande se ve el texto en el móvil. */
+export const TREE_WIDTH = 392;
+
 /**
  * Árbol de dos niveles: la raíz, las ramas de la partición (A₁, A₂…) y, de cada una, C y Cᶜ. `first`
  * son los textos de las ramas del primer nivel; `second[i]` = [rama a C, rama a Cᶜ] de Aᵢ; `leaves[i]`
@@ -36,14 +39,14 @@ export function TreeDiagram({
   label: string;
 }) {
   const n = branches.length;
-  // Estrecho a propósito: a 390 px de ancho el texto sigue leyéndose.
-  const W = 430;
+  // Estrecho a propósito: a 390 px de ancho (unos 320 px de dibujo) el texto se lee a 13–14 px.
+  const W = TREE_WIDTH;
   const rowH = 60;
   const H = n * 2 * rowH + 16;
   const rootY = H / 2;
   const x0 = 12;
-  const x1 = 118;
-  const x2 = 322;
+  const x1 = 110;
+  const x2 = 270;
   const leafY = (i: number, j: number) => 8 + (2 * i + j) * rowH + rowH / 2;
   const midY = (i: number) => (leafY(i, 0) + leafY(i, 1)) / 2;
   const edge = (key: string, ax: number, ay: number, bx: number, by: number, e: TreeEdge) => {
@@ -54,8 +57,8 @@ export function TreeDiagram({
     return (
       <g key={key} data-edge={key} data-state={e.state}>
         <line x1={ax} y1={ay} x2={bx} y2={by} stroke={EDGE_COLOR[e.state]} strokeWidth={e.state === "mal" ? 2.5 : 2} strokeDasharray={e.state === "mal" ? "7 5" : e.state === "vacío" ? "2 4" : undefined} />
-        <rect x={mx - 38} y={my - 13} width={76} height={26} rx={4} fill="var(--surface-raised)" stroke={EDGE_COLOR[e.state]} strokeWidth={1} />
-        <text x={mx} y={my + 5} textAnchor="middle" fontSize="15" fill={EDGE_COLOR[e.state]} className="font-mono">
+        <rect x={mx - 40} y={my - 14} width={80} height={28} rx={4} fill="var(--surface-raised)" stroke={EDGE_COLOR[e.state]} strokeWidth={1} />
+        <text x={mx} y={my + 5} textAnchor="middle" fontSize="16" fill={EDGE_COLOR[e.state]} className="font-mono">
           {text.length > 8 ? `${text.slice(0, 7)}…` : text}
         </text>
       </g>
@@ -78,7 +81,7 @@ export function TreeDiagram({
           <text x={x2} y={leafY(i, 1) + 5} fontSize="16" fontWeight="600" fill="var(--text)">
             Cᶜ
           </text>
-          <text x={x2 + 22} y={leafY(i, 0) + 5} fontSize="14" fill={EDGE_COLOR[leaves[i]!.state]} className="font-mono">
+          <text x={x2 + 20} y={leafY(i, 0) + 6} fontSize="17" fill={EDGE_COLOR[leaves[i]!.state]} className="font-mono">
             {`∩ ${leaves[i]!.state === "mal" ? "✗" : ""}${leaves[i]!.text.length > 8 ? `${leaves[i]!.text.slice(0, 7)}…` : leaves[i]!.text}`}
           </text>
         </g>
