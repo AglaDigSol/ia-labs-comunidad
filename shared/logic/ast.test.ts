@@ -89,13 +89,14 @@ describe("paréntesis de libro", () => {
     expect(plain(src)).toBe(out);
   });
 
-  it("mismo operador: se mantiene la asociatividad", () => {
+  it("mismo operador: ∧ y ∨ siguen la asociatividad; → y ↔ encadenados, siempre con paréntesis", () => {
     expect(plain("p ∧ q ∧ r")).toBe("p ∧ q ∧ r");
     expect(plain("p ∧ (q ∧ r)")).toBe("p ∧ (q ∧ r)");
     expect(plain("p ∨ q ∨ r")).toBe("p ∨ q ∨ r");
-    expect(plain("p → q → r")).toBe("p → q → r");
+    expect(plain("p → q → r")).toBe("p → (q → r)");
     expect(plain("(p → q) → r")).toBe("(p → q) → r");
-    expect(plain("p ↔ q ↔ r")).toBe("p ↔ q ↔ r");
+    expect(plain("p ↔ q ↔ r")).toBe("p ↔ (q ↔ r)");
+    expect(plain("(p ↔ q) ↔ r")).toBe("(p ↔ q) ↔ r");
   });
 
   it("¬ no cambia", () => {

@@ -54,7 +54,7 @@ describe("precedence", () => {
     ["¬p ∧ q", "¬p ∧ q"],
     ["p ∨ q ∧ r", "p ∨ (q ∧ r)"],
     ["p ⊻ q ∨ r", "p ⊻ (q ∨ r)"],
-    ["p → q → r", "p → q → r"],
+    ["p → q → r", "p → (q → r)"],
     ["p ↔ q → r", "p ↔ (q → r)"],
     ["¬p'", "¬¬p"],
     ["(p ∧ q)'", "¬(p ∧ q)"],

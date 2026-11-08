@@ -48,7 +48,7 @@ describe("parsePredicate", () => {
   });
 
   it("→ y ↔ asocian por la derecha y ∧ liga más que ∨", () => {
-    expect(plain("P(a) → Q(a) → R(a)")).toBe("P(a) → Q(a) → R(a)");
+    expect(plain("P(a) → Q(a) → R(a)")).toBe("P(a) → (Q(a) → R(a))");
     expect(parse("P(a) → Q(a) → R(a)")).toMatchObject({ kind: "imp", right: { kind: "imp" } });
     expect(plain("P(a) ∧ Q(a) ∨ R(a)")).toBe("(P(a) ∧ Q(a)) ∨ R(a)");
   });

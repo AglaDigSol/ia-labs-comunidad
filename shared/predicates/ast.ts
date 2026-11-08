@@ -214,12 +214,13 @@ const startsWithQuantifier = (f: PredFormula): boolean =>
   isPredQuantifier(f) || (f.kind === "not" && startsWithQuantifier(f.arg));
 
 // Paréntesis «de libro» (los mismos que en lógica proposicional desde 0.6.0): un binario dentro de
-// otro binario distinto siempre va entre paréntesis; con el mismo operador manda la asociatividad, y
+// otro binario distinto siempre va entre paréntesis; con ∧ y ∨ repetidos manda la asociatividad, → y
+// ↔ encadenados van siempre entre paréntesis (P → (Q → R)), y
 // el cuerpo de ¬ o de un cuantificador solo lleva paréntesis si es un binario.
 function render(f: PredFormula, tex: boolean): string {
   const wrap = (child: PredFormula, parent: PredFormula, side: "left" | "right" | "arg"): string => {
     const s = render(child, tex);
-    if (isPredBinary(child) && isPredBinary(parent) && child.kind !== parent.kind) return `(${s})`;
+    if (isPredBinary(child) && isPredBinary(parent) && (child.kind !== parent.kind || RIGHT_ASSOC.has(child.kind))) return `(${s})`;
     if (isPredBinary(parent) && side === "left" && startsWithQuantifier(child)) return `(${s})`;
     const pc = PREC[child.kind];
     const pp = PREC[parent.kind];
