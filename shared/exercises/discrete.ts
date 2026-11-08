@@ -14,8 +14,20 @@ import type { ExerciseLevel, ExerciseType } from "./types.ts";
 
 const ALL_LEVELS = ["básico", "medio", "avanzado"] as const;
 
-/** Un problema de recuento: el enunciado y los modelos cuya suma (con signo) es la respuesta. */
-export type CombProblemInstance = { text: string; terms: Array<{ sign: 1 | -1; model: CountingModel }> };
+/**
+ * Un paso de un problema: un modelo (por los demás de `times`, si el paso se hace en varias etapas
+ * seguidas: principio del producto) y, si hay más de un paso, qué cuenta.
+ */
+export type CombTerm = { sign: 1 | -1; model: CountingModel; times?: CountingModel[]; label?: string };
+/** Un problema de recuento: el enunciado y los pasos cuya suma (con signo) es la respuesta. */
+export type CombProblemInstance = { text: string; terms: CombTerm[] };
+
+/** Los modelos de un paso, en orden (el principal y los que lo multiplican). */
+export const termModels = (t: CombTerm): CountingModel[] => [t.model, ...(t.times ?? [])];
+/** Lo que vale un paso (sin el signo). */
+export const termValue = (t: CombTerm): bigint => termModels(t).reduce((acc, m) => acc * countModel(m), 1n);
+/** ¿El problema tiene más de un paso (complementario, producto…)? */
+export const isMultiStep = (p: CombProblemInstance): boolean => p.terms.length > 1 || p.terms.some((t) => (t.times?.length ?? 0) > 0);
 /** Un problema con un solo modelo y cuatro fórmulas para elegir (una sola encaja). */
 export type CombModelInstance = { text: string; model: CountingModel; options: FormulaId[] };
 /** `multi`: marcar todas las verdaderas; si no, hay exactamente una verdadera (a–d). */
@@ -24,7 +36,7 @@ export type CombComplexityInstance = ({ kind: "algo"; algo: Algorithm } | { kind
 export type CombPnpInstance = { ids: string[] };
 
 /** La respuesta exacta de un problema. */
-export const problemAnswer = (p: CombProblemInstance): bigint => p.terms.reduce((acc, t) => acc + BigInt(t.sign) * countModel(t.model), 0n);
+export const problemAnswer = (p: CombProblemInstance): bigint => p.terms.reduce((acc, t) => acc + BigInt(t.sign) * termValue(t), 0n);
 
 /**
  * Por qué puede estar mal un número, si coincide con un error típico: el de otro modelo con los mismos
@@ -33,14 +45,31 @@ export const problemAnswer = (p: CombProblemInstance): bigint => p.terms.reduce(
  */
 export function problemMistake(p: CombProblemInstance, value: bigint): string | null {
   if (value === problemAnswer(p)) return null;
-  if (p.terms.length === 1) return wrongModelHint(p.terms[0]!.model, value);
-  const values = p.terms.map((t) => countModel(t.model));
-  if (value === values[0]) return "Ese número es el total de casos posibles: falta quitar los que no cumplen la condición.";
-  if (p.terms.slice(1).some((t, i) => t.sign < 0 && values[i + 1] === value)) return "Ese número es el de los casos que no cumplen la condición, los que hay que quitar del total.";
-  if (value === values.reduce((a, b) => a + b, 0n)) return "Has sumado los recuentos: los casos que no cumplen la condición se restan del total.";
+  if (p.terms.length === 1 && !p.terms[0]!.times) return wrongModelHint(p.terms[0]!.model, value);
+  const values = p.terms.map(termValue);
+  const negatives = p.terms.flatMap((t, i) => (t.sign < 0 ? [i] : []));
+  if (negatives.length > 0) {
+    if (value === values[0]) return "Ese número es el total de casos posibles: falta quitar los que no cumplen la condición.";
+    if (negatives.some((i) => values[i] === value)) return "Ese número es el de una parte de los casos que no cumplen la condición, los que hay que quitar del total.";
+    if (value === values.reduce((a, b) => a + b, 0n)) return "Has sumado los recuentos: los casos que no cumplen la condición se restan del total.";
+    // Quitar solo una parte de los que no cumplen (con dos o más grupos que quitar).
+    for (let mask = 1; mask < (1 << negatives.length) - 1; mask++) {
+      const kept = p.terms.reduce((acc, t, i) => acc + (t.sign < 0 && ((mask >> negatives.indexOf(i)) & 1) === 0 ? 0n : BigInt(t.sign) * values[i]!), 0n);
+      if (kept === value) return "Has quitado solo una parte de los casos que no cumplen la condición: revisa si falta algún grupo.";
+    }
+  }
   for (const t of p.terms) {
-    const hint = wrongModelHint(t.model, value);
-    if (hint) return hint;
+    const ms = termModels(t);
+    if (ms.length < 2) continue;
+    const vs = ms.map(countModel);
+    if (vs.includes(value)) return "Ese número es solo una de las etapas: cuando el recuento se hace en varias etapas seguidas, se multiplican (principio del producto).";
+    if (vs.reduce((a, b) => a + b, 0n) === value) return "Has sumado las etapas: cuando se hacen una detrás de otra, se multiplican (principio del producto).";
+  }
+  for (const t of p.terms) {
+    for (const m of termModels(t)) {
+      const hint = wrongModelHint(m, value);
+      if (hint) return hint;
+    }
   }
   return null;
 }
@@ -81,7 +110,15 @@ export const optionLetter = (i: number) => `${"abcdefgh"[i]})`;
 // ---------------------------------------------------------------- Plantillas de recuento
 
 type Single = { text: string; model: CountingModel };
-type Template = { levels: readonly ExerciseLevel[]; make: (r: Rng, level: ExerciseLevel) => Single | CombProblemInstance | null };
+/** `steps`: el problema tiene varios pasos (complementario, producto); en avanzado solo salen estos. */
+type Template = { levels: readonly ExerciseLevel[]; steps?: true; make: (r: Rng, level: ExerciseLevel) => Single | CombProblemInstance | null };
+
+const C_ = (n: number, k: number): CountingModel => ({ n, k, order: false, repetition: false });
+const V_ = (n: number, k: number): CountingModel => ({ n, k, order: true, repetition: false });
+const VR_ = (n: number, k: number): CountingModel => ({ n, k, order: true, repetition: true });
+const CR_ = (n: number, k: number): CountingModel => ({ n, k, order: false, repetition: true });
+const P_ = (n: number): CountingModel => ({ n, k: n, order: true, repetition: false });
+const plural = (k: number, one: string, many: string) => `${k} ${k === 1 ? one : many}`;
 
 const pr = (groups: number[]): CountingModel => {
   const n = groups.reduce((a, b) => a + b, 0);
@@ -335,6 +372,7 @@ const TEMPLATES: Template[] = [
   // Por el complementario (solo con número)
   {
     levels: ["avanzado"],
+    steps: true,
     make: (r) => {
       const k = r.pick([3, 5, 6]);
       return {
@@ -348,6 +386,7 @@ const TEMPLATES: Template[] = [
   },
   {
     levels: ["avanzado"],
+    steps: true,
     make: (r) => {
       const w = r.int(3, 7);
       const h = r.int(4, 8);
@@ -361,11 +400,111 @@ const TEMPLATES: Template[] = [
       };
     },
   },
+  // Varios pasos (avanzado): producto de etapas, «al menos dos», bloques y complementarios.
+  {
+    levels: ["avanzado"],
+    steps: true,
+    make: (r) => {
+      const w = r.int(4, 8);
+      const h = r.int(4, 8);
+      const a = r.int(1, 3);
+      const b = r.int(1, 3);
+      return {
+        text: `En un grupo hay ${w} mujeres y ${h} hombres. ¿Cuántas comisiones de ${a + b} personas, sin cargos, tienen exactamente ${plural(a, "mujer", "mujeres")} y ${plural(b, "hombre", "hombres")}?`,
+        terms: [{ sign: 1, model: C_(w, a), times: [C_(h, b)], label: "Las mujeres de la comisión y, por cada elección, los hombres" }],
+      };
+    },
+  },
+  {
+    levels: ["avanzado"],
+    steps: true,
+    make: (r) => {
+      const w = r.int(3, 6);
+      const h = r.int(4, 8);
+      const k = r.int(3, 4);
+      return {
+        text: `En un grupo hay ${w} mujeres y ${h} hombres. ¿Cuántas comisiones de ${k} personas, sin cargos, tienen al menos dos mujeres?`,
+        terms: [
+          { sign: 1, model: C_(w + h, k), label: "Todas las comisiones" },
+          { sign: -1, model: C_(h, k), label: "Menos las que no tienen ninguna mujer" },
+          { sign: -1, model: C_(w, 1), times: [C_(h, k - 1)], label: "Menos las que tienen exactamente una mujer" },
+        ],
+      };
+    },
+  },
+  {
+    levels: ["avanzado"],
+    steps: true,
+    make: (r) => {
+      const w = r.pick(DISTINCT_WORDS.filter((x) => x.length >= 5));
+      const [a, b] = r.shuffle([...w]).slice(0, 2) as [string, string];
+      return {
+        text: `¿Cuántas ordenaciones de todas las letras de ${w} tienen la ${a} y la ${b} juntas (en cualquier orden)?`,
+        terms: [{ sign: 1, model: P_(w.length - 1), times: [P_(2)], label: "El bloque de las dos letras con las demás y, dentro del bloque, las dos letras" }],
+      };
+    },
+  },
+  {
+    levels: ["avanzado"],
+    steps: true,
+    make: (r) => {
+      const n = r.int(9, 15);
+      const v = r.int(2, 3);
+      return {
+        text: `Una asociación de ${n} socios elige presidente y secretario (cargos distintos) y, entre los demás socios, ${v} vocales sin cargo. ¿De cuántas formas puede quedar la junta?`,
+        terms: [{ sign: 1, model: V_(n, 2), times: [C_(n - 2, v)], label: "Los cargos y, entre los que quedan, los vocales" }],
+      };
+    },
+  },
+  {
+    levels: ["avanzado"],
+    steps: true,
+    make: (r) => {
+      const m = r.int(3, 4);
+      const k = r.int(2, 3);
+      return {
+        text: `Un código tiene ${m} cifras (del 0 al 9, que se pueden repetir) seguidas de ${k} letras de un alfabeto de 26, todas distintas. ¿Cuántos códigos distintos hay?`,
+        terms: [{ sign: 1, model: VR_(10, m), times: [V_(26, k)], label: "Las cifras y, por cada una, las letras" }],
+      };
+    },
+  },
+  {
+    levels: ["avanzado"],
+    steps: true,
+    make: (r) => {
+      const n = r.int(4, 8);
+      const k = r.int(3, 5);
+      return {
+        text: `Una heladería ofrece ${n} sabores, uno de ellos chocolate. ¿Cuántas tarrinas distintas de ${k} bolas llevan al menos una bola de chocolate, si se puede repetir sabor y el orden de las bolas no importa?`,
+        terms: [
+          { sign: 1, model: CR_(n, k), label: "Todas las tarrinas" },
+          { sign: -1, model: CR_(n - 1, k), label: "Menos las que no llevan chocolate" },
+        ],
+      };
+    },
+  },
+  {
+    levels: ["avanzado"],
+    steps: true,
+    make: (r) => {
+      const w = r.pick(REPEATED_WORDS);
+      const letter = r.pick([...new Set(w)]);
+      const rest = letterGroups(w.replace(letter, ""));
+      if (rest.length < 2) return null;
+      return {
+        text: `¿Cuántas palabras distintas, con o sin sentido, se pueden formar reordenando todas las letras de ${w}, si no pueden empezar por ${letter}?`,
+        terms: [
+          { sign: 1, model: pr(letterGroups(w)), label: "Todas las ordenaciones" },
+          { sign: -1, model: pr(rest), label: `Menos las que empiezan por ${letter} (se ordenan las demás letras)` },
+        ],
+      };
+    },
+  },
 ];
 
 const isSingle = (x: Single | CombProblemInstance): x is Single => "model" in x;
 
-const validTerms = (terms: CombProblemInstance["terms"]) => terms.every((t) => modelProblem(t.model) === null);
+const validTerms = (terms: CombProblemInstance["terms"]) => terms.every((t) => termModels(t).every((m) => modelProblem(m) === null) && termValue(t) > 0n);
 
 export const COMB_PROBLEM: ExerciseType<CombProblemInstance> = {
   id: "combinatoria-problema",
@@ -374,7 +513,8 @@ export const COMB_PROBLEM: ExerciseType<CombProblemInstance> = {
   description: "Lee el enunciado, decide qué fórmula aplica (permutaciones, variaciones o combinaciones, con o sin repetición) y escribe el número exacto, como en el examen: sin separador de miles.",
   levels: ALL_LEVELS,
   generate(seed, level) {
-    const pool = TEMPLATES.filter((t) => t.levels.includes(level));
+    // En avanzado, solo problemas de varios pasos: un C(9, 2) suelto es de básico.
+    const pool = TEMPLATES.filter((t) => t.levels.includes(level) && (level !== "avanzado" || t.steps));
     return generateUntil(
       rngFor("combinatoria-problema", seed),
       (r) => {

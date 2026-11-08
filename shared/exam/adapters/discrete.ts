@@ -1,14 +1,14 @@
 // Adaptadores de conjuntos, funciones, combinatoria y complejidad.
 import { algorithmGivens, algorithmLines } from "../../discrete/algorithms.ts";
 import { costOf, costSpoken, costTex, growthText, isLooseBound, optionTex, optionText, sameGrowth } from "../../discrete/bigo.ts";
-import { acceptedFormulas, FORMULAS, substitutedTex, substitutedText } from "../../discrete/count.ts";
+import { acceptedFormulas, countModel, FORMULAS, substitutedTex, substitutedText } from "../../discrete/count.ts";
 import { statementReason, statementText, statementTrue } from "../../discrete/functions.ts";
 import { pnpPool } from "../../discrete/pnp.ts";
 import { countOf, solveRegions } from "../../sets/cardinal.ts";
 import { parseSetExpr, setRegions, setToPlain, setToTex, vennVars, type SetExpr, type SetName } from "../../sets/expr.ts";
 import { createRng } from "../../exercises/random.ts";
 import { seedFromKey, type ChoiceOption } from "../../exercises/choice.ts";
-import { COMB_COMPLEXITY, COMB_FUNCTIONS, COMB_MODEL, COMB_PNP, COMB_PROBLEM, complexityGrowth, problemAnswer } from "../../exercises/discrete.ts";
+import { COMB_COMPLEXITY, COMB_FUNCTIONS, COMB_MODEL, COMB_PNP, COMB_PROBLEM, complexityGrowth, problemAnswer, termModels, termValue } from "../../exercises/discrete.ts";
 import { CARTESIAN_RELATION, parseSetHypotheses, parseSetRelation, relationSpoken, relationToTex } from "../../sets/relations.ts";
 import { relationOptionExplanation, relationsAnswer, SETS_CARDINAL, SETS_EQUAL, SETS_PARTS, SETS_RELATIONS } from "../../exercises/sets.ts";
 import { examAdapter, type ExamAdapter } from "../adapter.ts";
@@ -199,7 +199,17 @@ const problemAdapter = examAdapter({
       format: "entero",
       label: "Número",
       solution: [
-        ...inst.terms.map((t, i) => examMath(`${i === 0 ? "" : t.sign < 0 ? "-\\;" : "+\\;"}${substitutedTex(t.model)}`, `${i === 0 ? "" : t.sign < 0 ? "menos " : "más "}${substitutedText(t.model)}`)),
+        ...inst.terms.map((t, i) => {
+          const sign = i === 0 ? "" : t.sign < 0 ? "-\\;" : "+\\;";
+          const said = i === 0 ? "" : t.sign < 0 ? "menos " : "más ";
+          const ms = termModels(t);
+          if (ms.length === 1) return examMath(`${sign}${substitutedTex(t.model)}`, `${said}${substitutedText(t.model)}`);
+          // Varias etapas: cada fórmula con su valor, multiplicadas.
+          return examMath(
+            `${sign}${ms.map((m) => `\\left(${substitutedTex(m)}\\right)`).join(" \\cdot ")} = ${ms.map((m) => countModel(m).toString()).join(" \\cdot ")} = ${termValue(t).toString()}`,
+            `${said}${ms.map((m) => substitutedText(m)).join(" por ")}, que da ${termValue(t).toString()}`,
+          );
+        }),
         examP(`Resultado: ${value}.`),
       ],
     };

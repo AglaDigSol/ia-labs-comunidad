@@ -184,6 +184,25 @@ describe("en «Ejercicios»", () => {
     for (const id of accepted) expect(status()).not.toContain(`Las ${FORMULAS[id].name.toLowerCase()} se usan`);
   });
 
+  it("avanzado con varias etapas: una etapa sola lo dice y la solución enseña cada paso", async () => {
+    const seed = Array.from({ length: 300 }, (_, i) => i).find((s) => COMB_PROBLEM.generate(s, "avanzado").terms.some((t) => t.times))!;
+    const p = COMB_PROBLEM.generate(seed, "avanzado");
+    const t = p.terms.find((x) => x.times)!;
+    renderAt(`/laboratorios/ejercicios?t=combinatoria-problema&n=avanzado&s=${seedToText(seed)}`);
+    await screen.findByText(p.text, undefined, { timeout: 5000 });
+    if (p.terms.length === 1) {
+      fireEvent.change(screen.getByLabelText("Resultado"), { target: { value: countModel(t.model).toString() } });
+      click("Comprobar");
+      expect(status()).toMatch(/solo una de las etapas|el que dan las/);
+    }
+    fireEvent.change(screen.getByLabelText("Resultado"), { target: { value: problemAnswer(p).toString() } });
+    click("Comprobar");
+    expect(status()).toMatch(/¡Correcto!/);
+    click("Ver la solución completa");
+    expect(screen.getByTestId("solution").textContent).toContain(` · `);
+    expect(screen.getByTestId("solution").textContent).toContain(`Respuesta: ${problemAnswer(p).toString()}`);
+  });
+
   it("un número que es el de otro modelo lo dice (72 = V₉,₂ en vez de C₉,₂), sin dar el bueno", async () => {
     // Una semilla con combinaciones sin repetición y V distinto de C.
     const level = "básico" as const;

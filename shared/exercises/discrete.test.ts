@@ -14,8 +14,11 @@ import {
   COMB_PROBLEM,
   complexityGrowth,
   DISCRETE_EXERCISES,
+  isMultiStep,
   problemAnswer,
   problemMistake,
+  termModels,
+  termValue,
 } from "./discrete.ts";
 import { seedFromText } from "./random.ts";
 import { exerciseTopics, exercisesOfTopic, mixedType } from "./registry.ts";
@@ -72,6 +75,43 @@ describe("generadores", () => {
     expect([...formulas.get("avanzado")!].sort()).toEqual([...FORMULA_IDS].sort());
     expect(formulas.get("básico")!.size).toBeGreaterThanOrEqual(4);
     expect(complements).toBeGreaterThan(10);
+  });
+
+  it("avanzado: siempre varios pasos (complementario, producto, «al menos dos», bloques), nunca un C(9, 2) suelto", () => {
+    const kinds = { complemento: 0, producto: 0, tres: 0 };
+    for (const s of [...SEEDS, ...Array.from({ length: 200 }, (_, i) => i)]) {
+      const p = COMB_PROBLEM.generate(s, "avanzado");
+      expect(isMultiStep(p), p.text).toBe(true);
+      if (p.terms.some((t) => t.sign < 0)) kinds.complemento++;
+      if (p.terms.some((t) => t.times)) kinds.producto++;
+      if (p.terms.length >= 3) kinds.tres++;
+      // Cada paso vale algo y la respuesta es la suma con signo.
+      for (const t of p.terms) expect(termValue(t) > 0n).toBe(true);
+      expect(problemAnswer(p)).toBe(p.terms.reduce((a, t) => a + BigInt(t.sign) * termModels(t).reduce((x, m) => x * countModel(m), 1n), 0n));
+    }
+    expect(kinds.complemento).toBeGreaterThan(20);
+    expect(kinds.producto).toBeGreaterThan(20);
+    expect(kinds.tres).toBeGreaterThan(5);
+  });
+
+  it("errores típicos con varios pasos: una sola etapa, las etapas sumadas, quitar solo una parte", () => {
+    const prod = { text: "", terms: [{ sign: 1 as const, model: { n: 7, k: 2, order: false, repetition: false }, times: [{ n: 5, k: 1, order: false, repetition: false }] }] };
+    expect(problemAnswer(prod)).toBe(105n);
+    expect(problemMistake(prod, 21n)).toMatch(/solo una de las etapas/);
+    expect(problemMistake(prod, 26n)).toMatch(/Has sumado las etapas/);
+    const two = {
+      text: "",
+      terms: [
+        { sign: 1 as const, model: { n: 9, k: 3, order: false, repetition: false } },
+        { sign: -1 as const, model: { n: 5, k: 3, order: false, repetition: false } },
+        { sign: -1 as const, model: { n: 4, k: 1, order: false, repetition: false }, times: [{ n: 5, k: 2, order: false, repetition: false }] },
+      ],
+    };
+    // 84 − 10 − 40 = 34; 84 − 10 = 74 quita solo una parte.
+    expect(problemAnswer(two)).toBe(34n);
+    expect(problemMistake(two, 74n)).toMatch(/solo una parte/);
+    expect(problemMistake(two, 84n)).toMatch(/total de casos/);
+    expect(problemMistake(two, 34n)).toBeNull();
   });
 
   it("no repite los números de las preguntas de examen (Morse 5 con 3, capa 6/4/2, 16 bits)", () => {

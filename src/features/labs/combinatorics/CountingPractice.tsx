@@ -25,7 +25,7 @@ import {
   type CountingModel,
   type FormulaId,
 } from "../../../../shared/discrete/count.ts";
-import { problemAnswer, problemMistake, type CombProblemInstance } from "../../../../shared/exercises/discrete.ts";
+import { isMultiStep, problemAnswer, problemMistake, termModels, termValue, type CombProblemInstance, type CombTerm } from "../../../../shared/exercises/discrete.ts";
 import { SolutionGate } from "../../../components/practice/SolutionGate.tsx";
 import { Button } from "../../../components/ui/button.tsx";
 import { Tex } from "../../../lib/tex.tsx";
@@ -49,27 +49,40 @@ const lowerFirst = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
 function problemHints(p: CombProblemInstance, ask: CountingAsk): string[] {
   // Si lo que se pide es el modelo, las pistas solo preguntan: nombrarlo sería dar la respuesta.
   if (ask === "model") return modelQuestionHints(p.terms[0]!.model);
-  if (p.terms.length === 1) return modelHints(p.terms[0]!.model);
+  if (!isMultiStep(p)) return modelHints(p.terms[0]!.model);
+  const names = (t: CombTerm) => termModels(t).map((m) => FORMULAS[countingFormula(m)].name.toLowerCase()).join(" por ");
   return [
-    "«Al menos uno» se cuenta mejor por el complementario: todos los casos posibles menos los que no tienen ninguno.",
-    `Para todos los casos: ${FORMULAS[countingFormula(p.terms[0]!.model)].name.toLowerCase()}. ${FORMULAS[countingFormula(p.terms[0]!.model)].when}`,
-    `Para los que no cumplen la condición: ${FORMULAS[countingFormula(p.terms[1]!.model)].name.toLowerCase()}. ${FORMULAS[countingFormula(p.terms[1]!.model)].when}`,
-    "Resta los dos recuentos.",
+    ...(p.terms.some((t) => t.sign < 0) ? ["«Al menos» se cuenta mejor por el complementario: todos los casos posibles menos los que no cumplen la condición."] : []),
+    ...(p.terms.some((t) => t.times) ? ["Si el recuento se hace en varias etapas seguidas (primero esto y, por cada forma, aquello), las etapas se multiplican: principio del producto."] : []),
+    ...p.terms.map((t, i) => `${t.label ?? (i === 0 ? "Todos los casos" : "Los que no cumplen la condición")}: ${names(t)}.`),
+    p.terms.length > 1 ? "Suma o resta cada paso según corresponda." : "Multiplica las etapas.",
   ];
 }
 
-/** La solución: cada modelo con sus datos sustituidos y el total. */
+/** La solución: cada paso con sus modelos y sus datos sustituidos, y el total. */
 export function CountingSolution({ problem }: { problem: CombProblemInstance }) {
   const total = problemAnswer(problem);
+  const multi = problem.terms.length > 1;
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-raised p-3">
-      {problem.terms.map((t, i) => (
-        <div key={i} className="flex flex-col gap-1">
-          <p className="text-[14px] text-muted">{`${problem.terms.length > 1 ? (i === 0 ? "Todos los casos: " : "Menos los que no cumplen: ") : ""}${FORMULAS[countingFormula(t.model)].name}.`}</p>
-          <Tex display tex={`${substitutedTex(t.model)} = ${countModel(t.model).toString()}`} label={`${substitutedText(t.model)} = ${integerText(countModel(t.model))}`} className="text-[18px]" />
-        </div>
-      ))}
-      {problem.terms.length > 1 ? <p className="font-mono text-[16px] [overflow-wrap:anywhere]">{`${problem.terms.map((t) => integerText(countModel(t.model))).join(" − ")} = ${integerText(total)}`}</p> : null}
+      {problem.terms.map((t, i) => {
+        const ms = termModels(t);
+        const label = t.label ?? (multi ? (i === 0 ? "Todos los casos" : "Menos los que no cumplen") : null);
+        return (
+          <div key={i} className="flex flex-col gap-1">
+            <p className="text-[14px] text-muted">{`${label ? `${label}: ` : ""}${ms.map((m) => FORMULAS[countingFormula(m)].name.toLowerCase()).join(" por ")}.`}</p>
+            {ms.map((m, j) => (
+              <Tex key={j} display tex={`${substitutedTex(m)} = ${countModel(m).toString()}`} label={`${substitutedText(m)} = ${integerText(countModel(m))}`} className="text-[18px]" />
+            ))}
+            {ms.length > 1 ? <p className="font-mono text-[16px] [overflow-wrap:anywhere]">{`${ms.map((m) => integerText(countModel(m))).join(" · ")} = ${integerText(termValue(t))}`}</p> : null}
+          </div>
+        );
+      })}
+      {multi ? (
+        <p className="font-mono text-[16px] [overflow-wrap:anywhere]">
+          {`${problem.terms.map((t, i) => `${i === 0 ? "" : t.sign < 0 ? " − " : " + "}${integerText(termValue(t))}`).join("")} = ${integerText(total)}`}
+        </p>
+      ) : null}
       <p className="text-[16px]">
         Respuesta: <span className="font-mono font-semibold [overflow-wrap:anywhere]">{integerText(total)}</span>
       </p>
