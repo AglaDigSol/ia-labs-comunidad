@@ -80,7 +80,7 @@ function SkipLink() {
   return (
     <a
       href={`#${MAIN_ID}`}
-      className="sr-only z-50 rounded-md bg-raised px-4 py-3 font-semibold text-accent shadow-md focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      className="sr-only z-50 rounded-md bg-raised font-semibold text-accent shadow-md focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:px-4 focus:py-3"
       onClick={(e) => {
         const main = document.getElementById(MAIN_ID);
         if (!main) return;

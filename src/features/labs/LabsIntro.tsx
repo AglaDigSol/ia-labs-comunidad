@@ -30,13 +30,12 @@ export function LabsIntro({ base, python }: { base: string; python: boolean }) {
         </li>
         <li>
           <strong>Ejercicios</strong>: el banco de ejercicios de todos los temas, con tres niveles y semilla para repetirlos.
-          {python ? (
-            <>
-              {" "}
-              <strong>Python</strong>: Python en el navegador, con NumPy, pandas y matplotlib.
-            </>
-          ) : null}
         </li>
+        {python ? (
+          <li>
+            <strong>Python</strong>: Python en el navegador, con NumPy, pandas y matplotlib.
+          </li>
+        ) : null}
       </ul>
       <div className="flex flex-wrap gap-2">
         <Link to={`${base}/ejercicios/simulacro`} className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-[14px] font-semibold text-accent hover:bg-sunken">
