@@ -33,3 +33,18 @@ export function decimalComma(v: number, digits = PROB_DIGITS): string {
   const s = v.toFixed(digits).replace(/0+$/, "").replace(/\.$/, "");
   return (s === "-0" ? "0" : s).replace("-", "−").replace(".", ",");
 }
+
+const SUBSCRIPT_DIGITS = "₀₁₂₃₄₅₆₇₈₉";
+
+/**
+ * El nombre de una rama en TeX: «S₁» → S_{1} (KaTeX no admite los subíndices Unicode, ni en \text),
+ * una letra sola en cursiva y una palabra («Phishing», «Legítimo») en \text{}. Solo letras, cifras y
+ * subíndices: lo demás se quita.
+ */
+export function branchTex(name: string): string {
+  const m = /^(.*?)([₀-₉]+)$/u.exec(name);
+  const base = (m ? m[1]! : name).replace(/[^\p{L}\p{N} ]/gu, "");
+  const sub = m ? [...m[2]!].map((c) => SUBSCRIPT_DIGITS.indexOf(c)).join("") : "";
+  const head = /^[A-Za-z]$/.test(base) ? base : `\\text{${base}}`;
+  return sub ? `${head}_{${sub}}` : head;
+}

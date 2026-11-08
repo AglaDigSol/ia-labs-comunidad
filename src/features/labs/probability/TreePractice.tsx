@@ -5,7 +5,7 @@
 // «Ver la solución completa».
 import { useId, useMemo } from "react";
 import { solveTree, type ProbTree } from "../../../../shared/probability/conditional.ts";
-import { probTex } from "../../../../shared/probability/format.ts";
+import { branchTex, probTex } from "../../../../shared/probability/format.ts";
 import type { Frac } from "../../../../shared/rational.ts";
 import { SolutionGate } from "../../../components/practice/SolutionGate.tsx";
 import { Tex } from "../../../lib/tex.tsx";
@@ -34,9 +34,9 @@ export const TREE_HINTS = [
   "Probabilidad total: P(C) es la suma de los caminos que acaban en C, P(C) = Σ P(Aᵢ)·P(C | Aᵢ).",
   "Bayes: P(Aᵢ | C) = P(Aᵢ ∩ C) / P(C), el camino de Aᵢ dividido entre la suma de todos los caminos que acaban en C.",
 ];
-
-/** «P(S₁ ∩ C)» para TeX: nombres con letras van en \text{}. */
-const nameTex = (b: string) => `\\text{${b.replace(/[{}\\]/g, "")}}`;
+/** «P(S₁ ∩ C)» para TeX: S_{1}, con el subíndice de TeX (KaTeX no admite «₁»); las palabras, en \text{}. */
+/** «P(S₁ ∩ C)» para TeX: S_{1}, con el subíndice de TeX (KaTeX no admite «₁»); las palabras, en \\text{}. */
+const nameTex = branchTex;
 
 export function TreePractice({
   tree,

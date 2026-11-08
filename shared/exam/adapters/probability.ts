@@ -2,7 +2,7 @@
 import { solveTree } from "../../probability/conditional.ts";
 import { distMean, probAtLeast, pmfExact, cdf, type DistSpec } from "../../probability/distributions.ts";
 import { dieEventText } from "../../probability/events.ts";
-import { probTex, probText } from "../../probability/format.ts";
+import { branchTex, probTex, probText } from "../../probability/format.ts";
 import { dieRuleText, gameVar, rvMean } from "../../probability/variable.ts";
 import { formatDecimal, mul, ONE, sub, type Frac } from "../../rational.ts";
 import type { ChoiceOption } from "../../exercises/choice.ts";
@@ -84,8 +84,8 @@ const totalAdapter = examAdapter({
       stem = [
         examP(`${story.context} ${names.join(", ").replace(/, ([^,]*)$/, " y $1")} forman una partición: cada caso cae en uno solo. C es el suceso «${story.event}».`),
         examList([
-          ...names.flatMap((b, i) => (i === inst.hiddenPrior ? [] : [dataLine(`P(${b}) = ${probDataTex(tree.priors[i]!)}`, `P de ${b} igual a ${probDataText(tree.priors[i]!)}`)])),
-          ...names.map((b, i) => dataLine(`P(C \\mid ${b}) = ${probDataTex(tree.likelihoods[i]!)}`, `P de C dado ${b} igual a ${probDataText(tree.likelihoods[i]!)}`)),
+          ...names.flatMap((b, i) => (i === inst.hiddenPrior ? [] : [dataLine(`P(${branchTex(b)}) = ${probDataTex(tree.priors[i]!)}`, `P de ${b} igual a ${probDataText(tree.priors[i]!)}`)])),
+          ...names.map((b, i) => dataLine(`P(C \\mid ${branchTex(b)}) = ${probDataTex(tree.likelihoods[i]!)}`, `P de C dado ${b} igual a ${probDataText(tree.likelihoods[i]!)}`)),
         ]),
       ];
       prompt = inst.ask === null ? "Calcula P(C)." : `Calcula P(${names[inst.ask]} | C).`;

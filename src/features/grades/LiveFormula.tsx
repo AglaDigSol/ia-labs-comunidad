@@ -21,7 +21,9 @@ export function LiveFormula({
   const nTex = `N = \\frac{\\sum_i w_i \\cdot n_i}{100} = \\frac{${sum}}{100} = ${a}`;
   const w = `0{,}${course.examWeightPct}`;
   const eTex = `e_{\\min} = \\max\\left(5{,}0,\\ \\frac{\\text{objetivo} - ${a}}{${w}}\\right)`;
-  const html = katex.renderToString(`${nTex} \\\\ ${eTex}`, {
+  // Dos líneas en modo display: un \\ suelto no hace nada ahí (KaTeX avisa); dentro de gathered sí, y con
+  // [0.6em] la fracción larga de N no toca la línea de e_min.
+  const html = katex.renderToString(`\\begin{gathered}${nTex} \\\\[0.6em] ${eTex}\\end{gathered}`, {
     throwOnError: false,
     displayMode: true,
     output: "htmlAndMathml",

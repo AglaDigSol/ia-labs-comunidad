@@ -1,7 +1,7 @@
 // Generadores de probabilidad sobre muchas semillas: cada instancia es válida (particiones que suman
 // 1, pares de sucesos posibles, al menos una afirmación correcta y una falsa), las respuestas son
 // fracciones exactas y coinciden con la enumeración por fuerza bruta donde se puede.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { add, cmp, equals, frac, mul, ONE, sub, sum, ZERO, type Frac } from "../rational.ts";
 import { solveTree } from "../probability/conditional.ts";
 import { distMean, distVariance, pmfExact, probAtLeast } from "../probability/distributions.ts";
@@ -202,5 +202,37 @@ describe("generadores", () => {
 describe("ortografía de las historias", () => {
   it("«De estos» y «De estas», sin tilde (demostrativos)", () => {
     for (const s of PERCENT_STORIES) expect(s.text).not.toMatch(/(^|\s)ést[oa]s\b/);
+  });
+});
+
+describe("nombres de rama en TeX", () => {
+  it("S₁ → S_{1} y las palabras en \\text, sin avisos de KaTeX", async () => {
+    const { branchTex } = await import("../probability/format.ts");
+    expect(branchTex("S₁")).toBe("S_{1}");
+    expect(branchTex("L₂")).toBe("L_{2}");
+    expect(branchTex("Phishing")).toBe("\\text{Phishing}");
+    expect(branchTex("Legítimo")).toBe("\\text{Legítimo}");
+    const katex = (await import("katex")).default;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    for (const b of ["S₁", "S₂", "L₃", "Legítimo"]) katex.renderToString(`P(C \\mid ${branchTex(b)})`, { throwOnError: true });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
+
+describe("árbol en el simulacro", () => {
+  it("el TeX de los datos no lleva subíndices Unicode", async () => {
+    const { examItem } = await import("../exam/items.ts");
+    let seen = 0;
+    for (let s = 0; s < 40; s++) {
+      for (const level of PROB_TOTAL.levels) {
+        const item = examItem("probabilidad-total", s, level);
+        if (!item) continue;
+        const tex = JSON.stringify(item.stem).match(/"tex":"[^"]*"/g) ?? [];
+        seen += tex.length;
+        for (const t of tex) expect(t).not.toMatch(/[₀-₉]/);
+      }
+    }
+    expect(seen).toBeGreaterThan(0);
   });
 });
