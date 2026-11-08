@@ -243,8 +243,7 @@ function StepPractice({ table, format, formula, onSolved }: PartProps) {
     `Fila ${i + 1} (${table.vars.map((v, k) => `${v} = ${fmt(table.rows[i]!.values[k]!, format)}`).join(", ")})`;
   const headClass = (col: string) =>
     cn(
-      // En el móvil los títulos largos pasan a otra línea en lugar de quedar cortados.
-      "px-3 py-2 font-mono font-normal whitespace-nowrap max-sm:max-w-40 max-sm:whitespace-normal max-sm:break-words",
+      "px-3 py-2 font-mono font-normal whitespace-nowrap",
       highlighted.has(col) && !allDone && "border-b-2 border-b-accent bg-accent-soft",
     );
   const operandMark = (col: string) =>
@@ -285,7 +284,12 @@ function StepPractice({ table, format, formula, onSolved }: PartProps) {
                 <th
                   key={j}
                   scope="col"
-                  className={cn(headClass(`s:${j}`), j === step && !stepDone && "font-semibold")}
+                  className={cn(
+                    headClass(`s:${j}`),
+                    j === step && !stepDone && "font-semibold",
+                    // En el móvil el título del paso actual (el más largo) pasa a otra línea en lugar de quedar cortado.
+                    j === step && "max-sm:min-w-32 max-sm:max-w-44 max-sm:whitespace-normal",
+                  )}
                 >
                   {keys[j]}
                   {operandMark(`s:${j}`)}
