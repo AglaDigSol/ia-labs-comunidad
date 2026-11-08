@@ -21,10 +21,19 @@ export const SET_KEYS: KeypadKey[] = [
   { glyph: "C", label: "conjunto C" },
   { glyph: "(", label: "abrir paréntesis" },
   { glyph: ")", label: "cerrar paréntesis" },
+  // Relaciones (verdaderas o falsas): para «Supuestos» y «Relaciones».
+  { glyph: "⊆", label: "contenido en (subconjunto)" },
+  { glyph: "⊂", label: "contenido y distinto (subconjunto propio)" },
+  { glyph: "⊇", label: "contiene a" },
+  { glyph: "=", label: "igual a" },
+  { glyph: "≠", label: "distinto de" },
 ];
 
 export const HOW_TO_WRITE =
   "Unión: ∪ o |. Intersección: ∩ o &. Diferencia: ∖, \\ o −. Diferencia simétrica: Δ o ^. Complementario: ᶜ, ′ o ' detrás (Aᶜ, (A ∪ B)ᶜ). Vacío: ∅ o {}. Universal: U. Entre operaciones distintas hacen falta paréntesis: (A ∪ B) ∩ C.";
+
+export const HOW_TO_WRITE_RELATIONS =
+  "Una relación compara dos conjuntos y es verdadera o falsa: ⊆ (o <=) contenido, ⊂ o ⊊ (o <) contenido y distinto, ⊇ (o >=) contiene, ⊃ o ⊋ (o >) contiene y es distinto, = igual, ≠ (o !=) distinto y ⊈ no contenido. Se pueden encadenar: ∅ ≠ A ⊆ B son dos (∅ ≠ A y A ⊆ B). Disjuntos: A ∩ B = ∅. Varios supuestos, separados por comas.";
 
 /** Campo de expresión de conjuntos con su teclado de símbolos plegable. */
 export function SetExprField({
