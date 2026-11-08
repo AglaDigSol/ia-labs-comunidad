@@ -22,6 +22,7 @@ import { Button, buttonVariants } from "../../../components/ui/button.tsx";
 import { Chip } from "../../../components/ui/chip.tsx";
 import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group.tsx";
 import { cn } from "../../../lib/cn.ts";
+import { scrollBehavior } from "../../../lib/reveal.ts";
 import { selectClass } from "../boole/AxiomPractice.tsx";
 import { loadProgress, recordSolved, solvedOfType, type ExercisesProgress } from "./progress.ts";
 import { PYTHON_EXERCISE_VIEWS } from "./python-views.tsx";
@@ -72,6 +73,8 @@ export function ExercisesPage({ python = false, examPath = "simulacro", pyExamPa
   const [progress, setProgress] = useState<ExercisesProgress>(loadProgress);
   // Ejercicios resueltos desde que se abrió la página.
   const [session, setSession] = useState(0);
+  // Tema del que se vino a practicar: «Cambiar de tipo» vuelve a su sección, no al principio.
+  const [returnTopic, setReturnTopic] = useState<ExerciseTopic | null>(null);
   const modules = useMemo<ExerciseModules>(() => ({ python }), [python]);
   const read = readParams(params, modules);
 
@@ -108,7 +111,10 @@ export function ExercisesPage({ python = false, examPath = "simulacro", pyExamPa
           progress={progress}
           session={session}
           onOpen={open}
-          onBack={() => setParams(new URLSearchParams())}
+          onBack={() => {
+            setReturnTopic(read.type.topic);
+            setParams(new URLSearchParams());
+          }}
           onSolved={(type, level) => {
             setProgress(recordSolved(type.id, level));
             setSession((n) => n + 1);
@@ -117,7 +123,15 @@ export function ExercisesPage({ python = false, examPath = "simulacro", pyExamPa
       ) : read ? null : (
         <>
           {examPath !== null ? <ExamCard to={examPath} /> : null}
-          <ExerciseList progress={progress} session={session} modules={modules} pyExamPath={python ? pyExamPath : null} onStart={start} onMix={mix} />
+          <ExerciseList
+            progress={progress}
+            session={session}
+            modules={modules}
+            pyExamPath={python ? pyExamPath : null}
+            focusTopic={returnTopic}
+            onStart={start}
+            onMix={mix}
+          />
         </>
       )}
     </section>
@@ -188,11 +202,50 @@ function LevelSelect({ id, value, onChange, levels }: { id: string; value: Exerc
   );
 }
 
+/** Ancla de la sección de un tema en el índice («#tema-logica»). */
+export const topicAnchor = (topic: ExerciseTopic) => `tema-${topic}`;
+
+/** Lleva a la vista la sección de un tema y pone el foco en su título. */
+function goToTopic(topic: ExerciseTopic, smooth: boolean) {
+  const section = document.getElementById(topicAnchor(topic));
+  const title = section?.querySelector<HTMLElement>("h2");
+  if (!section || !title) return;
+  if (typeof section.scrollIntoView === "function") section.scrollIntoView({ block: "start", behavior: smooth ? scrollBehavior() : "auto" });
+  title.focus({ preventScroll: true });
+}
+
+/** Índice de temas: un enlace por tema, al principio de la lista. */
+function TopicIndex({ topics }: { topics: readonly ExerciseTopic[] }) {
+  return (
+    <nav aria-label="Temas del banco de ejercicios" className="flex flex-col gap-2">
+      <p className="text-[14px] font-semibold text-muted">Ir a un tema</p>
+      <ul className="flex flex-wrap gap-2">
+        {topics.map((topic) => (
+          <li key={topic}>
+            <a
+              href={`#${topicAnchor(topic)}`}
+              onClick={(e) => {
+                // Sin tocar la URL (el enrutador no debe ver el #): desplazamiento y foco en el título.
+                e.preventDefault();
+                goToTopic(topic, true);
+              }}
+              className="inline-flex min-h-11 items-center rounded-full border border-border bg-raised px-4 text-[14px] font-semibold text-fg hover:bg-sunken"
+            >
+              {topicLabel(topic)}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 function ExerciseList({
   progress,
   session,
   modules,
   pyExamPath,
+  focusTopic,
   onStart,
   onMix,
 }: {
@@ -200,13 +253,22 @@ function ExerciseList({
   session: number;
   modules: ExerciseModules;
   pyExamPath: string | null;
+  /** Tema al que volver al montar la lista (desde «Cambiar de tipo»). */
+  focusTopic: ExerciseTopic | null;
   onStart: (t: AnyExerciseType, l: ExerciseLevel) => void;
   onMix: (topic: ExerciseTopic, l: ExerciseLevel) => void;
 }) {
+  const topics = exerciseTopics(modules);
+  useEffect(() => {
+    if (focusTopic) goToTopic(focusTopic, false);
+    // Solo al montar: la lista se monta de nuevo al volver de una práctica.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <div className="flex flex-col gap-8">
+      <TopicIndex topics={topics.map((t) => t.id)} />
       {session > 0 ? <SessionCounter session={session} /> : null}
-      {exerciseTopics(modules).map((topic) => (
+      {topics.map((topic) => (
         <TopicBlock key={topic.id} topic={topic.id} progress={progress} modules={modules} pyExamPath={topic.id === "python" ? pyExamPath : null} onStart={onStart} onMix={onMix} />
       ))}
     </div>
@@ -232,9 +294,9 @@ function TopicBlock({
   const [mixLevel, setMixLevel] = useState<ExerciseLevel>("básico");
   const types = exercisesOfTopic(topic, modules);
   return (
-    <section aria-labelledby={`${id}-title`} className="flex flex-col gap-3">
+    <section id={topicAnchor(topic)} aria-labelledby={`${id}-title`} className="flex scroll-mt-28 flex-col gap-3 lg:scroll-mt-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id={`${id}-title`} className="font-display text-[22px] font-semibold">
+        <h2 id={`${id}-title`} tabIndex={-1} className="font-display text-[22px] font-semibold">
           {topicLabel(topic)}
         </h2>
         <div className="flex flex-wrap items-center gap-2">
@@ -294,7 +356,7 @@ function ExerciseCard({
           Nivel
         </label>
         <LevelSelect id={`${id}-level`} value={level} onChange={setLevel} levels={type.levels} />
-        <Button variant="primary" aria-describedby={`${id}-title`} onClick={() => onStart(type, level)}>
+        <Button variant="primary" aria-label={`Practicar: ${type.title}`} onClick={() => onStart(type, level)}>
           Practicar
         </Button>
       </div>

@@ -69,6 +69,34 @@ describe("lista de ejercicios", () => {
     expect(screen.getAllByRole("button", { name: /^Practicar/ }).length).toBe(EXERCISE_TYPES.filter((t) => !t.module).length);
   });
 
+  it("un índice de temas enlaza cada sección, y cada «Practicar» tiene su propio nombre", async () => {
+    renderAt("/laboratorios/ejercicios");
+    await page();
+    const index = screen.getByRole("navigation", { name: "Temas del banco de ejercicios" });
+    const links = within(index).getAllByRole("link");
+    expect(links.map((l) => l.textContent)).toEqual(["Lógica proposicional", "Lógica de predicados", "Conjuntos", "Combinatoria y complejidad", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad"]);
+    expect(links[2]!.getAttribute("href")).toBe("#tema-conjuntos");
+    Element.prototype.scrollIntoView = () => {};
+    fireEvent.click(links[2]!);
+    expect(document.activeElement).toBe(screen.getByRole("heading", { level: 2, name: "Conjuntos" }));
+    // La URL no cambia (el # no llega al enrutador).
+    expect(screen.getByTestId("loc").textContent).toBe("/laboratorios/ejercicios");
+    const names = screen.getAllByRole("button", { name: /^Practicar/ }).map((b) => b.getAttribute("aria-label"));
+    expect(new Set(names).size).toBe(names.length);
+    expect(names).toContain("Practicar: Tabla de verdad paso a paso");
+  });
+
+  it("«Cambiar de tipo» vuelve a la sección del tema de donde se vino", async () => {
+    Element.prototype.scrollIntoView = () => {};
+    renderAt("/laboratorios/ejercicios");
+    await page();
+    fireEvent.click(screen.getByRole("button", { name: "Practicar: Inclusión–exclusión" }));
+    await screen.findByRole("heading", { level: 2, name: "Ejercicio 1: Inclusión–exclusión" });
+    fireEvent.click(screen.getByRole("button", { name: "Cambiar de tipo" }));
+    const heading = await screen.findByRole("heading", { level: 2, name: "Conjuntos" });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+  });
+
   it("la tarjeta del simulacro abre …/ejercicios/simulacro, sin pestaña nueva", async () => {
     renderAt("/laboratorios/ejercicios");
     await page();
