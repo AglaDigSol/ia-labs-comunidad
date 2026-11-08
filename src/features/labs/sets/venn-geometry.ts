@@ -2,7 +2,11 @@
 // (shared/sets/expr.ts: máscara de bits, bit i = dentro del conjunto i) es un camino SVG exacto hecho
 // con arcos de los círculos, así que se puede pulsar y enfocar región a región. Se calcula una vez por
 // número de conjuntos.
+// Con dos conjuntos y unos supuestos que lo permiten (shared/sets/relations.ts, nestedShape) hay otros
+// dibujos: A dentro de B, B dentro de A, separados (disjuntos) o un solo círculo (A = B). Las regiones
+// que esos dibujos no tienen (vacías por hipótesis) llevan un camino vacío y no se pintan.
 import { regionCount, type Region } from "../../../../shared/sets/expr.ts";
+import type { NestedShape } from "../../../../shared/sets/relations.ts";
 
 type Circle = { cx: number; cy: number; r: number };
 type Pt = { x: number; y: number; id: string };
@@ -15,7 +19,9 @@ export type VennLayout = {
   /** Posición del nombre de cada conjunto (A, B, C) y del universal U. */
   names: Array<{ x: number; y: number }>;
   universeName: { x: number; y: number };
-  /** Camino de cada región (índice = región). La región 0 usa la regla evenodd. */
+  /** Texto de cada nombre si no es el del conjunto («A = B» en el dibujo de un solo círculo; "" lo omite). */
+  nameText?: string[];
+  /** Camino de cada región (índice = región), "" si el dibujo no la tiene. Se pintan con la regla evenodd. */
   paths: string[];
   /** Punto bien dentro de cada región, para rotular un número o una marca. */
   anchors: Array<{ x: number; y: number }>;
@@ -92,9 +98,19 @@ function build(circles: Circle[], width: number, height: number): Pick<VennLayou
     paths.push(d.trim());
   }
 
-  // Ancla de cada región: el punto de una rejilla más alejado de cualquier borde.
   const regionAt = (p: { x: number; y: number }) => circles.reduce((r, c, j) => (inside(p, c) ? r | (1 << j) : r), 0);
-  const best = Array.from({ length: regionCount(n) }, () => ({ x: width / 2, y: height / 2, score: -1 }));
+  return { paths, anchors: anchorsOf(circles, width, height, regionCount(n), regionAt) };
+}
+
+/** Ancla de cada región: el punto de una rejilla más alejado de cualquier borde. */
+function anchorsOf(
+  circles: Circle[],
+  width: number,
+  height: number,
+  count: number,
+  regionAt: (p: { x: number; y: number }) => number,
+): Array<{ x: number; y: number }> {
+  const best = Array.from({ length: count }, () => ({ x: width / 2, y: height / 2, score: -1 }));
   for (let x = PAD + 4; x < width - PAD; x += 3) {
     for (let y = PAD + 4; y < height - PAD; y += 3) {
       const p = { x, y };
@@ -103,7 +119,77 @@ function build(circles: Circle[], width: number, height: number): Pick<VennLayou
       if (edge > best[r]!.score) best[r] = { x, y, score: edge };
     }
   }
-  return { paths, anchors: best.map(({ x, y }) => ({ x, y })) };
+  return best.map(({ x, y }) => ({ x, y }));
+}
+
+const circlePath = (c: Circle) =>
+  `M ${f(c.cx - c.r)} ${c.cy} A ${c.r} ${c.r} 0 1 0 ${f(c.cx + c.r)} ${c.cy} A ${c.r} ${c.r} 0 1 0 ${f(c.cx - c.r)} ${c.cy} Z`;
+
+/** Dibujos de dos conjuntos según los supuestos (mismo tamaño que el normal). */
+function nestedLayout(shape: NestedShape): VennLayout {
+  const width = 320;
+  const height = 210;
+  const rect = `M ${PAD} ${PAD} H ${width - PAD} V ${height - PAD} H ${PAD} Z`;
+  const universeName = { x: 22, y: 196 };
+  if (shape === "iguales") {
+    const o = { cx: 160, cy: 112, r: 78 };
+    const paths = [`${rect} ${circlePath(o)}`, "", "", circlePath(o)];
+    return {
+      width,
+      height,
+      circles: [o],
+      names: [
+        { x: 56, y: 32 },
+        { x: 56, y: 32 },
+      ],
+      nameText: ["A = B", ""],
+      universeName,
+      paths,
+      anchors: anchorsOf([o], width, height, 4, (p) => (inside(p, o) ? 3 : 0)),
+    };
+  }
+  if (shape === "separados") {
+    const a = { cx: 88, cy: 112, r: 62 };
+    const b = { cx: 232, cy: 112, r: 62 };
+    const circles = [a, b];
+    return {
+      width,
+      height,
+      circles,
+      names: [
+        { x: 40, y: 36 },
+        { x: 280, y: 36 },
+      ],
+      universeName,
+      paths: [`${rect} ${circlePath(a)} ${circlePath(b)}`, circlePath(a), circlePath(b), ""],
+      anchors: anchorsOf(circles, width, height, 4, (p) => (inside(p, a) ? 1 : 0) | (inside(p, b) ? 2 : 0)),
+    };
+  }
+  // Uno dentro del otro: el grande, a la derecha; el pequeño, dentro y algo desplazado.
+  const big = { cx: 170, cy: 108, r: 88 };
+  const small = { cx: 150, cy: 118, r: 44 };
+  const aInB = shape === "A-en-B";
+  const a = aInB ? small : { ...big, cx: 150 };
+  const b = aInB ? big : { ...small, cx: 170 };
+  const outer = aInB ? b : a;
+  const inner = aInB ? a : b;
+  const circles = [a, b];
+  const paths = ["", "", "", ""];
+  paths[0] = `${rect} ${circlePath(outer)}`;
+  paths[3] = circlePath(inner);
+  // El anillo: la región del grande que no está en el pequeño (Aᶜ ∩ B o A ∩ Bᶜ).
+  paths[aInB ? 2 : 1] = `${circlePath(outer)} ${circlePath(inner)}`;
+  const innerName = { x: inner.cx, y: inner.cy - inner.r - 12 };
+  const outerName = { x: aInB ? 72 : 48, y: 34 };
+  return {
+    width,
+    height,
+    circles,
+    names: aInB ? [innerName, outerName] : [outerName, innerName],
+    universeName,
+    paths,
+    anchors: anchorsOf(circles, width, height, 4, (p) => (inside(p, a) ? 1 : 0) | (inside(p, b) ? 2 : 0)),
+  };
 }
 
 function layout(n: 2 | 3): VennLayout {
@@ -147,14 +233,18 @@ function layout(n: 2 | 3): VennLayout {
   };
 }
 
-const cache = new Map<number, VennLayout>();
+const cache = new Map<string, VennLayout>();
 
-/** Diagrama de Venn de dos o tres conjuntos (A, B y, si hace falta, C). */
-export function vennLayout(n: 2 | 3): VennLayout {
-  let l = cache.get(n);
+/**
+ * Diagrama de Venn de dos o tres conjuntos (A, B y, si hace falta, C). Con dos conjuntos, `shape`
+ * pide uno de los dibujos de los supuestos (A dentro de B, separados…).
+ */
+export function vennLayout(n: 2 | 3, shape: NestedShape | null = null): VennLayout {
+  const key = n === 2 && shape ? shape : String(n);
+  let l = cache.get(key);
   if (!l) {
-    l = layout(n);
-    cache.set(n, l);
+    l = n === 2 && shape ? nestedLayout(shape) : layout(n);
+    cache.set(key, l);
   }
   return l;
 }
@@ -162,4 +252,10 @@ export function vennLayout(n: 2 | 3): VennLayout {
 /** Regiones en el orden de lectura del diagrama: de dentro hacia fuera. */
 export function regionOrder(n: 2 | 3): Region[] {
   return n === 2 ? [3, 1, 2, 0] : [7, 3, 5, 6, 1, 2, 4, 0];
+}
+
+/** Las regiones que tiene un dibujo, en orden de lectura (las vacías por hipótesis no están). */
+export function drawnRegions(n: 2 | 3, shape: NestedShape | null = null): Region[] {
+  const l = vennLayout(n, shape);
+  return regionOrder(n).filter((r) => l.paths[r] !== "");
 }
