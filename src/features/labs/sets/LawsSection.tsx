@@ -4,6 +4,8 @@
 //   que la ley encaja (reescritura, como en el laboratorio de Boole), y avisa al llegar al lado derecho.
 // - «¿Son iguales?»: decides si dos expresiones son iguales. Solo después de responder se enseña una
 //   región donde difieren (contraejemplo) o se confirma que ocupan las mismas regiones.
+// - «Relaciones»: decides si una relación (A ⊆ B, B ∖ A ⊆ A…) es siempre cierta, nunca cierta o
+//   depende, con supuestos si se quiere (RelationsSection.tsx).
 import { Check, Lightbulb, RotateCcw, Undo2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SETS_PACK } from "../../../../content/conjuntos/practica.ts";
@@ -32,10 +34,11 @@ import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-grou
 import { cn } from "../../../lib/cn.ts";
 import { Tex } from "../../../lib/tex.tsx";
 import { selectClass } from "../boole/AxiomPractice.tsx";
+import { RelationsPractice } from "./RelationsSection.tsx";
 import { HOW_TO_WRITE, SetExprField, Status, Verdict } from "./shared.tsx";
 import { VennDiagram } from "./VennDiagram.tsx";
 
-type Mode = "pasos" | "iguales";
+type Mode = "pasos" | "iguales" | "relaciones";
 type Pair = { left: string; right: string };
 const LEVELS = ["básico", "medio", "avanzado"] as const;
 
@@ -61,14 +64,17 @@ export function LawsSection() {
         value={mode}
         aria-label="Modo"
         onValueChange={(v) => {
-          if (v === "pasos" || v === "iguales") setMode(v);
+          if (v === "pasos" || v === "iguales" || v === "relaciones") setMode(v);
         }}
         className="self-start"
       >
         <ToggleGroupItem value="pasos">Paso a paso</ToggleGroupItem>
         <ToggleGroupItem value="iguales">¿Son iguales?</ToggleGroupItem>
+        <ToggleGroupItem value="relaciones">Relaciones</ToggleGroupItem>
       </ToggleGroup>
-      {mode === "pasos" ? (
+      {mode === "relaciones" ? (
+        <RelationsPractice />
+      ) : mode === "pasos" ? (
         <StepsPractice key={handoff ? `${handoff.left}=${handoff.right}` : "inicio"} initial={handoff} />
       ) : (
         <DecidePractice
