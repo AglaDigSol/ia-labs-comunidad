@@ -1,5 +1,5 @@
 // Laboratorio de conjuntos: expresiones para el diagrama de Venn, datos con elementos, igualdades para
-// demostrar o refutar y problemas de cardinales. Contenido CC BY 4.0. Se valida con SetsPackSchema
+// demostrar o refutar, relaciones (con supuestos) para decidir si son ciertas y problemas de cardinales. Contenido CC BY 4.0. Se valida con SetsPackSchema
 // (tests/content.test.ts). Notación de clase: ∪, ∩, ∖, Δ, Aᶜ, ∅ y U. Nada de esto sale de actividades
 // evaluables: son ejercicios de elaboración propia para entrenar.
 import type { SetsPack } from "../../shared/sets/schema.ts";
@@ -13,7 +13,7 @@ export const SETS_PACK: SetsPack = {
     author: "Comunidad IA Labs",
     license: "CC-BY-4.0",
     source: "Elaboración propia",
-    updated: "2026-10-29",
+    updated: "2026-11-08",
   },
   venn: [
     { id: "dos-1", expr: "A ∩ Bᶜ", level: "básico" },
@@ -66,6 +66,23 @@ export const SETS_PACK: SetsPack = {
     { id: "falsa-asociativa", left: "A ∖ (B ∖ C)", right: "(A ∖ B) ∖ C", level: "avanzado" },
     { id: "falsa-distributiva", left: "A ∪ (B ∩ C)", right: "(A ∪ B) ∩ C", level: "avanzado" },
     { id: "simetrica-propia", left: "A Δ A", right: "∅", level: "avanzado" },
+  ],
+  relations: [
+    { id: "contenido-interseccion", hypotheses: "A ⊆ B", relation: "A ∩ B = A", level: "básico" },
+    { id: "contenido-al-reves", hypotheses: "A ⊆ B", relation: "B ⊆ A", level: "básico" },
+    { id: "disjuntos-complemento", hypotheses: "A ∩ B = ∅", relation: "A ⊆ Bᶜ", level: "básico" },
+    { id: "diferencia-contenida", hypotheses: "", relation: "A ∖ B ⊆ A", level: "básico" },
+    { id: "contenido-en-interseccion", hypotheses: "", relation: "A ⊆ A ∩ B", level: "básico" },
+    { id: "no-vacio-diferencia", hypotheses: "∅ ≠ A ⊆ B", relation: "B ∖ A ⊆ A", level: "medio" },
+    { id: "no-vacio-disjuntos", hypotheses: "∅ ≠ A ⊆ B", relation: "A ∩ B = ∅", level: "medio" },
+    { id: "complementos-al-reves", hypotheses: "A ⊆ B", relation: "Bᶜ ⊆ Aᶜ", level: "medio" },
+    { id: "estricto-diferencia", hypotheses: "A ⊂ B", relation: "B ∖ A ≠ ∅", level: "medio" },
+    { id: "union-igual", hypotheses: "A ⊆ B", relation: "A ∪ B = B", level: "medio" },
+    { id: "cadena-disjuntos", hypotheses: "A ⊆ B, B ∩ C = ∅", relation: "A ∩ C = ∅", level: "avanzado" },
+    { id: "cadena-contenido", hypotheses: "A ⊆ B, B ⊆ C", relation: "A ∖ C ≠ ∅", level: "avanzado" },
+    { id: "interseccion-en-c", hypotheses: "A ∩ B ⊆ C", relation: "A ∖ C ⊆ Bᶜ", level: "avanzado" },
+    { id: "union-es-c", hypotheses: "A ∪ B = C", relation: "A ⊆ C", level: "avanzado" },
+    { id: "union-con-c", hypotheses: "A ⊆ B", relation: "A ∪ C = B ∪ C", level: "avanzado" },
   ],
   cardinal: [
     {

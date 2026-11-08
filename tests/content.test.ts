@@ -17,6 +17,7 @@ import { minimizeBoole } from "../shared/boole/minimize.ts";
 import { CourseSchema } from "../shared/courses/types.ts";
 import { SETS_PACK } from "../content/conjuntos/practica.ts";
 import { compareSetExprs, parseSetExpr } from "../shared/sets/expr.ts";
+import { checkRelation, parseSetHypotheses, parseSetRelation } from "../shared/sets/relations.ts";
 import { SetsPackSchema } from "../shared/sets/schema.ts";
 import { NotationSchema } from "../shared/logic/notation.ts";
 import { SymbolPackSchema } from "../shared/symbols/schema.ts";
@@ -235,6 +236,23 @@ describe("content/conjuntos", () => {
     });
     expect(verdicts.filter(Boolean).length).toBeGreaterThanOrEqual(5);
     expect(verdicts.filter((v) => !v).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("hay relaciones siempre ciertas, nunca ciertas y que dependen, para «Relaciones»", () => {
+    const verdicts = SETS_PACK.relations.map((r) => {
+      const h = parseSetHypotheses(r.hypotheses);
+      const x = parseSetRelation(r.relation);
+      return h.ok && x.ok ? checkRelation(x.relations, h.relations).verdict : null;
+    });
+    expect(verdicts.filter((v) => v === "siempre").length).toBeGreaterThanOrEqual(4);
+    expect(verdicts.filter((v) => v === "nunca").length).toBeGreaterThanOrEqual(2);
+    expect(verdicts.filter((v) => v === "depende").length).toBeGreaterThanOrEqual(3);
+    // Supuestos contradictorios o una relación que no se lee: el esquema los rechaza.
+    const base = SETS_PACK.relations[0]!;
+    const contradiction = { ...base, hypotheses: "A ⊊ B, B ⊆ A" };
+    expect(SetsPackSchema.safeParse({ ...SETS_PACK, relations: [contradiction, ...SETS_PACK.relations.slice(1)] }).success).toBe(false);
+    const notRelation = { ...base, relation: "A ∩ B" };
+    expect(SetsPackSchema.safeParse({ ...SETS_PACK, relations: [notRelation, ...SETS_PACK.relations.slice(1)] }).success).toBe(false);
   });
 
   it("el esquema rechaza un problema sin datos suficientes y una expresión que no se lee", () => {

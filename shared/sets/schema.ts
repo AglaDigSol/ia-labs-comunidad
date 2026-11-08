@@ -1,12 +1,13 @@
 // Esquema del contenido del laboratorio de conjuntos (content/conjuntos/). Se valida en
 // tests/content.test.ts: además de la forma, cada expresión se tiene que poder leer, los conjuntos con
-// elementos tienen que caber en su universo y cada problema de cardinales tiene que fijar una única
-// solución con números naturales.
+// elementos tienen que caber en su universo, cada problema de cardinales tiene que fijar una única
+// solución con números naturales y los supuestos de cada relación no pueden contradecirse.
 import { z } from "zod";
 import { ContentMetaSchema } from "../content/meta.ts";
 import { solveRegions } from "./cardinal.ts";
 import { parseSetExpr, SET_NAMES, setVars, type SetName } from "./expr.ts";
 import { parseElementList } from "./finite.ts";
+import { analyzeHypotheses, parseSetHypotheses, parseSetRelation, relationVars } from "./relations.ts";
 
 const Id = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 const Level = z.enum(["básico", "medio", "avanzado"]);
@@ -26,6 +27,14 @@ export const SetsElementsItemSchema = z.strictObject({
 });
 
 export const SetsIdentitySchema = z.strictObject({ id: Id, left: Expr, right: Expr, level: Level });
+
+/** Relación para «Relaciones»: supuestos (separados por comas, pueden faltar) y la relación que se decide. */
+export const SetsRelationSchema = z.strictObject({
+  id: Id,
+  hypotheses: z.string().trim().max(120),
+  relation: Expr,
+  level: Level,
+});
 
 export const SetsCardinalSchema = z.strictObject({
   id: Id,
@@ -50,6 +59,7 @@ export const SetsPackSchema = z
     venn: z.array(SetsVennItemSchema).min(6).max(40),
     elements: z.array(SetsElementsItemSchema).min(1).max(10),
     identities: z.array(SetsIdentitySchema).min(6).max(40),
+    relations: z.array(SetsRelationSchema).min(6).max(40),
     cardinal: z.array(SetsCardinalSchema).min(3).max(20),
   })
   .superRefine((p, ctx) => {
@@ -59,7 +69,7 @@ export const SetsPackSchema = z
       if (!r.ok) issue(`${where}: «${text}» no se lee (${r.error.message}).`);
       return r.ok ? r.expr : null;
     };
-    for (const list of [p.venn, p.elements, p.identities, p.cardinal]) {
+    for (const list of [p.venn, p.elements, p.identities, p.relations, p.cardinal]) {
       const ids = list.map((x) => x.id);
       if (new Set(ids).size !== ids.length) issue("Los ids de cada lista deben ser únicos.");
     }
@@ -67,6 +77,15 @@ export const SetsPackSchema = z
     for (const i of p.identities) {
       parse(`identities.${i.id}`, i.left);
       parse(`identities.${i.id}`, i.right);
+    }
+    for (const r of p.relations) {
+      const h = parseSetHypotheses(r.hypotheses);
+      const x = parseSetRelation(r.relation);
+      if (!h.ok) issue(`relations.${r.id}: los supuestos «${r.hypotheses}» no se leen (${h.error.message}).`);
+      if (!x.ok) issue(`relations.${r.id}: «${r.relation}» no se lee (${x.error.message}).`);
+      if (h.ok && x.ok && !analyzeHypotheses(h.relations, relationVars([...h.relations, ...x.relations])).consistent) {
+        issue(`relations.${r.id}: los supuestos se contradicen.`);
+      }
     }
     for (const el of p.elements) {
       const u = parseElementList(el.universe);
@@ -103,5 +122,6 @@ export const SetsPackSchema = z
   });
 
 export type SetsPack = z.infer<typeof SetsPackSchema>;
+export type SetsRelationItem = z.infer<typeof SetsRelationSchema>;
 export type SetsCardinalProblem = z.infer<typeof SetsCardinalSchema>;
 export type SetsElementsItem = z.infer<typeof SetsElementsItemSchema>;
