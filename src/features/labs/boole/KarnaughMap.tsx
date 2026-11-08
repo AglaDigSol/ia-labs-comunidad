@@ -2,7 +2,9 @@
 // menos 44 px y navegación con las flechas (un solo punto de tabulación). Cada grupo lleva su número
 // en una insignia con su propio estilo de borde (continuo, discontinuo, punteado, doble) además del
 // color, y la etiqueta de cada celda dice sus variables, su valor y sus grupos: «Celda x=0, y=1, z=1:
-// 1, en el grupo 2». Sin `onActivate`, el mapa es de solo lectura (para la solución).
+// 1, en el grupo 2». Sin `onActivate`, el mapa es de solo lectura (para la solución). Con `onValue`
+// («Cambiar su valor»), 0, 1 y X (también F, V y -) escriben el valor de la celda y, con «Avanzar al
+// escribir» (grid-input.tsx), el foco baja a la fila siguiente.
 import { useRef, useState, type KeyboardEvent } from "react";
 import { rowValues } from "../../../../shared/boole/canonical.ts";
 import {
@@ -14,6 +16,7 @@ import {
 } from "../../../../shared/boole/karnaugh.ts";
 import type { Implicant } from "../../../../shared/boole/minimize.ts";
 import { cn } from "../../../lib/cn.ts";
+import { cellKeyValue, useGridAdvance } from "../grid-input.tsx";
 
 /** Estilos de los grupos: el borde cambia de forma, no solo de color. */
 const GROUP_STYLES = [
@@ -71,6 +74,8 @@ export function KarnaughMap({
   groups,
   selected,
   onActivate,
+  onValue,
+  describedBy,
 }: {
   layout: KMapLayout;
   vector: string;
@@ -79,6 +84,10 @@ export function KarnaughMap({
   selected?: ReadonlySet<number>;
   /** Al pulsar (o con Intro / Espacio) una celda; sin él, el mapa es de solo lectura. */
   onActivate?: (m: number) => void;
+  /** Escribir el valor de una celda con el teclado (0, 1 o X); sin él, las teclas de valor no hacen nada. */
+  onValue?: (m: number, value: "0" | "1" | "X") => void;
+  /** Id del texto de los atajos, para las celdas. */
+  describedBy?: string;
 }) {
   const n = layout.vars.length;
   const R = layout.rowCodes.length;
@@ -86,8 +95,22 @@ export function KarnaughMap({
   const [focus, setFocus] = useState<[number, number]>([0, 0]);
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const memberOf = (m: number) => groups.flatMap((g, i) => (implicantCells(n, g).includes(m) ? [i] : []));
+  const [advance] = useGridAdvance();
+
+  const go = (to: [number, number]) => {
+    setFocus(to);
+    refs.current.get(`${to[0]}:${to[1]}`)?.focus();
+  };
 
   const move = (e: KeyboardEvent, r: number, c: number) => {
+    const typed = onValue ? cellKeyValue(e, true) : null;
+    // En el mapa no hay celdas vacías: Retroceso y Supr no hacen nada.
+    if (typed && typed.value !== null) {
+      e.preventDefault();
+      onValue!(kmapMinterm(layout, r, c), typed.value === "X" ? "X" : typed.value ? "1" : "0");
+      if (advance && r + 1 < R) go([r + 1, c]);
+      return;
+    }
     const next: Record<string, [number, number]> = {
       ArrowUp: [Math.max(0, r - 1), c],
       ArrowDown: [Math.min(R - 1, r + 1), c],
@@ -99,8 +122,7 @@ export function KarnaughMap({
     const to = next[e.key];
     if (!to) return;
     e.preventDefault();
-    setFocus(to);
-    refs.current.get(`${to[0]}:${to[1]}`)?.focus();
+    go(to);
   };
 
   const corner = `${layout.rowVars.join("")} \\ ${layout.colVars.join("")}`;
@@ -182,6 +204,7 @@ export function KarnaughMap({
                         type="button"
                         tabIndex={focus[0] === r && focus[1] === c ? 0 : -1}
                         aria-label={label}
+                        aria-describedby={describedBy}
                         aria-pressed={selected ? isSelected : undefined}
                         onClick={() => {
                           setFocus([r, c]);

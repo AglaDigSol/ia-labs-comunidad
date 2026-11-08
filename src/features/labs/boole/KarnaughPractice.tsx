@@ -3,9 +3,9 @@
 // escribe su término. «Comprobar» dice si la agrupación cubre todo y si es mínima, sin enseñar la
 // mínima; las pistas señalan un 1 sin cubrir o un grupo mejorable, nunca la solución, que queda detrás
 // de «Ver la solución completa». También se agrupan los 0 (producto de sumas) y, con «Cambiar su
-// valor», cada celda pasa por 0 → 1 → X.
+// valor», cada celda pasa por 0 → 1 → X (o se escribe con 0, 1 o X desde el teclado).
 import { Check, Lightbulb, Plus, RotateCcw, Trash2, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { booleToPlain, booleToTex } from "../../../../shared/boole/expr.ts";
 import {
   checkKMapGroups,
@@ -27,6 +27,7 @@ import { Chip } from "../../../components/ui/chip.tsx";
 import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group.tsx";
 import { cn } from "../../../lib/cn.ts";
 import { Tex } from "../../../lib/tex.tsx";
+import { GridShortcuts } from "../grid-input.tsx";
 import { cellPlace, GroupBadge, KarnaughMap } from "./KarnaughMap.tsx";
 
 type Tool = "agrupar" | "editar";
@@ -67,6 +68,11 @@ export function KarnaughPractice({
   const target = mode === "sop" ? "1" : "0";
   const other = mode === "sop" ? "0" : "1";
   const hasX = vector.includes("X");
+  const hintId = `kmap-hint-${useId().replace(/[^A-Za-z0-9_-]/g, "")}`;
+  const editing = tool === "editar" && onEdit !== undefined;
+  const write = (m: number, v: string) => {
+    if (onEdit && vector[m] !== v) onEdit(vector.slice(0, m) + v + vector.slice(m + 1));
+  };
 
   const reset = () => {
     setSelection(new Set());
@@ -261,6 +267,7 @@ export function KarnaughPractice({
           ? `Pulsa las celdas de un grupo y luego «Crear grupo». Un grupo es un rectángulo de 1, 2, 4, 8 o 16 celdas con ${what} (y, si quieres, X) que puede dar la vuelta por los bordes. Muévete por el mapa con las flechas.`
           : "Cada pulsación cambia la celda: 0 → 1 → X → 0. Al cambiar el mapa se borran los grupos."}
       </p>
+      {editing ? <GridShortcuts id={hintId} format="01X" allowX clear={false} /> : null}
 
       <KarnaughMap
         layout={layout}
@@ -269,6 +276,8 @@ export function KarnaughPractice({
         groups={groups}
         selected={tool === "agrupar" ? selection : undefined}
         onActivate={activate}
+        onValue={editing ? write : undefined}
+        describedBy={editing ? hintId : undefined}
       />
 
       {tool === "agrupar" ? (
