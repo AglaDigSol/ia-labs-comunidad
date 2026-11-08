@@ -1,11 +1,20 @@
 // «Diagrama de Venn»: dos modos.
 // - «Sombrear regiones»: eliges o escribes una expresión y marcas en el diagrama las regiones que
 //   crees que denota. «Comprobar» señala las regiones mal marcadas (de más o de menos) sin decir cuál
-//   es la respuesta; la solución queda detrás de «Ver la solución completa».
+//   es la respuesta; la solución queda detrás de «Ver la solución completa». Con «Supuestos» (A ⊆ B,
+//   A ∩ C = ∅…), las regiones vacías por hipótesis se marcan aparte y no cuentan; con dos conjuntos y
+//   una inclusión, disjunción o igualdad, se pueden dibujar anidados o separados.
 // - «Con elementos»: el universo y A, B, C por extensión; calculas el conjunto resultado y la app lo
 //   corrige: marca los elementos que sobran y dice cuántos faltan, nunca cuáles.
 import { Check, Eraser, Lightbulb } from "lucide-react";
 import { useMemo, useState } from "react";
+import {
+  analyzeHypotheses,
+  nestedShape,
+  relationToPlain,
+  relationVars,
+  type SetRelation,
+} from "../../../../shared/sets/relations.ts";
 import { SETS_PACK } from "../../../../content/conjuntos/practica.ts";
 import {
   elementRegion,
@@ -18,7 +27,6 @@ import {
   setToPlain,
   setToTex,
   setVars,
-  vennVars,
   type FiniteSets,
   type SetExpr,
   type SetName,
@@ -33,7 +41,8 @@ import { cn } from "../../../lib/cn.ts";
 import { Tex } from "../../../lib/tex.tsx";
 import { selectClass } from "../boole/AxiomPractice.tsx";
 import { HOW_TO_WRITE, operationRules, plural, SetExprField, Status, subexpressions, Verdict } from "./shared.tsx";
-import { regionOrder } from "./venn-geometry.ts";
+import { EmptyLegend, HypothesesEditor, NESTED_LABEL } from "./Hypotheses.tsx";
+import { drawnRegions, regionOrder } from "./venn-geometry.ts";
 import { VennDiagram } from "./VennDiagram.tsx";
 
 type Mode = "regiones" | "elementos";
@@ -70,6 +79,9 @@ function RegionsPractice() {
     const r = parseSetExpr(SETS_PACK.venn[0]!.expr);
     return r.ok ? r.expr : null;
   });
+  const [hypotheses, setHypotheses] = useState<SetRelation[]>([]);
+  const consistent = useMemo(() => analyzeHypotheses(hypotheses).consistent, [hypotheses]);
+  const vars = expr ? relationVars(hypotheses, expr) : [];
 
   const pick = (id: string) => {
     setChoice(id);
@@ -129,34 +141,59 @@ function RegionsPractice() {
           <summary className="flex min-h-11 cursor-pointer items-center">Cómo escribir</summary>
           <p className="pb-2 text-muted">{HOW_TO_WRITE}</p>
         </details>
+        <HypothesesEditor value={hypotheses} onChange={setHypotheses} contradiction={!consistent} />
       </div>
       <div className="flex min-w-0 flex-col gap-4 lg:col-span-7">
-        {expr ? <ShadePractice key={setToPlain(expr)} expr={expr} /> : null}
+        {expr ? (
+          <ShadePractice key={`${setToPlain(expr)}|${vars.join("")}`} expr={expr} hypotheses={consistent ? hypotheses : []} />
+        ) : null}
       </div>
     </div>
   );
 }
 
-/** Sombrear las regiones de una expresión. `onSolved` se llama al comprobar un diagrama correcto. */
-export function ShadePractice({ expr, onSolved }: { expr: SetExpr; onSolved?: () => void }) {
-  const vars = useMemo(() => vennVars(expr), [expr]);
+/**
+ * Sombrear las regiones de una expresión. `onSolved` se llama al comprobar un diagrama correcto. Con
+ * `hypotheses`, las regiones vacías por hipótesis no se marcan ni cuentan.
+ */
+export function ShadePractice({ expr, hypotheses = [], onSolved }: { expr: SetExpr; hypotheses?: readonly SetRelation[]; onSolved?: () => void }) {
+  const hypKey = hypotheses.map(relationToPlain).join(", ");
+  const analysis = useMemo(() => analyzeHypotheses(hypotheses, relationVars(hypotheses, expr)), [hypotheses, expr]);
+  const vars = analysis.vars;
   const n = vars.length as 2 | 3;
+  const empty = analysis.empty;
+  const shape = nestedShape(analysis);
   const truth = useMemo(() => setRegions(expr, vars), [expr, vars]);
   const [marks, setMarks] = useState<boolean[]>(() => truth.map(() => false));
   const [checked, setChecked] = useState(false);
   const [hints, setHints] = useState(0);
+  const [nested, setNested] = useState(false);
+  // Otros supuestos: la corrección anterior ya no vale.
+  const [seenHyps, setSeenHyps] = useState(hypKey);
+  if (seenHyps !== hypKey) {
+    setSeenHyps(hypKey);
+    setChecked(false);
+  }
+  const drawShape = nested ? shape : null;
   const plain = setToPlain(expr);
 
-  const wrong = marks.map((m, r) => m !== truth[r]);
+  // Las regiones vacías por hipótesis no cuentan: da igual si se marcan.
+  const counted = truth.map((_, r) => !empty[r]);
+  const total = counted.filter(Boolean).length;
+  const wrong = marks.map((m, r) => counted[r]! && m !== truth[r]);
   const bad = wrong.filter(Boolean).length;
-  const extra = marks.filter((m, r) => m && !truth[r]).length;
-  const missing = marks.filter((m, r) => !m && truth[r]).length;
+  const extra = marks.filter((m, r) => counted[r] && m && !truth[r]).length;
+  const missing = marks.filter((m, r) => counted[r] && !m && truth[r]).length;
+  const emptyNames = regionOrder(n)
+    .filter((r) => empty[r])
+    .map((r) => regionLabel(vars, r));
   const subs = subexpressions(expr);
   const hintList = [
     subs.length > 1
       ? `Trabaja por partes, de dentro hacia fuera: ${subs.join(", luego ")}.`
       : "Marca las regiones que quedan dentro del conjunto que nombra la expresión.",
     ...operationRules(expr),
+    ...(emptyNames.length > 0 ? ["Las regiones vacías por hipótesis no tienen elementos: da igual si las cuentas o no, no se corrigen."] : []),
   ];
 
   const toggle = (r: number) => {
@@ -177,17 +214,32 @@ export function ShadePractice({ expr, onSolved }: { expr: SetExpr; onSolved?: ()
           Pulsa cada región (o enfócala con el tabulador y pulsa Espacio) para marcarla o desmarcarla; con el teclado,
           también V o 1 la marca y F, 0 o Supr la desmarca. Las marcadas se ven rayadas.
         </p>
+        {hypotheses.length > 0 ? (
+          <p className="text-[14px]">{`Supuestos: ${hypKey}.`}</p>
+        ) : null}
+        {shape ? (
+          <label className="flex min-h-11 items-center gap-2 text-[14px]">
+            <input type="checkbox" className="h-5 w-5" checked={nested} onChange={(e) => setNested(e.target.checked)} />
+            {NESTED_LABEL[shape]}
+          </label>
+        ) : null}
         <VennDiagram
           n={n}
           selected={marks}
           onToggle={toggle}
           wrong={checked ? wrong : undefined}
+          emptyRegions={empty}
+          shape={drawShape}
           label={`Tu diagrama de Venn para ${plain}`}
         />
+        <EmptyLegend regions={drawShape ? [] : emptyNames} practice />
+        {drawShape && emptyNames.length > 0 ? (
+          <p className="text-[14px]">{`Dibujo con los supuestos: no aparece${emptyNames.length === 1 ? " la región" : "n las regiones"} ${emptyNames.join("; ")}, que ${emptyNames.length === 1 ? "está vacía" : "están vacías"} por hipótesis.`}</p>
+        ) : null}
         <p className="text-[14px] text-muted">
           {`Marcadas: ${
-            regionOrder(n)
-              .filter((r) => marks[r])
+            drawnRegions(n, drawShape)
+              .filter((r) => marks[r] && !empty[r])
               .map((r) => regionLabel(vars, r))
               .join("; ") || "ninguna"
           }.`}
@@ -234,7 +286,7 @@ export function ShadePractice({ expr, onSolved }: { expr: SetExpr; onSolved?: ()
               </Verdict>
             ) : (
               <>
-                <Verdict tone="warn">{`${truth.length - bad} de ${truth.length} regiones bien`}</Verdict>
+                <Verdict tone="warn">{`${total - bad} de ${total} regiones bien`}</Verdict>
                 <span>
                   {[
                     extra > 0 ? `${plural(extra, "región marcada no debería estarlo", "regiones marcadas no deberían estarlo")}` : null,
@@ -252,13 +304,13 @@ export function ShadePractice({ expr, onSolved }: { expr: SetExpr; onSolved?: ()
       <SolutionGate resetKey={plain}>
         <div className="flex flex-col gap-2 rounded-lg border border-border bg-raised p-3">
           <h3 className="font-display text-[18px] font-semibold">Regiones de la expresión</h3>
-          <VennDiagram n={n} selected={truth} label={`Solución: diagrama de Venn de ${plain}`} />
-          {truth.some(Boolean) ? (
+          <VennDiagram n={n} selected={truth} emptyRegions={empty} shape={drawShape} label={`Solución: diagrama de Venn de ${plain}`} />
+          {truth.some((t, r) => t && !empty[r]) ? (
             <>
               <p className="text-[14px]">Como unión de regiones:</p>
               <ul className="flex flex-col gap-1">
                 {regionOrder(n)
-                  .filter((r) => truth[r])
+                  .filter((r) => truth[r] && !empty[r])
                   .map((r) => (
                     <li key={r}>
                       <Tex tex={setToTex(regionExpr(vars, r))} label={regionLabel(vars, r)} />
@@ -267,7 +319,9 @@ export function ShadePractice({ expr, onSolved }: { expr: SetExpr; onSolved?: ()
               </ul>
             </>
           ) : (
-            <p className="text-[14px]">Ninguna región: la expresión es el conjunto vacío.</p>
+            <p className="text-[14px]">
+              {emptyNames.length > 0 ? "Ninguna región con elementos: con estos supuestos, la expresión es el conjunto vacío." : "Ninguna región: la expresión es el conjunto vacío."}
+            </p>
           )}
         </div>
       </SolutionGate>
