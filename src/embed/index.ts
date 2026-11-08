@@ -110,6 +110,7 @@ export * from "../../shared/logic/notation.ts";
 
 export * from "../../shared/sets/expr.ts";
 export * from "../../shared/sets/laws.ts";
+export * from "../../shared/sets/relations.ts";
 export * from "../../shared/sets/cardinal.ts";
 export * from "../../shared/sets/finite.ts";
 export * from "../../shared/sets/schema.ts";
