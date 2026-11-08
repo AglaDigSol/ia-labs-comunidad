@@ -123,6 +123,22 @@ describe("Derivadas paso a paso", () => {
   });
 });
 
+describe("campos de función", () => {
+  it("el ejemplo del campo es de cálculo, no el «p → q» de lógica (derivada, pasos, primitiva, tangente, gradiente)", async () => {
+    for (const t of ["calculo-derivada", "calculo-primitiva", "calculo-tangente", "calculo-gradiente"]) {
+      const { unmount } = renderAt(`/laboratorios/ejercicios?t=${t}&n=medio&s=1`);
+      await screen.findAllByRole("textbox", undefined, { timeout: 5000 });
+      const fields = screen.getAllByRole("textbox").filter((x) => x.getAttribute("placeholder"));
+      expect(fields.length, t).toBeGreaterThan(0);
+      for (const f of fields) expect(f.getAttribute("placeholder"), t).not.toMatch(/[→↔∧∨]/);
+      unmount();
+    }
+    renderAt("/laboratorios/calculo");
+    await heading();
+    for (const f of screen.getAllByRole("textbox")) expect(f.getAttribute("placeholder") ?? "").not.toMatch(/[→↔∧∨]/);
+  });
+});
+
 describe("Recta tangente", () => {
   it("marca los campos mal sin decir el valor y acepta la recta en cualquier forma", async () => {
     renderAt("/laboratorios/calculo?s=tangente");

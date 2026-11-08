@@ -69,7 +69,8 @@ export function FunctionField({
         onChange={(v) => onChange(v.slice(0, MAX_FN_TEXT))}
         error={error}
         inputRef={ref}
-        placeholder={placeholder}
+        // Sin el «p → q» de lógica que FormulaField pone por defecto: un ejemplo de cálculo.
+        placeholder={placeholder ?? (vars.length === 2 ? "p. ej. 2x·y + y^2" : "p. ej. 3x^2 + cos(x)")}
         notation="calculo"
         invalid={invalid}
       />
