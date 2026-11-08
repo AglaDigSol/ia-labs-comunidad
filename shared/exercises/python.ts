@@ -144,7 +144,20 @@ const PRECIO: Tpl = {
     const iva = rng.pick([21, 10, 4]);
     const desc = rng.pick([5, 10, 15, 20]);
     const umbral = rng.pick([3, 5, 10]);
-    const precios = Array.from({ length: 5 }, () => rng.int(100, 9999) / 100);
+    // Precios en céntimos. Nada de medios céntimos exactos (85,305 €): ahí round(precio * 1.21, 2) y
+    // round(precio + precio * 21 / 100, 2) pueden redondear a lados distintos por el error del float, y
+    // las dos formas son correctas.
+    const unidades = [1, umbral - 1, umbral, umbral + rng.int(1, 5), rng.int(1, 20)];
+    const halfCent = (cents: number, u: number) => {
+      const d = level !== "básico" && u >= umbral ? desc : 0;
+      return (cents * u * (100 - d) * (100 + iva)) % 10_000 === 5000;
+    };
+    const precios = unidades.map((u) => {
+      for (;;) {
+        const cents = rng.int(100, 9999);
+        if (!halfCent(cents, level === "básico" ? 1 : u)) return cents / 100;
+      }
+    });
     const hints = [
       `Un IVA del ${iva} % significa multiplicar por 1 + ${iva}/100.`,
       level === "básico" ? "Redondea al final, no en cada paso." : `El descuento solo se aplica cuando las unidades llegan a ${umbral}: eso es una condición.`,
@@ -161,7 +174,6 @@ const PRECIO: Tpl = {
         `,
       };
     }
-    const unidades = [1, umbral - 1, umbral, umbral + rng.int(1, 5), rng.int(1, 20)];
     const args: PyVal[][] = unidades.map((u, i) => [precios[i]!, u]);
     const body = py`
           base = precio * unidades

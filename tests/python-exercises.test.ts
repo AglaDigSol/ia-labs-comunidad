@@ -184,6 +184,33 @@ describe.skipIf(!hasPython3)("ejercicios de Python: banco de pruebas con python3
     });
   }, 120_000);
 
+  // Formas equivalentes de escribir lo que pide el enunciado: tienen que pasar (las semillas de los
+  // revisores en base 36, «10» = 36 y «7y» = 286, más unas cuantas). En «precio», nada de medios céntimos exactos: 85,305 € redondea
+  // distinto con precio * 1.21 que con precio + precio * 21 / 100.
+  const pct = (inst: PyCodeInstance, what: string) => Number(new RegExp(`${what} del (\\d+) %`).exec(inst.statement.join(" "))![1]);
+  const umbralOf = (inst: PyCodeInstance) => Number(/a partir de (\d+) unidades|si se compran (\d+) unidades/.exec(inst.statement.join(" "))!.slice(1).find(Boolean));
+  const precioCode = (i: PyCodeInstance): string => {
+    const iva = pct(i, "IVA");
+    if (i.fn === "precio_con_iva") return `def precio_con_iva(precio):\n    return round(precio + precio * ${iva} / 100, 2)\n`;
+    const body = `    t = precio * unidades\n    if unidades >= ${umbralOf(i)}:\n        t = t - t * ${pct(i, "descuento")} / 100\n    t = round(t + t * ${iva} / 100, 2)\n`;
+    return i.fn === "total" ? `def total(precio, unidades):\n${body}    return t\n` : `def ticket(precio, unidades):\n${body}    return f"{unidades} x {precio:.2f} € = {t:.2f} €"\n`;
+  };
+  const pyTipos = PY_CODE_TYPES.find((t) => t.id === "py-tipos")!;
+  const RIGHT: Array<{ label: string; inst: PyCodeInstance; code: (inst: PyCodeInstance) => string }> = [
+    ...EXERCISE_LEVELS.flatMap((level) => [36, 286].map((s) => ({ label: `py-tipos ${level} ${s}`, inst: pyTipos.generate(s, level), code: precioCode }))),
+    ...EXERCISE_LEVELS.flatMap((level) => SEEDS.map((s) => ({ label: `precio ${level} ${s}`, inst: makeCodeTemplate("precio", s, level), code: precioCode }))),
+  ];
+
+  it("formas equivalentes de la solución también pasan", () => {
+    const jobs = RIGHT.filter((w) => w.inst.template === "precio" || !w.label.startsWith("py-tipos"));
+    expect(jobs.filter((w) => w.label.startsWith("py-tipos")).length).toBeGreaterThan(0);
+    const results = check(jobs.map((w) => checkJob(w.inst, w.code(w.inst))));
+    results.forEach((r, i) => {
+      const { label } = jobs[i]!;
+      expect({ label, sintaxis: r.sintaxis, ok: allPassed(r) }).toEqual({ label, sintaxis: null, ok: true });
+    });
+  }, 120_000);
+
   it("informa de errores con la línea del código, de la función que falta, del tiempo y de la sintaxis", () => {
     const inst = makeCodeTemplate("booleanos", 3, "básico");
     const [boom, missing, slow, syntax, prints] = check([
