@@ -22,7 +22,20 @@ import { binaryCount, hasRedundancy, LOGIC_CLASSIFY, LOGIC_EQUIVALENCE, LOGIC_LI
 import { EXERCISE_MAX_EVAL_STEPS, NEGATION_STEPS, PRED_EVALUATE, PRED_NEGATE, toPredInterpretation, wellFormedSentence } from "./predicates.ts";
 import { createRng, generateUntil, randomSeed, seedFromText, seedToText } from "./random.ts";
 import { EXERCISE_TYPES, exerciseType, exerciseTopics, mixedType } from "./registry.ts";
-import { SETS_CARDINAL, SETS_EQUAL, SETS_PARTS, SETS_PROOF, SETS_VENN, setRedundant } from "./sets.ts";
+import { analyzeHypotheses, CARTESIAN_RELATION, checkRelation, parseSetHypotheses, parseSetRelation, relationToPlain, relationVars } from "../sets/relations.ts";
+import {
+  relationOptionExplanation,
+  relationOptionVerdict,
+  relationsAnswer,
+  SETS_CARDINAL,
+  SETS_EQUAL,
+  SETS_PARTS,
+  SETS_PROOF,
+  SETS_RELATIONS,
+  SETS_VENN,
+  setRedundant,
+  setTrivialPart,
+} from "./sets.ts";
 import { EXERCISE_LEVELS, levelFromSlug, LEVEL_SLUGS, type ExerciseLevel } from "./types.ts";
 
 const SEEDS = Array.from({ length: 200 }, (_, i) => (i * 2654435761) >>> 0);
@@ -122,7 +135,7 @@ describe("registro", () => {
   it("«Mezclar» elige un tipo del tema, siempre el mismo con la misma semilla", () => {
     expect(mixedType("logica", "medio", 5).id).toBe(mixedType("logica", "medio", 5).id);
     const ids = new Set(SEEDS.slice(0, 60).map((s) => mixedType("conjuntos", "básico", s).id));
-    expect(ids.size).toBe(5);
+    expect(ids.size).toBe(6);
     for (const id of ids) expect(exerciseType(id)!.topic).toBe("conjuntos");
   });
 });
@@ -316,6 +329,57 @@ describe("conjuntos", () => {
       }
       expect(yes).toBeGreaterThan(60);
       expect(yes).toBeLessThan(140);
+    }
+  });
+
+  it("relaciones: cuatro opciones legibles y distintas, una sola correcta que depende de los supuestos y algún «depende»", () => {
+    for (const level of EXERCISE_LEVELS) {
+      let cierta = 0;
+      let cartesian = 0;
+      for (const s of SEEDS) {
+        const inst = SETS_RELATIONS.generate(s, level);
+        expect(SETS_RELATIONS.generate(s, level)).toEqual(inst);
+        const h = parseSetHypotheses(inst.hypotheses);
+        if (!h.ok) throw new Error(inst.hypotheses);
+        expect(h.relations.length).toBeGreaterThan(0);
+        expect(inst.options).toHaveLength(4);
+        expect(new Set(inst.options).size).toBe(4);
+        const answer = relationsAnswer(inst);
+        expect(answer).toBeGreaterThanOrEqual(0);
+        const verdicts = inst.options.map((o) => relationOptionVerdict(o, inst.hypotheses));
+        const want = inst.ask === "cierta" ? "siempre" : "nunca";
+        expect(verdicts.filter((v) => v === want)).toHaveLength(1);
+        expect(verdicts).toContain("depende");
+        if (inst.ask === "cierta") cierta++;
+        for (const o of inst.options) {
+          // Ninguna opción repite un supuesto; todas tienen explicación.
+          expect(h.relations.map(relationToPlain)).not.toContain(o);
+          expect(relationOptionExplanation(o, inst.hypotheses).length).toBeGreaterThan(20);
+          if (o === CARTESIAN_RELATION.text) {
+            cartesian++;
+            expect(level).not.toBe("básico");
+            continue;
+          }
+          const r = parseSetRelation(o);
+          if (!r.ok) throw new Error(o);
+          expect(relationToPlain(r.relations[0]!)).toBe(o);
+          const vars = relationVars([...h.relations, ...r.relations]);
+          expect(vars).toEqual(level === "avanzado" ? ["A", "B", "C"] : ["A", "B"]);
+          for (const side of [r.relations[0]!.left, r.relations[0]!.right]) expect(setTrivialPart(side, vars)).toBe(false);
+        }
+        expect(analyzeHypotheses(h.relations).consistent).toBe(true);
+        // La correcta no lo es sin los supuestos (salvo el producto cartesiano, que va aparte).
+        const right = inst.options[answer]!;
+        if (right !== CARTESIAN_RELATION.text) {
+          const r = parseSetRelation(right);
+          if (!r.ok) throw new Error(right);
+          expect(checkRelation(r.relations).verdict).toBe("depende");
+        }
+      }
+      expect(cierta).toBeGreaterThan(60);
+      expect(cierta).toBeLessThan(140);
+      // A × B ⊆ A ∪ B sale en el medio (los supuestos dicen que A y B no son vacíos).
+      if (level === "medio") expect(cartesian).toBeGreaterThan(0);
     }
   });
 

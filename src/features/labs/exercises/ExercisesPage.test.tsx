@@ -6,7 +6,7 @@ import { LOGIC_EQUIVALENCE, LOGIC_TRUTH_TABLE } from "../../../../shared/exercis
 import { EXERCISE_TYPES } from "../../../../shared/exercises/registry.ts";
 import { EXERCISE_LEVELS, LEVEL_SLUGS } from "../../../../shared/exercises/types.ts";
 import { seedFromText } from "../../../../shared/exercises/random.ts";
-import { SETS_PARTS } from "../../../../shared/exercises/sets.ts";
+import { relationsAnswer, SETS_PARTS, SETS_RELATIONS } from "../../../../shared/exercises/sets.ts";
 import { compareFormulas } from "../../../../shared/logic/compare.ts";
 import { parseFormula } from "../../../../shared/logic/parser.ts";
 import { cartesianProduct, powerSetOf, subsetText } from "../../../../shared/sets/finite.ts";
@@ -133,6 +133,26 @@ describe("práctica", () => {
     renderAt("/laboratorios/ejercicios?t=no-existe&n=basico&s=1");
     await page();
     expect(screen.getByRole("heading", { level: 2, name: "Lógica proposicional" })).toBeTruthy();
+  });
+
+  it("relaciones entre conjuntos: una mal explica por qué, la correcta cuenta y la solución da el porqué de cada una", async () => {
+    renderAt("/laboratorios/ejercicios?t=conjuntos-relaciones&n=medio&s=abc");
+    await page();
+    const inst = SETS_RELATIONS.generate(seedFromText("abc")!, "medio");
+    expect(screen.getByRole("heading", { level: 2, name: "Ejercicio 1: Relaciones entre conjuntos" })).toBeTruthy();
+    expect(screen.getByText(`¿Cuál de estas afirmaciones es siempre ${inst.ask}?`)).toBeTruthy();
+    const options = within(screen.getByRole("group", { name: `Es siempre ${inst.ask}:` })).getAllByRole("radio");
+    expect(options).toHaveLength(4);
+    const answer = relationsAnswer(inst);
+    fireEvent.click(options[(answer + 1) % 4]!);
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(screen.getByText("No es esa.")).toBeTruthy();
+    expect(screen.getByText(/^(Siempre cierta|Siempre falsa|Depende|Los elementos de A × B)/)).toBeTruthy();
+    fireEvent.click(options[answer]!);
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(await screen.findByText("¡Resuelto! Cuenta en tu progreso.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Ver la solución completa" }));
+    expect(within(screen.getByTestId("solution")).getAllByRole("listitem")).toHaveLength(4);
   });
 
   it("comprobar → resuelto (cuenta una vez) → siguiente: nueva semilla, foco en el título y contador de sesión", async () => {
