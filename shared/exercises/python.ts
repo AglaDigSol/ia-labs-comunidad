@@ -1458,7 +1458,10 @@ const VARIOS_VALORES: Tpl = {
     const args: PyVal[][] = [[rng.int(10, 99), rng.int(2, 9)], [rng.int(0, 5), rng.int(6, 9)], [rng.int(1, 50), 0], [-rng.int(10, 30), rng.int(2, 7)]];
     return {
       kind: "code", tema: 4, template: "varios-valores", title: "Cociente y resto con control",
-      statement: ["Escribe la función `dividir(a, b)` que devuelva el cociente entero y el resto de dividir `a` entre `b`. Si `b` es 0, devuelve `(None, None)` en lugar de lanzar un error."],
+      statement: [
+        "Escribe la función `dividir(a, b)` que devuelva el cociente entero y el resto de dividir `a` entre `b`, como los dan `//` y `%` en Python. Si `b` es 0, devuelve `(None, None)` en lugar de lanzar un error.",
+        "Ojo con los negativos: `//` redondea hacia abajo, así que `dividir(-7, 2)` devuelve `(-4, 1)`, no `(-3, -1)`.",
+      ],
       fn: "dividir", starter: starterOf("dividir", "a, b"), cases: calls("dividir", args),
       hints: ["Comprueba el caso problemático antes de dividir.", "// y % dan el cociente y el resto (y divmod, los dos a la vez).", "En el caso especial, devuelve dos None."],
       solution: py`

@@ -314,7 +314,7 @@ const KNOWN: Record<string, Partial<Record<ExerciseLevel, string[]>>> = {
   "comprension-listas": { básico: ["cuadrados(4) == [1, 4, 9, 16]"], medio: ["pares_al_cuadrado([1, 2, -4]) == [4, 16]"], avanzado: ["aplanar([[1, 2], [3]]) == [1, 2, 3]"] },
   "comprension-dict": { básico: ["longitudes(['sol', 'agua']) == {'sol': 3, 'agua': 4}"], medio: ["invertir({'a': 1, 'b': 2}) == {1: 'a', 2: 'b'}"], avanzado: ["filtrar({'a': 4, 'b': 6}, 5) == {'b': 6}"] },
   "args-kwargs": { básico: ["sumar_todos(1, 2, 3) == 6", "sumar_todos() == 0"], medio: ["media(1, 2) == 1.5", "media() == 0"], avanzado: ["ficha(talla=40, color='azul') == 'color=azul, talla=40'", "ficha() == ''"] },
-  "varios-valores": { básico: ["primero_y_ultimo([1, 2, 3]) == (1, 3)"], medio: ["estadisticas([1, 2, 4]) == (1, 4, 2.33)"], avanzado: ["dividir(17, 5) == (3, 2)", "dividir(1, 0) == (None, None)"] },
+  "varios-valores": { básico: ["primero_y_ultimo([1, 2, 3]) == (1, 3)"], medio: ["estadisticas([1, 2, 4]) == (1, 4, 2.33)"], avanzado: ["dividir(17, 5) == (3, 2)", "dividir(1, 0) == (None, None)", "dividir(-7, 2) == (-4, 1)", "dividir(-28, 3) == (-10, 2)"] },
   recursion: { básico: ["factorial(5) == 120", "factorial(0) == 1"], medio: ["suma_cifras(472) == 13"], avanzado: ["aplanar_todo([1, [2, [3]], 4]) == [1, 2, 3, 4]"] },
   ordenar: { básico: ["por_longitud(['mar', 'agua', 'sol']) == ['mar', 'sol', 'agua']"], medio: ["por_nota([('b', 7), ('a', 7), ('c', 9)]) == [('c', 9), ('a', 7), ('b', 7)]"], avanzado: ["mejores({'b': 5, 'a': 5, 'c': 2}, 2) == ['a', 'b']", "mejores({'a': 1}, 3) == ['a']"] },
   lambdas: { básico: ["aplicar(len, ['ab', 'c']) == [2, 1]"], medio: ["componer(lambda x: x + 1, lambda x: x * 3)(2) == 7"], avanzado: ["multiplicador(3)(5) == 15"] },
