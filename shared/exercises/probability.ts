@@ -43,13 +43,13 @@ export const TREE_STORIES = [
  */
 export const PERCENT_STORIES = [
   {
-    text: "Un {x} % de los portátiles de un lote tiene la batería defectuosa. De éstos, un {y} % no muestra ningún aviso; de los que la tienen bien, un {z} % muestra un aviso igualmente.",
+    text: "Un {x} % de los portátiles de un lote tiene la batería defectuosa. De estos, un {y} % no muestra ningún aviso; de los que la tienen bien, un {z} % muestra un aviso igualmente.",
     branches: ["Defectuosa", "Bien"],
     event: "el portátil muestra un aviso",
     question: "Si un portátil muestra un aviso, ¿qué probabilidad hay de que su batería sea defectuosa?",
   },
   {
-    text: "Un {x} % de las operaciones de una tienda en línea son fraudulentas. De éstas, un {y} % no activa la alerta del sistema; de las legítimas, un {z} % sí la activa.",
+    text: "Un {x} % de las operaciones de una tienda en línea son fraudulentas. De estas, un {y} % no activa la alerta del sistema; de las legítimas, un {z} % sí la activa.",
     branches: ["Fraude", "Legítima"],
     event: "se activa la alerta",
     question: "Si se activa la alerta, ¿qué probabilidad hay de que la operación sea fraudulenta?",

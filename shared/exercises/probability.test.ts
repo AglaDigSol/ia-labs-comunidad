@@ -14,6 +14,7 @@ import {
   pairInstanceFacts,
   penaltyAnswer,
   dieCondFacts,
+  PERCENT_STORIES,
   PROB_BINOMIAL,
   PROB_DIE_COND,
   PROB_EXERCISES,
@@ -195,5 +196,11 @@ describe("generadores", () => {
         expect(equals(rvMean(combo), add(add(mul(a!, rvMean(X)), mul(b!, rvMean(Y))), c!))).toBe(true);
       }
     }, SEEDS.slice(0, 80));
+  });
+});
+
+describe("ortografía de las historias", () => {
+  it("«De estos» y «De estas», sin tilde (demostrativos)", () => {
+    for (const s of PERCENT_STORIES) expect(s.text).not.toMatch(/(^|\s)ést[oa]s\b/);
   });
 });
