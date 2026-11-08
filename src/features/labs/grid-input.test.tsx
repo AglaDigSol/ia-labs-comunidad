@@ -182,6 +182,8 @@ describe("tabla de verdad con el teclado: «Solo el resultado»", () => {
     const user = userEvent.setup();
     const { unmount } = render(practice("p → q", "VF"));
     expect(screen.queryByRole("checkbox", { name: "Avanzar al escribir" })).toBeNull();
+    // Solo de teclado: en un dispositivo solo táctil se oculta (variante touch de tokens.css).
+    expect(screen.getByText("Atajos de teclado").closest("[data-keyboard-only]")?.className).toMatch(/\btouch:hidden\b/);
     await user.click(screen.getByText("Atajos de teclado"));
     const box = screen.getByRole("checkbox", { name: "Avanzar al escribir" }) as HTMLInputElement;
     expect(box.checked).toBe(true);

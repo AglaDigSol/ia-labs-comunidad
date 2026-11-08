@@ -71,6 +71,8 @@
 }
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+/* Solo táctil (móvil, iPad sin teclado ni trackpad): `touch:hidden` oculta lo que es de teclado. */
+@custom-variant touch (@media (hover: none) and (pointer: coarse));
 
 html {
   background: var(--surface-base);
