@@ -5,7 +5,7 @@
 // cada paso, queda detrás de «Ver la solución completa».
 import { Check, ClipboardCopy, Lightbulb, RotateCcw, Undo2 } from "lucide-react";
 import { useId, useMemo, useState } from "react";
-import { derivativeRaw, RULE_BY_ID, RULES, type RuleId } from "../../../../shared/calculus/derive.ts";
+import { derivativeRaw, RULE_BY_ID, RULE_PHRASE, RULES, type RuleId } from "../../../../shared/calculus/derive.ts";
 import { equivalent } from "../../../../shared/calculus/equivalence.ts";
 import { toPlain, toSpoken, toTex, type Expr } from "../../../../shared/calculus/expr.ts";
 import { checkDerivStep, derivationSteps, nextRuleHints, SIMPLIFY_LABEL, stepRuleName, type StepRule } from "../../../../shared/calculus/steps.ts";
@@ -25,9 +25,10 @@ type Line = { expr: Expr; rule: StepRule | null; warning: string | null };
 type Feedback = { tone: "ok" | "warn" | "crit"; text: string } | null;
 
 const isStepRule = (x: string): x is StepRule => x === "simplificar" || RULES.some((r) => r.id === x);
-const ruleList = (ids: readonly RuleId[]) => {
-  const names = ids.map((id) => RULE_BY_ID[id].name.toLowerCase());
-  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} o ${names[names.length - 1]}`;
+/** «la regla de la suma», «el factor constante o las derivadas elementales» (con su artículo). */
+const ruleList = (ids: readonly RuleId[], last: "o" | "y" = "o") => {
+  const names = ids.map((id) => RULE_PHRASE[id]);
+  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} ${last} ${names[names.length - 1]}`;
 };
 
 /** Las reglas que salen en la derivación de f (para la pista de «Solo el resultado»). */
@@ -123,7 +124,7 @@ function ResultOnly({ f, onSolved }: { f: Expr; onSolved?: () => void }) {
           <Check size={16} aria-hidden="true" />
           Comprobar
         </Button>
-        <Hints hints={[`Reglas que vas a necesitar: ${ruleList(rulesUsed(f))}.`, ...rulesUsed(f).map((r) => `${RULE_BY_ID[r].name}: ${RULE_BY_ID[r].formula}`)]} />
+        <Hints hints={[`Reglas que vas a necesitar: ${ruleList(rulesUsed(f), "y")}.`, ...rulesUsed(f).map((r) => `${RULE_BY_ID[r].name}: ${RULE_BY_ID[r].formula}`)]} />
       </div>
       {verdict ? (
         <Status>
@@ -187,11 +188,11 @@ function StepByStep({ f, onSolved }: { f: Expr; onSolved?: () => void }) {
     } else if (!c.ruleFits) {
       warning =
         rule === "simplificar"
-          ? `Es equivalente, pero en este paso también derivas: eso es la ${ruleList(c.suggestions)}.`
-          : `Es equivalente, pero no parece la ${RULE_BY_ID[rule].name.toLowerCase()}; ¿quizá la ${ruleList(c.suggestions)}?`;
+          ? `Es equivalente, pero en este paso también derivas: eso es ${ruleList(c.suggestions)}.`
+          : `Es equivalente, pero no parece que hayas aplicado ${RULE_PHRASE[rule]}; ¿quizá ${ruleList(c.suggestions)}?`;
       text = warning;
     } else if (c.alsoApplied.length > 0) {
-      warning = `Correcto, aunque en este paso también aplicas la ${ruleList(c.alsoApplied)}: mejor una regla por paso.`;
+      warning = `Correcto, aunque en este paso también aplicas ${ruleList(c.alsoApplied)}: mejor una regla por paso.`;
       text = warning;
     } else text = `Paso correcto: ${stepRuleName(rule)}.`;
     if (c.done) {

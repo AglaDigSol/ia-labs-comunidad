@@ -92,7 +92,18 @@ describe("Derivadas paso a paso", () => {
     type("= (nueva línea)", "(x^2)' sen x + x^2 (sen x)'");
     fireEvent.change(screen.getByLabelText("Regla que aplicas"), { target: { value: "cociente" } });
     click("Comprobar paso");
-    expect(status()).toMatch(/no parece la regla del cociente; ¿quizá la regla del producto\?/);
+    expect(status()).toMatch(/no parece que hayas aplicado la regla del cociente; ¿quizá la regla del producto\?/);
+  });
+
+  it("los avisos de regla llevan su artículo: «las derivadas elementales», «el factor constante»", async () => {
+    renderAt("/laboratorios/calculo");
+    await heading();
+    fireEvent.change(screen.getByLabelText("Función"), { target: { value: "producto" } });
+    type("= (nueva línea)", "(x^2)' sen x + x^2 (sen x)'");
+    fireEvent.change(screen.getByLabelText("Regla que aplicas"), { target: { value: "elementales" } });
+    click("Comprobar paso");
+    expect(status()).toMatch(/no parece que hayas aplicado las derivadas elementales; ¿quizá la regla del producto\?/);
+    expect(status()).not.toMatch(/la derivadas|la factor/);
   });
 
   it("«Solo el resultado» acepta formas equivalentes y la solución está detrás de la puerta", async () => {

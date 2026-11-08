@@ -28,6 +28,16 @@ export const RULES = [
 ] as const;
 export type RuleId = (typeof RULES)[number]["id"];
 export const RULE_BY_ID = Object.fromEntries(RULES.map((r) => [r.id, r])) as Record<RuleId, (typeof RULES)[number]>;
+/** El nombre con su artículo, en minúscula, para frases: «la regla de la suma», «el factor constante», «las derivadas elementales». */
+export const RULE_PHRASE: Record<RuleId, string> = {
+  suma: "la regla de la suma",
+  constante: "el factor constante",
+  producto: "la regla del producto",
+  cociente: "la regla del cociente",
+  potencia: "la regla de la potencia",
+  cadena: "la regla de la cadena",
+  elementales: "las derivadas elementales",
+};
 export const isRuleId = (x: unknown): x is RuleId => typeof x === "string" && RULES.some((r) => r.id === x);
 
 const isConst = (e: Expr, v: VarName) => !dependsOn(e, v);
@@ -43,7 +53,8 @@ export function rulesFor(u: Expr, v: VarName = "x"): RuleId[] {
     case "var":
       return ["elementales", "potencia"];
     case "add":
-      return ["suma"];
+      // (x − 2)′ = 1 de una vez: es la suma, pero también solo derivadas elementales (x′ = 1, k′ = 0).
+      return u.args.every((a) => isConst(a, v) || isTheVar(a, v) || (a.k === "neg" && isTheVar(a.a, v))) ? ["suma", "elementales"] : ["suma"];
     case "neg":
       return ["constante", "suma"];
     case "mul": {

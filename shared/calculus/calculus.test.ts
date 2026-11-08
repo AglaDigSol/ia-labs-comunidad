@@ -268,6 +268,18 @@ describe("derivadas paso a paso", () => {
     expect(noRule).toMatchObject({ ok: true, ruleFits: false });
   });
 
+  it("(x − 2)′ = 1 de una vez vale con «Derivadas elementales» (x′ = 1, k′ = 0) y con la suma", () => {
+    const g = P("(x - 2)^4");
+    const prev = P("4(x - 2)^3·(x - 2)′");
+    const next = P("4(x - 2)^3·1");
+    expect(checkDerivStep(g, prev, next, "elementales")).toMatchObject({ ok: true, ruleFits: true, done: true, alsoApplied: [] });
+    expect(checkDerivStep(g, prev, next, "suma")).toMatchObject({ ok: true, ruleFits: true, done: true });
+    // Con un coeficiente, (3x − 2)′ sigue siendo la suma (y el factor constante): las elementales no bastan.
+    const h = P("(3x - 2)^4");
+    const r = checkDerivStep(h, P("4(3x - 2)^3·(3x - 2)′"), P("4(3x - 2)^3·3"), "elementales");
+    expect(r).toMatchObject({ ok: true, ruleFits: false, suggestions: ["suma"] });
+  });
+
   it("la cadena y la pista que dice la regla, no el resultado", () => {
     const g = P("sen(x^2 + 1)");
     const r = checkDerivStep(g, { k: "d", a: g, v: "x" }, P("cos(x^2 + 1)·(x^2 + 1)′"), "cadena");
