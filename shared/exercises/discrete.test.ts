@@ -2,7 +2,7 @@
 // respuestas razonables, cuatro opciones con una sola buena (también la trampa de la constante dentro
 // de la O), funciones con una sola verdadera (o varias, en avanzado) y P y NP con verdaderas y falsas.
 import { describe, expect, it } from "vitest";
-import { isConstantTrap, optionIsCorrect } from "../discrete/bigo.ts";
+import { costOf, growthLE, growthOf, isConstantTrap, isLooseBound, optionIsCorrect } from "../discrete/bigo.ts";
 import { acceptedFormulas, countingFormula, countModel, FORMULA_IDS } from "../discrete/count.ts";
 import { statementText, statementTrue } from "../discrete/functions.ts";
 import { pnpStatement } from "../discrete/pnp.ts";
@@ -16,6 +16,7 @@ import {
   DISCRETE_EXERCISES,
   problemAnswer,
 } from "./discrete.ts";
+import { seedFromText } from "./random.ts";
 import { exerciseTopics, exercisesOfTopic, mixedType } from "./registry.ts";
 import { EXERCISE_LEVELS, type ExerciseLevel } from "./types.ts";
 
@@ -137,6 +138,30 @@ describe("generadores", () => {
     expect(none).toBeGreaterThan(20);
     expect(traps).toBeGreaterThan(50);
     expect(calls).toBeGreaterThan(50);
+  });
+
+  it("complejidad: junto a «Ninguna» no hay un orden mayor (que sería una cota O verdadera)", () => {
+    let none = 0;
+    each((s, level) => {
+      const x = COMB_COMPLEXITY.generate(s, level);
+      const g = complexityGrowth(x);
+      if (!x.options.some((o) => "none" in o)) return;
+      none++;
+      for (const o of x.options) expect(isLooseBound(o, g), `${level} ${s}`).toBe(false);
+    });
+    expect(none).toBeGreaterThan(20);
+    // La semilla del revisor (básico, 4c): T(n) = n² + 3n⁸ con O(n⁹) junto a «Ninguna».
+    const x = COMB_COMPLEXITY.generate(seedFromText("4c")!, "básico");
+    const g = complexityGrowth(x);
+    if (x.options.some((o) => "none" in o)) for (const o of x.options) expect(isLooseBound(o, g)).toBe(false);
+  });
+
+  it("cota ajustada: O(n⁹) acota a n⁸ pero no es el orden exacto; O(n⁷) no acota", () => {
+    const g = growthOf(costOf("n^2 + 3n^8"));
+    expect(growthLE(g, growthOf(costOf("n^9")))).toBe(true);
+    expect(isLooseBound({ growth: growthOf(costOf("n^9")) }, g)).toBe(true);
+    expect(isLooseBound({ growth: growthOf(costOf("n^7")) }, g)).toBe(false);
+    expect(isLooseBound({ growth: g }, g)).toBe(false);
   });
 
   it("P y NP: afirmaciones del banco, sin repetir, con verdaderas y falsas", () => {

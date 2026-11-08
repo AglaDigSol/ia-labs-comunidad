@@ -130,7 +130,7 @@ export function ComplexitySection() {
             <PresetPicker label="Fragmento o coste" presets={presets} value={choice} onChange={setChoice} />
             <p className="text-[14px] text-muted">
               Cuenta cuántas veces se ejecuta lo de dentro: los bucles anidados multiplican, los bloques seguidos suman y se queda el término que más
-              crece, sin constantes. A veces la buena es «Ninguna de las otras».
+              crece, sin constantes. Se pide el orden exacto (la cota ajustada), no una cota mayor. A veces la buena es «Ninguna de las otras».
             </p>
           </>
         }

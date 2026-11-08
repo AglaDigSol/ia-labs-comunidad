@@ -534,5 +534,16 @@ export function optionIsCorrect(options: readonly BigOOption[], index: number, c
   return exact(o);
 }
 
+/**
+ * ¿x ∈ O(y)? Cada término dominante de x lo acota algún término de y. O(n²) ⊆ O(n⁹): por eso, si se
+ * pregunta solo por «una cota O», un orden mayor también sería verdad; el ejercicio pide el orden
+ * exacto (la cota ajustada).
+ */
+export const growthLE = (x: Growth, y: Growth): boolean => prune(x).every((a) => prune(y).some((b) => monoLE(a, b)));
+
+/** ¿La opción es una cota superior verdadera pero no ajustada (O(n⁹) para un coste n⁸)? */
+export const isLooseBound = (o: BigOOption, correct: Growth): boolean =>
+  "growth" in o && !sameGrowth(o.growth, correct) && growthLE(correct, o.growth);
+
 /** ¿Es la trampa de la constante (mismo orden, con un número dentro)? */
 export const isConstantTrap = (o: BigOOption, correct: Growth): boolean => "growth" in o && (o.coef ?? 1) !== 1 && sameGrowth(o.growth, correct);

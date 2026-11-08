@@ -5,7 +5,7 @@
 // NP. Los enunciados salen de plantillas con números al azar; las respuestas las calcula el motor de
 // shared/discrete al corregir, nunca están escritas en la instancia.
 import { algorithmGrowth, type Algorithm, type AlgoStmt } from "../discrete/algorithms.ts";
-import { costOf, distractors, growthOf, type BigOOption, type Growth } from "../discrete/bigo.ts";
+import { costOf, distractors, growthLE, growthOf, type BigOOption, type Growth } from "../discrete/bigo.ts";
 import { acceptedFormulas, countModel, FORMULA_IDS, modelProblem, type CountingModel, type FormulaId } from "../discrete/count.ts";
 import { countFunctions, FN_MODES, statementTrue, type FnProp, type FnSetting, type FnStatement } from "../discrete/functions.ts";
 import { pnpPool } from "../discrete/pnp.ts";
@@ -31,10 +31,13 @@ export const complexityGrowth = (x: { kind: "algo"; algo: Algorithm } | { kind: 
   x.kind === "algo" ? algorithmGrowth(x.algo) : growthOf(costOf(x.cost, ["n", "m"]));
 
 /**
- * Cuatro opciones tipo examen, a) a d), con una sola buena. Si `trapCoef` se da, una de las falsas es
- * el orden correcto con una constante dentro (O(10n⁸)), la trampa típica, y otra el orden equivocado
- * con la misma constante. Con probabilidad `pNone` la d) es «Ninguna de las otras» (y, la mitad de
- * esas veces, es la buena porque el orden correcto no está).
+ * Cuatro opciones tipo examen, a) a d), con una sola buena: se pide el orden exacto (la cota
+ * ajustada), así que un orden mayor es una opción falsa aunque sea una cota O verdadera. Si `trapCoef`
+ * se da, una de las falsas es el orden correcto con una constante dentro (O(10n⁸)), la trampa típica,
+ * y otra el orden equivocado con la misma constante. Con probabilidad `pNone` la d) es «Ninguna de las
+ * otras» (y, la mitad de esas veces, es la buena porque el orden correcto no está). Junto a «Ninguna»
+ * no se pone nunca un orden mayor que el correcto: con la lectura «cota superior», esa opción sería
+ * verdadera y «Ninguna» falsa, y la pregunta quedaría ambigua.
  */
 export function bigOOptions(rng: Rng, correct: Growth, pNone: number, trapCoef?: number): BigOOption[] {
   const ds = rng.shuffle(distractors(correct));
@@ -43,8 +46,12 @@ export function bigOOptions(rng: Rng, correct: Growth, pNone: number, trapCoef?:
     : ds.slice(0, 4).map((growth) => ({ growth }));
   if (rng.chance(pNone)) {
     const noneRight = rng.chance(0.5);
-    const three = noneRight ? rng.shuffle(wrong).slice(0, 3) : rng.shuffle([{ growth: correct }, ...rng.shuffle(wrong).slice(0, 2)]);
-    return [...three, { none: true }];
+    // Solo órdenes que no acotan al correcto (menores o no comparables).
+    const notBounds = ds.filter((g) => !growthLE(correct, g)).map((growth): BigOOption => ({ growth }));
+    if (notBounds.length >= 3) {
+      const three = noneRight ? notBounds.slice(0, 3) : rng.shuffle([{ growth: correct }, ...notBounds.slice(0, 2)]);
+      return [...three, { none: true }];
+    }
   }
   return rng.shuffle([{ growth: correct }, ...(trapCoef ? [wrong[0]!, ...rng.shuffle(wrong.slice(1)).slice(0, 2)] : wrong.slice(0, 3))]);
 }
@@ -563,7 +570,7 @@ export const COMB_COMPLEXITY: ExerciseType<CombComplexityInstance> = {
   id: "combinatoria-complejidad",
   topic: "combinatoria",
   title: "Complejidad de un algoritmo",
-  description: "Elige el orden O grande de un fragmento de pseudocódigo (bucles anidados, mitades, llamadas a otro algoritmo) o de un coste T(n), entre cuatro opciones como en el examen (ojo: dentro de la O no van constantes).",
+  description: "Elige el orden exacto (la cota O ajustada) de un fragmento de pseudocódigo (bucles anidados, mitades, llamadas a otro algoritmo) o de un coste T(n), entre cuatro opciones como en el examen (ojo: dentro de la O no van constantes).",
   levels: ALL_LEVELS,
   generate(seed, level) {
     const r = rngFor("combinatoria-complejidad", seed);

@@ -6,7 +6,7 @@
 import { Check } from "lucide-react";
 import { useState } from "react";
 import { algorithmCost, algorithmGivens, algorithmHints, algorithmLines, costHints, type Algorithm } from "../../../../shared/discrete/algorithms.ts";
-import { bigOTex, bigOText, costOf, costSpoken, costTex, isConstantTrap, optionIsCorrect, optionTex, optionText, type BigOOption } from "../../../../shared/discrete/bigo.ts";
+import { bigOTex, bigOText, costOf, costSpoken, costTex, isConstantTrap, isLooseBound, optionIsCorrect, optionTex, optionText, type BigOOption } from "../../../../shared/discrete/bigo.ts";
 import { pnpStatement } from "../../../../shared/discrete/pnp.ts";
 import { complexityGrowth } from "../../../../shared/exercises/discrete.ts";
 import { SolutionGate } from "../../../components/practice/SolutionGate.tsx";
@@ -42,6 +42,7 @@ export function ComplexityPractice({ problem, options, onSolved }: { problem: Co
   const index = choice === null ? -1 : Number(choice);
   const solved = index >= 0 && optionIsCorrect(options, index, growth);
   const trap = index >= 0 && isConstantTrap(options[index]!, growth);
+  const loose = index >= 0 && isLooseBound(options[index]!, growth);
   const hints = problem.kind === "algo" ? algorithmHints(problem.algo) : costHints(costOf(problem.cost, ["n", "m"]));
   const cost = problem.kind === "algo" ? algorithmCost(problem.algo) : costOf(problem.cost, ["n", "m"]);
   const choices = options.map((o, i) => ({ key: String(i), content: <Tex tex={optionTex(o)} label={optionText(o)} /> }));
@@ -49,6 +50,7 @@ export function ComplexityPractice({ problem, options, onSolved }: { problem: Co
   return (
     <PracticeBox title={problem.kind === "algo" ? "¿De qué orden es este algoritmo?" : "¿De qué orden es este coste?"}>
       <ComplexityStatement problem={problem} />
+      <p className="text-[14px] text-muted">Se pide el orden exacto: la cota O ajustada (Θ), la que crece igual que el coste.</p>
       <OptionList legend="Elige una opción" options={choices} value={choice} onChange={(k) => (setChoice(k), setChecked(false))} invalid={checked && !solved} />
       <div className="flex flex-wrap gap-2">
         <Button
@@ -74,6 +76,8 @@ export function ComplexityPractice({ problem, options, onSolved }: { problem: Co
             <Verdict tone="warn">Elige una opción.</Verdict>
           ) : trap ? (
             <Verdict tone="warn">Casi: dentro de la O no se escriben constantes. Busca la opción simplificada.</Verdict>
+          ) : loose ? (
+            <Verdict tone="warn">Esa es una cota superior verdadera (O solo acota por arriba), pero no la ajustada: el coste crece más despacio. Busca el orden exacto.</Verdict>
           ) : (
             <Verdict tone="warn">Esa no es. Vuelve a contar el término que más crece.</Verdict>
           )}

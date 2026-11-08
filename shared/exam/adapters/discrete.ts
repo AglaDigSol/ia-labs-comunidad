@@ -1,6 +1,6 @@
 // Adaptadores de conjuntos, funciones, combinatoria y complejidad.
 import { algorithmGivens, algorithmLines } from "../../discrete/algorithms.ts";
-import { costOf, costSpoken, costTex, growthText, optionTex, optionText, sameGrowth } from "../../discrete/bigo.ts";
+import { costOf, costSpoken, costTex, growthText, isLooseBound, optionTex, optionText, sameGrowth } from "../../discrete/bigo.ts";
 import { acceptedFormulas, FORMULAS, substitutedTex, substitutedText } from "../../discrete/count.ts";
 import { statementReason, statementText, statementTrue } from "../../discrete/functions.ts";
 import { pnpPool } from "../../discrete/pnp.ts";
@@ -226,7 +226,7 @@ const modelAdapter = examAdapter({
 
 const complexityAdapter = examAdapter({
   type: COMB_COMPLEXITY,
-  ask: "Orden de complejidad O grande de un fragmento o de un coste (opción múltiple, a veces con «Ninguna de las otras»).",
+  ask: "Orden exacto (cota O ajustada) de un fragmento o de un coste (opción múltiple, a veces con «Ninguna de las otras»).",
   build(inst) {
     const growth = complexityGrowth(inst);
     const hasNone = inst.options.some((o) => "none" in o);
@@ -243,10 +243,10 @@ const complexityAdapter = examAdapter({
     return {
       kind: "choice",
       stem,
-      prompt: inst.kind === "cost" ? "¿De qué orden es el coste?" : "¿De qué orden es el coste de este fragmento?",
+      prompt: inst.kind === "cost" ? "¿De qué orden exacto (cota O ajustada) es el coste?" : "¿De qué orden exacto (cota O ajustada) es el coste de este fragmento?",
       question: {
         mode: "single",
-        options: real.map((o, i) => opt(`o${i}`, optionText(o), exact(o), exact(o) ? "Es el término dominante, sin constantes." : "growth" in o && (o.coef ?? 1) !== 1 ? "Dentro de la O no van constantes." : undefined, optionTex(o))),
+        options: real.map((o, i) => opt(`o${i}`, optionText(o), exact(o), exact(o) ? "Es el término dominante, sin constantes." : "growth" in o && (o.coef ?? 1) !== 1 ? "Dentro de la O no van constantes." : isLooseBound(o, growth) ? "Es una cota superior verdadera, pero no la ajustada: el coste crece más despacio." : undefined, optionTex(o))),
         ...(hasNone ? { noneOfOthers: true } : {}),
       },
       solution: [examP(`El orden es O(${growthText(growth)}).`)],
