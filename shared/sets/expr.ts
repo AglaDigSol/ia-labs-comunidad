@@ -5,6 +5,8 @@
 // acepta, porque cada libro lo agrupa de una manera. Internamente, ∪ y ∩ son n-arias, aplanadas y con
 // los argumentos ordenados, y Δ ordena sus dos lados: dos expresiones que solo difieren por
 // conmutatividad o asociatividad tienen la misma clave.
+// Las relaciones (⊆, ⊂, ⊇, ⊃, =, ≠…) no son expresiones: A ⊆ B es verdadera o falsa, no un conjunto.
+// Se leen en relations.ts; aquí solo se reconocen para explicar el error.
 import type { ParseError } from "../logic/parser.ts";
 
 /** Nombres de conjunto que se pueden usar, en este orden. */
@@ -114,6 +116,82 @@ export function setVars(...es: SetExpr[]): SetName[] {
   return SET_NAMES.filter((n) => seen.has(n));
 }
 
+// ---------------------------------------------------------------- Relaciones (solo para reconocerlas)
+
+/**
+ * Relaciones entre dos conjuntos. «subset» y «supset» son las estrictas (⊊, ⊋: contenido y distinto);
+ * «nsubseteq» es «no está contenido» (⊈).
+ */
+export type SetRelationOp = "subseteq" | "subset" | "supseteq" | "supset" | "eq" | "neq" | "nsubseteq";
+
+/** Cómo se escribe cada relación al mostrarla (texto plano). */
+export const RELATION_GLYPH: Record<SetRelationOp, string> = {
+  subseteq: "⊆",
+  subset: "⊊",
+  supseteq: "⊇",
+  supset: "⊋",
+  eq: "=",
+  neq: "≠",
+  nsubseteq: "⊈",
+};
+
+// Símbolos y alternativas ASCII, de más largo a más corto para que «<=» gane a «<».
+const RELATION_SYMBOLS: Array<[string, SetRelationOp]> = [
+  ["<=", "subseteq"],
+  [">=", "supseteq"],
+  ["!=", "neq"],
+  ["/=", "neq"],
+  ["==", "eq"],
+  ["⊆", "subseteq"],
+  ["⊂", "subset"],
+  ["⊊", "subset"],
+  ["⊇", "supseteq"],
+  ["⊃", "supset"],
+  ["⊋", "supset"],
+  ["⊈", "nsubseteq"],
+  ["⊄", "nsubseteq"],
+  ["≠", "neq"],
+  ["=", "eq"],
+  ["<", "subset"],
+  [">", "supset"],
+];
+// Palabras de LaTeX, con o sin barra: \subseteq, subset, \neq…
+const RELATION_WORDS: Array<[string, SetRelationOp]> = [
+  ["nsubseteq", "nsubseteq"],
+  ["subsetneq", "subset"],
+  ["supsetneq", "supset"],
+  ["subseteq", "subseteq"],
+  ["supseteq", "supseteq"],
+  ["subset", "subset"],
+  ["supset", "supset"],
+  ["neq", "neq"],
+  ["ne", "neq"],
+];
+
+/** ¿Empieza en `i` una relación? Su tipo y cuántos caracteres ocupa. */
+export function relationTokenAt(s: string, i: number): { op: SetRelationOp; len: number } | null {
+  for (const [sym, op] of RELATION_SYMBOLS) if (s.startsWith(sym, i)) return { op, len: sym.length };
+  const slash = s[i] === "\\" ? 1 : 0;
+  // Una palabra empieza donde no hay otra letra justo antes (o tras la barra) y acaba donde no sigue otra.
+  if (slash === 0 && i > 0 && /[A-Za-z]/.test(s[i - 1]!)) return null;
+  const rest = s.slice(i + slash);
+  for (const [word, op] of RELATION_WORDS) {
+    if (rest.toLowerCase().startsWith(word) && !/[A-Za-z]/.test(rest[word.length] ?? "")) return { op, len: slash + word.length };
+  }
+  return null;
+}
+
+const RELATION_HELP =
+  "aquí va una expresión que se pueda sombrear, como A ∩ B. Para suponerla, añádela en «Supuestos»; para decidir si es cierta, usa «Relaciones» en «Comprobar una igualdad».";
+
+/** «A ⊆ B es una relación (verdadera o falsa), no un conjunto: …», con lo que se ha escrito a cada lado. */
+export function relationIsNotASet(s: string, i: number, op: SetRelationOp, len: number): string {
+  const cut = (x: string) => (x.length > 40 ? `${x.slice(0, 39)}…` : x);
+  const left = cut(s.slice(0, i).trim()) || "X";
+  const right = cut(s.slice(i + len).trim()) || "Y";
+  return `${left} ${RELATION_GLYPH[op]} ${right} es una relación (verdadera o falsa), no un conjunto: ${RELATION_HELP}`;
+}
+
 // ---------------------------------------------------------------- Lectura
 
 type TokType = "set" | "empty" | "universe" | "comp" | "union" | "inter" | "diff" | "sym" | "open" | "close";
@@ -142,6 +220,8 @@ function tokenize(s: string): { ok: true; toks: Tok[] } | { ok: false; error: Pa
       toks.push({ t, start: i, end: i + len, name });
       i += len;
     };
+    const rel = relationTokenAt(s, i);
+    if (rel) return { ok: false, error: err("unexpected-token", i, i + rel.len, relationIsNotASet(s, i, rel.op, rel.len)) };
     if (ch === "A" || ch === "B" || ch === "C") push("set", 1, ch);
     else if (ch === "\u0100") {
       // Ā precompuesta: A seguida de su complemento.
