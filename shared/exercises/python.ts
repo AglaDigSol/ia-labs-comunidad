@@ -2012,10 +2012,18 @@ const OUT_MEDIUM: OutTpl[] = [
     id: "range-continue",
     tema: 3,
     make(rng) {
-      const a = rng.int(0, 4);
-      const c = rng.int(2, 3);
-      const b = a + c * rng.int(4, 6);
-      const k = rng.int(2, 4);
+      // Que algo se salte y algo se imprima: con range(0, 8, 2) y k = 2 no se imprimiría nada.
+      const draw = () => {
+        const a = rng.int(0, 4);
+        const c = rng.int(2, 3);
+        const b = a + c * rng.int(4, 6);
+        const k = rng.int(2, 4);
+        const values = Array.from({ length: (b - a) / c }, (_, j) => a + j * c);
+        return { a, b, c, k, ok: values.some((i) => i % k !== 0) && values.some((i) => i % k === 0) };
+      };
+      let d = draw();
+      while (!d.ok) d = draw();
+      const { a, b, c, k } = d;
       return {
         code: py`
           for i in range(${a}, ${b}, ${c}):

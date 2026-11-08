@@ -256,7 +256,10 @@ describe.skipIf(!hasPython3)("ejercicios de Python: banco de pruebas con python3
   });
 
   it("«¿Qué imprime?»: cada fragmento se ejecuta sin errores y con salida", () => {
-    const insts = EXERCISE_LEVELS.flatMap((level) => SEEDS.map((s) => PY_OUTPUT.generate(s, level)));
+    // Las semillas del revisor (medio: 8, g, s, 24, 29 en base 36) daban un range-continue sin salida.
+    const reviewer = ["8", "g", "s", "24", "29"].map((t) => parseInt(t, 36));
+    const sweep = Array.from({ length: 80 }, (_, i) => i);
+    const insts = EXERCISE_LEVELS.flatMap((level) => [...SEEDS, ...reviewer, ...sweep].map((s) => PY_OUTPUT.generate(s, level)));
     // Y cada plantilla al menos una vez.
     const results = runJobs<unknown>(
       HARNESS_PY,
