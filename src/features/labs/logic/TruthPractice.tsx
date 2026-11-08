@@ -3,6 +3,8 @@
 //   hacia fuera; cada columna se comprueba y se bloquea antes de añadir la siguiente, y al final
 //   se elige la clasificación.
 // - «Solo el resultado»: la columna de la fórmula completa y la clasificación.
+// Las casillas se rellenan con el ratón (cada clic: ? → V → F → ?) o con el teclado (grid-input.tsx:
+// V/F o 1/0, flechas, Supr), con una sola parada de tabulación por tabla.
 // La app solo corrige y da pistas; nunca rellena ni muestra los valores correctos.
 import { Check, Lightbulb, RotateCcw, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,6 +14,7 @@ import { Button } from "../../../components/ui/button.tsx";
 import { Chip } from "../../../components/ui/chip.tsx";
 import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-group.tsx";
 import { cn } from "../../../lib/cn.ts";
+import { GridShortcuts, useCellGrid, type CellPos, type CellValue } from "../grid-input.tsx";
 import type { TruthFormat } from "./TruthTable.tsx";
 
 type Kind = "tautologia" | "contradiccion" | "contingencia";
@@ -25,6 +28,8 @@ const CLASSIFY_HINT =
 
 const fmt = (v: boolean, format: TruthFormat) => (format === "10" ? (v ? "1" : "0") : v ? "V" : "F");
 const next = (a: boolean | null) => (a === null ? true : a ? false : null);
+/** Valor de una tecla en una tabla de verdad (aquí no hay indiferencias). */
+const truthOf = (v: CellValue): boolean | null => (v === "X" ? null : v);
 
 export type TruthPracticeMode = "pasos" | "resultado";
 type Mode = TruthPracticeMode;
@@ -141,7 +146,6 @@ function StepPractice({ table, format, formula, onSolved }: PartProps) {
   const [hints, setHints] = useState(0);
   const [kind, setKind] = useState<Kind | null>(null);
   const [kindChecked, setKindChecked] = useState(false);
-  const firstCell = useRef<HTMLButtonElement>(null);
   const moved = useRef(false);
 
   const step = cols.length - 1;
@@ -159,17 +163,26 @@ function StepPractice({ table, format, formula, onSolved }: PartProps) {
   const missing = answers.filter((a) => a === null).length;
   const correct = answers.filter((a, i) => a === truth[i]).length;
 
+  const setCell = (i: number, f: (a: boolean | null) => boolean | null) => {
+    setCols((prev) => prev.map((c, j) => (j !== step ? c : c.map((a, k) => (k !== i ? a : f(a))))));
+    setChecked(false);
+  };
+  const cycle = (i: number) => setCell(i, next);
+  // Solo la columna del paso actual se edita (las anteriores ya están comprobadas y bloqueadas).
+  const editable = useMemo<CellPos[]>(
+    () => (stepDone ? [] : table.rows.map((_, i) => ({ row: i, col: step }))),
+    [stepDone, table.rows, step],
+  );
+  const grid = useCellGrid({ cells: editable, onValue: (p, v) => setCell(p.row, () => truthOf(v)) });
+
   // Al añadir una columna, el foco pasa a su primera casilla (no al montar el ejercicio).
+  const focusFirst = useRef(grid.focusFirst);
+  focusFirst.current = grid.focusFirst;
   useEffect(() => {
     if (!moved.current) return;
     moved.current = false;
-    firstCell.current?.focus();
+    focusFirst.current();
   }, [step]);
-
-  const cycle = (i: number) => {
-    setCols((prev) => prev.map((c, j) => (j !== step ? c : c.map((a, k) => (k !== i ? a : next(a))))));
-    setChecked(false);
-  };
   const checkStep = () => {
     setChecked(true);
     if (correct !== table.rows.length) return;
@@ -205,16 +218,17 @@ function StepPractice({ table, format, formula, onSolved }: PartProps) {
   return (
     <>
       <p className="text-[14px] text-muted">
-        Resuelve la tabla de dentro hacia fuera, una columna cada vez: pulsa cada casilla para elegir{" "}
+        Resuelve la tabla de dentro hacia fuera, una columna cada vez: pulsa cada casilla (o escribe) para elegir{" "}
         {fmt(true, format)} o {fmt(false, format)} y pulsa «Comprobar paso». Las columnas resaltadas son las que
         combina el paso actual.
       </p>
+      {stepDone ? null : <GridShortcuts id={grid.hintId} format={format} />}
       <p className="text-[14px] font-semibold">
         {`Paso ${step + 1} de ${n}: `}
         <span className="font-mono font-normal">{keys[step]}</span>
       </p>
       <div className="overflow-x-auto">
-        <table className="border-separate border-spacing-0 text-center">
+        <table role="grid" className="border-separate border-spacing-0 text-center">
           <caption className="sr-only">{`Tu tabla de verdad de ${formula}, paso a paso`}</caption>
           <thead>
             <tr>
@@ -258,7 +272,7 @@ function StepPractice({ table, format, formula, onSolved }: PartProps) {
                     <td key={j} className="px-2 py-1">
                       <span className="inline-flex items-center gap-1">
                         <button
-                          ref={i === 0 ? firstCell : undefined}
+                          {...grid.cellProps({ row: i, col: j })}
                           type="button"
                           aria-label={`${rowLabel(i)}, columna ${keys[j]}: ${a === null ? "sin responder" : fmt(a, format)}${bad ? ", incorrecta" : ""}`}
                           onClick={() => cycle(i)}
@@ -401,16 +415,22 @@ function ResultPractice({ table, format, formula, onSolved }: PartProps) {
     CLASSIFY_HINT,
   ];
 
-  const cycle = (i: number) => setAnswers((prev) => prev.map((a, k) => (k !== i ? a : next(a))));
+  const setCell = (i: number, f: (a: boolean | null) => boolean | null) => {
+    setAnswers((prev) => prev.map((a, k) => (k !== i ? a : f(a))));
+    setChecked(false);
+  };
+  const editable = useMemo<CellPos[]>(() => table.rows.map((_, i) => ({ row: i, col: 0 })), [table.rows]);
+  const grid = useCellGrid({ cells: editable, onValue: (p, v) => setCell(p.row, () => truthOf(v)) });
 
   return (
     <>
       <p className="text-[14px] text-muted">
-        Rellena la columna de {formula} (pulsa cada casilla para elegir {fmt(true, format)} o {fmt(false, format)}),
-        elige la clasificación y pulsa «Comprobar».
+        Rellena la columna de {formula} (pulsa cada casilla, o escribe, para elegir {fmt(true, format)} o{" "}
+        {fmt(false, format)}), elige la clasificación y pulsa «Comprobar».
       </p>
+      <GridShortcuts id={grid.hintId} format={format} />
       <div className="overflow-x-auto">
-        <table className="border-separate border-spacing-0 text-center">
+        <table role="grid" className="border-separate border-spacing-0 text-center">
           <caption className="sr-only">{`Tu tabla de verdad de ${formula}`}</caption>
           <thead>
             <tr>
@@ -438,12 +458,10 @@ function ResultPractice({ table, format, formula, onSolved }: PartProps) {
                   ))}
                   <td className="px-2 py-1">
                     <button
+                      {...grid.cellProps({ row: i, col: 0 })}
                       type="button"
                       aria-label={`${label}: ${a === null ? "sin responder" : fmt(a, format)}`}
-                      onClick={() => {
-                        cycle(i);
-                        setChecked(false);
-                      }}
+                      onClick={() => setCell(i, next)}
                       className={cn(
                         "min-h-11 min-w-11 rounded-md border font-mono text-[16px]",
                         checked && wrongRows[i] ? "border-crit text-crit" : "border-border",
