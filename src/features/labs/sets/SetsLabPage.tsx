@@ -1,5 +1,6 @@
 // Laboratorio de conjuntos: «Diagrama de Venn» (sombrear regiones y calcular con elementos),
-// «Comprobar una igualdad» (demostración con leyes paso a paso y «¿Son iguales?» con contraejemplo),
+// «Comprobar una igualdad» (demostración con leyes paso a paso, «¿Son iguales?» con contraejemplo y
+// «Relaciones»: ⊆, ⊊, =, ≠… con supuestos),
 // «Cardinales e inclusión–exclusión» (problemas de enunciado, región a región) y «Partes y producto
 // cartesiano». Notación de clase: ∪, ∩, ∖, Δ, Aᶜ, ∅ y U. La app corrige y da pistas; las soluciones
 // quedan detrás de «Ver la solución completa». La sección elegida va en la URL (?s=).
@@ -15,8 +16,8 @@ type Section = (typeof SECTIONS)[number];
 const isSection = (x: unknown): x is Section => typeof x === "string" && (SECTIONS as readonly string[]).includes(x);
 
 const INTRO: Record<Section, string> = {
-  venn: "Sombrea en el diagrama de Venn las regiones de una expresión, o calcúlala con conjuntos dados por sus elementos.",
-  igualdades: "Demuestra una igualdad de conjuntos aplicando una ley en cada paso, o decide si dos expresiones son iguales.",
+  venn: "Sombrea en el diagrama de Venn las regiones de una expresión (con supuestos como A ⊆ B, si quieres), o calcúlala con conjuntos dados por sus elementos.",
+  igualdades: "Demuestra una igualdad de conjuntos aplicando una ley en cada paso, decide si dos expresiones son iguales o si una relación (A ⊆ B, A ∩ B = ∅…) es siempre cierta.",
   cardinales: "Resuelve problemas de recuento: rellena el diagrama de Venn de dentro hacia fuera con la inclusión–exclusión.",
   partes: "Escribe el conjunto de partes 𝒫(A) o el producto cartesiano A × B, y cuántos elementos tienen.",
 };
@@ -47,7 +48,7 @@ export function SetsLabPage() {
         <p className="text-muted">{INTRO[section]}</p>
         <p className="text-[14px] text-muted">
           Notación: ∪ unión, ∩ intersección, ∖ diferencia, Δ diferencia simétrica, Aᶜ complementario, ∅ vacío y U el
-          universal.
+          universal. Relaciones: ⊆ contenido, ⊂ (o ⊊) contenido y distinto, ⊇ contiene, = igual y ≠ distinto.
         </p>
       </div>
       <ToggleGroup
