@@ -56,13 +56,15 @@ afterEach(() => {
 });
 
 describe("GradesPage", () => {
-  it("defaults to 01MIAR, toggles via URL and focuses the first input", async () => {
+  it("defaults to 01MIAR, toggles via URL and does not focus an input on load", async () => {
     renderAt("/notas");
     await settle(10);
     expect(
       screen.getByRole("heading", { level: 1, name: "Calculadora de notas" }),
     ).toBeTruthy();
-    expect(screen.getByLabelText(/Evidencia 1/)).toBe(document.activeElement);
+    // Sin autofoco: en el móvil abriría el teclado y desplazaría la página al cargar.
+    expect(screen.getByLabelText(/Evidencia 1/)).not.toBe(document.activeElement);
+    expect(document.activeElement?.tagName).not.toBe("INPUT");
     expect(screen.getByText("Introduce tu primera nota")).toBeTruthy();
     fireEvent.click(screen.getByRole("radio", { name: "02MIAR" }));
     expect(screen.getByTestId("loc").textContent).toBe("/notas?a=02MIAR");
