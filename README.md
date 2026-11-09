@@ -462,7 +462,7 @@ el `tsc` de la app anfitriona.
 `npm ci --ignore-scripts` funciona con esa línea (el paquete no tiene scripts de instalación).
 
 **Dependencias compartidas.** `react`, `react-dom` y `react-router` son `peerDependencies` con versión exacta
-(19.3.1, 19.3.1 y 8.5.0): la app anfitriona las pone en sus `dependencies` y así solo hay una copia de React. Radix,
+(19.3.1, 19.3.1 y 8.5.1): la app anfitriona las pone en sus `dependencies` y así solo hay una copia de React. Radix,
 KaTeX, zod, lucide-react, clsx, class-variance-authority y tailwind-merge son dependencias normales con versión exacta;
 si la app usa las mismas versiones, npm las comparte. `pyodide` (0.27.7) también: si la app tiene otra versión, npm
 instala la del paquete aparte y la pestaña usa la suya.
