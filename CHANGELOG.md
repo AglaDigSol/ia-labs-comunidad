@@ -12,6 +12,19 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 
+## [0.14.1] - 2026-11-10
+
+### Añadido
+
+- **Simbología**: ⊭ (no es consecuencia lógica, con el contraejemplo de ∀ y ∨), la ley de dominación
+  (a + 1 = 1, a · 0 = 0, que no es la absorción) y los símbolos de funciones de la Sesión 4: f: A → B (con
+  inyectiva, sobreyectiva y biyectiva), la composición g ∘ f, la función inversa f⁻¹ y la imagen inversa f⁻¹(B).
+
+### Cambiado
+
+- Dependencias: katex 0.19.1, lucide-react 1.65.0 y react-router 8.5.1 (también como `peerDependency`: la app
+  anfitriona debe usar 8.5.1).
+
 ## [0.14.0] - 2026-11-08
 
 Dos revisiones del conjunto, una con ojos de estudiante (móvil, iPad, teclado) y otra con ojos de profesor (lo que se
@@ -555,7 +568,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.14.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.14.1...HEAD
+[0.14.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.14.1
 [0.14.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.14.0
 [0.13.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.13.0
 [0.12.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.12.0

@@ -78,6 +78,13 @@ describe("SYM-04 coverage of Sesiones 1-2", () => {
     ["diferencia", "diferencia"],
     ["einsum", "einsum"],
     ["estacionaria", "distribucion-estacionaria"],
+    ["⊭", "no-consecuencia-logica"],
+    ["⊨", "consecuencia-logica"],
+    ["∘", "composicion"],
+    ["f⁻¹", "funcion-inversa"],
+    ["preimagen", "imagen-inversa"],
+    ["dominacion", "dominacion"],
+    ["biyectiva", "funcion"],
   ])("search %s finds %s first", (q, id) => {
     expect(searchSymbols(ALL_SYMBOLS, q)[0]?.id).toBe(id);
   });

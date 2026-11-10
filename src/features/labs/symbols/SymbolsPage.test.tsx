@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { symbolById } from "../../../../shared/symbols/index.ts";
+import { ALL_SYMBOLS, symbolById } from "../../../../shared/symbols/index.ts";
 import { SymbolsPage } from "./SymbolsPage.tsx";
 
 type W = Record<string, unknown>;
@@ -131,7 +131,10 @@ describe("SymbolsPage", () => {
     const ids = rowIds();
     expect(ids.length).toBeGreaterThan(0);
     expect(ids.every((id) => symbolById(id!)!.category === "conjuntos")).toBe(true);
-    expect(screen.getByText(`${ids.length} símbolos`)).toBeTruthy();
+    // La lista pinta primero unas filas; el contador cuenta todos los de la categoría.
+    const total = ALL_SYMBOLS.filter((e) => e.category === "conjuntos").length;
+    expect(ids.length).toBeLessThanOrEqual(total);
+    expect(screen.getByText(`${total} símbolos`)).toBeTruthy();
   });
 
   it("empty state offers Quitar filtros", () => {
