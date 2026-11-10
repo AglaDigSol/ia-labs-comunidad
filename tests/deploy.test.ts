@@ -109,7 +109,9 @@ describe("Dockerfile", () => {
     expect(df).toContain("COPY --from=build /app/dist /usr/share/nginx/html");
     expect(df).toContain("ARG CALENDAR_ICS_URL");
     expect(df).toContain("ARG LABS_PYTHON=");
-    expect(df).toContain('LABS_PYTHON="$LABS_PYTHON" npm run build');
+    expect(df).toContain('LABS_PYTHON="$LABS_PYTHON"');
+    expect(df).toContain("ARG VITE_GUIDES_URL=");
+    expect(df).toContain('VITE_GUIDES_URL="$VITE_GUIDES_URL" npm run build');
     expect(df).toContain("COPY deploy/security-headers-wasm.conf /etc/nginx/snippets/security-headers-wasm.conf");
   });
 });

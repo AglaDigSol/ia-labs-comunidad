@@ -4,13 +4,22 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa
 [versionado semántico](https://semver.org/lang/es/).
 
-## [Próximamente] (0.15)
+## [Próximamente] (0.16)
 
 - i18n completo: mover a `src/i18n/` los textos internos de los laboratorios, las flashcards, la calculadora y el
   calendario (hoy están en sus componentes) y añadir inglés.
 - Registro de plugins completo para módulos de terceros (hoy `src/config.ts` es un registro sencillo con
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
+
+## [0.15.0] - 2026-11-10
+
+### Añadido
+
+- **Enlace «Guías de estudio»** junto al título «Laboratorios»: abre en otra pestaña unas guías que viven fuera de
+  la app, así que se añaden o cambian sin publicar una versión nueva. En el sitio propio se fija con
+  `VITE_GUIDES_URL` al construir (o `--build-arg VITE_GUIDES_URL=…`); una app anfitriona lo pasa con
+  `<LabsRoutes guidesUrl="…" />`. Solo se aceptan direcciones https; vacía, no hay enlace.
 
 ## [0.14.1] - 2026-11-10
 
@@ -568,7 +577,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.14.1...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.15.0
 [0.14.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.14.1
 [0.14.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.14.0
 [0.13.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.13.0

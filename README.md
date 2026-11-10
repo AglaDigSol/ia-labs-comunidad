@@ -135,6 +135,7 @@ usan ese `python3`: las soluciones de referencia de cada examen generado sacan u
 npm ci --ignore-scripts
 npm run build                      # VITE_BASE=/ por defecto
 VITE_BASE=/labs/ npm run build     # si el sitio va en una subcarpeta
+VITE_GUIDES_URL=https://… npm run build   # enlace «Guías de estudio» (opcional)
 ```
 
 `npm run build` hace `vite build` y después `node scripts/build-ics.ts dist`, que añade `calendario.ics`,
@@ -455,7 +456,7 @@ el `tsc` de la app anfitriona.
 
 ```json
 "dependencies": {
-  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.14.1"
+  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.15.0"
 }
 ```
 
@@ -517,6 +518,10 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
   encendida). `element` puede ser perezoso: hay un `Suspense` alrededor. Una pestaña con el id o la ruta de un
   laboratorio se ignora; con `python`, también una con el id o la ruta `python`.
 - `python`: enciende la pestaña Python (por defecto, apagada). Ver «Pestaña Python en una app anfitriona», abajo.
+- `guidesUrl`: dirección https de unas guías de estudio que viven fuera de la app. Si se pasa, junto al título
+  «Laboratorios» aparece «Guías de estudio», que se abre en otra pestaña; así las guías cambian sin publicar una
+  versión nueva. En el sitio propio se fija con `VITE_GUIDES_URL` al construir (o `--build-arg VITE_GUIDES_URL=…` con
+  Docker); vacía, no hay enlace.
 - `renderHeaderAction(tab)`: acción opcional junto al título «Laboratorios»; recibe la pestaña activa
   (`{ id, label }`) o `null`.
 - `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el

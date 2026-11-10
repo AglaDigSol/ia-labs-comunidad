@@ -35,6 +35,9 @@ export type OptionalModuleId = Exclude<keyof typeof config.modules, "python">;
 declare const __LABS_PYTHON__: boolean | undefined;
 
 /** ¿Lleva el sitio la pestaña Python? En las pruebas (sin build), lo que diga config.modules.python. */
+/** Dirección de las guías de estudio (VITE_GUIDES_URL, en el build). Vacía: sin enlace. */
+export const GUIDES_URL: string | undefined = import.meta.env.VITE_GUIDES_URL;
+
 export const PYTHON_TAB: boolean = typeof __LABS_PYTHON__ === "boolean" ? __LABS_PYTHON__ : config.modules.python;
 
 type Icon = ComponentType<{ size?: number; strokeWidth?: number; "aria-hidden"?: boolean | "true"; className?: string }>;
@@ -62,7 +65,7 @@ export const MODULES: AppModule[] = [
     component: lazy(() =>
       import("./features/labs/labs.tsx").then((m) => {
         const Labs = m.LabsRoutes as ComponentType<LabsRoutesProps>;
-        return { default: () => createElement(Labs, { python: PYTHON_TAB }) };
+        return { default: () => createElement(Labs, { python: PYTHON_TAB, guidesUrl: GUIDES_URL }) };
       }),
     ),
     content: ["content/symbols", "content/notation"],

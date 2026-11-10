@@ -106,3 +106,29 @@ describe("orientación de la primera visita", () => {
     expect(screen.queryByRole("region", { name: "Cómo están organizados los laboratorios" })).toBeNull();
   });
 });
+
+describe("enlace a las guías de estudio", () => {
+  const renderWith = (guidesUrl?: string) =>
+    render(
+      <MemoryRouter initialEntries={["/laboratorios/simbolos"]}>
+        <Routes>
+          <Route path="/laboratorios/*" element={<LabsRoutes guidesUrl={guidesUrl} />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+  it("con una dirección https, enlaza las guías en otra pestaña, fuera de la lista de pestañas", () => {
+    renderWith("https://guias.example.org/indice");
+    const link = screen.getByRole("link", { name: /Guías de estudio/ });
+    expect(link.getAttribute("href")).toBe("https://guias.example.org/indice");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(link.textContent).toContain("se abre en otra pestaña");
+    expect(within(screen.getByRole("tablist")).queryByRole("link", { name: /Guías/ })).toBeNull();
+  });
+
+  it.each([undefined, "", "   ", "http://guias.example.org", "javascript:alert(1)", "no es una url"])("sin enlace con %j", (url) => {
+    renderWith(url);
+    expect(screen.queryByRole("link", { name: /Guías de estudio/ })).toBeNull();
+  });
+});

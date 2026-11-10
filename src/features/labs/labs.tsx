@@ -1,3 +1,4 @@
+import { ExternalLink } from "lucide-react";
 import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation, useParams } from "react-router";
 import { LabsIntro } from "./LabsIntro.tsx";
@@ -53,6 +54,12 @@ export interface LabsRoutesProps {
    * no se descarga. La carpeta de Pyodide y los borradores se configuran con configureLabs({ python }).
    */
   python?: boolean;
+  /**
+   * Dirección de las guías de estudio (https). Si se pasa, junto al título «Laboratorios» aparece el
+   * enlace «Guías de estudio», que se abre en otra pestaña. Las guías viven fuera de la app, así que se
+   * pueden añadir o cambiar sin publicar una versión nueva. Una dirección que no sea https se ignora.
+   */
+  guidesUrl?: string;
   /** Acción opcional a la derecha del título «Laboratorios» (recibe la pestaña activa o null). */
   renderHeaderAction?: (active: LabsActiveTab | null) => ReactNode;
   /**
@@ -116,12 +123,25 @@ function useLabsBase(basePath: string | undefined): string {
   return base.replace(/\/+$/, "");
 }
 
+/** La dirección de las guías, solo si es https y válida; null en otro caso. */
+export function safeGuidesUrl(raw: string | undefined): string | null {
+  const v = raw?.trim();
+  if (!v) return null;
+  try {
+    const u = new URL(v);
+    return u.protocol === "https:" ? u.href : null;
+  } catch {
+    return null;
+  }
+}
+
 const isActive = (pathname: string, to: string) => pathname === to || pathname.startsWith(`${to}/`);
 
 const RESERVED = new Set<string>(LABS.flatMap((l) => [l.id, l.path]));
 const RESERVED_WITH_PYTHON = new Set<string>([...RESERVED, PYTHON_LAB.id, PYTHON_LAB.path]);
 
-export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, python = false }: LabsRoutesProps = {}) {
+export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, python = false, guidesUrl }: LabsRoutesProps = {}) {
+  const guides = safeGuidesUrl(guidesUrl);
   const { pathname } = useLocation();
   const base = useLabsBase(basePath);
   const withPython = python && PythonLabPage !== null;
@@ -141,7 +161,21 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
       <div className="flex flex-col">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[14px] font-semibold text-muted">Laboratorios</p>
-          {renderHeaderAction?.(activeTab ? { id: activeTab.id, label: activeTab.label } : null)}
+          <div className="flex flex-wrap items-center gap-2">
+            {guides ? (
+              <a
+                href={guides}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-[14px] font-semibold text-accent hover:underline"
+              >
+                Guías de estudio
+                <ExternalLink size={16} strokeWidth={1.75} aria-hidden="true" />
+                <span className="sr-only">(se abre en otra pestaña)</span>
+              </a>
+            ) : null}
+            {renderHeaderAction?.(activeTab ? { id: activeTab.id, label: activeTab.label } : null)}
+          </div>
         </div>
         <LabTabs tabs={tabs.map((tab) => ({ id: tab.id, label: tab.label, to: hrefOf(tab) }))} activeId={activeTab?.id ?? null} />
       </div>
