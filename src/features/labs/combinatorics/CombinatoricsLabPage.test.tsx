@@ -52,10 +52,17 @@ describe("¿Qué fórmula es?", () => {
     expect(screen.getByRole("group", { name: GUIDE_TEXT.order }).getAttribute("aria-invalid")).toBe("true");
     expect(document.body.textContent).not.toMatch(/5040/);
 
-    // Separador de miles: se explica con las cifras de la persona.
-    fireEvent.change(result, { target: { value: "5.040" } });
+    // Separador de miles: con un número equivocado se explica con las cifras de la persona.
+    fireEvent.change(result, { target: { value: "5.000" } });
     click("Comprobar");
-    expect(screen.getByText(/Sin separador de miles, como en el examen: escribe 5040\./)).toBeTruthy();
+    expect(screen.getByText(/Sin separador de miles, como en el examen: escribe 5000\./)).toBeTruthy();
+    // Con el bueno se acepta, con la nota de cómo escribirlo.
+    for (const typed of ["5.040", "5 040"]) {
+      fireEvent.change(result, { target: { value: typed } });
+      click("Comprobar");
+      expect(status()).toMatch(/¡Correcto!/);
+      expect(status()).toMatch(/El número es correcto; escríbelo sin separador de miles: 5040/);
+    }
 
     answer(GUIDE_TEXT.order, "Sí");
     answer(GUIDE_TEXT.all, "Sí");

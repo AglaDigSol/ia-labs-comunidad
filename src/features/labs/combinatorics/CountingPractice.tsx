@@ -7,7 +7,7 @@
 // La solución, detrás de SolutionGate.
 import { Check } from "lucide-react";
 import { useState } from "react";
-import { equalsInteger, integerText, parseExamNumber } from "../../../../shared/discrete/answer.ts";
+import { equalsInteger, integerText, parseExamNumber, thousandsNote } from "../../../../shared/discrete/answer.ts";
 import {
   acceptedFormulas,
   countingFormula,
@@ -179,10 +179,13 @@ export function CountingPractice({
       {checked ? (
         <Status>
           {solved ? (
-            <Verdict tone="ok">
-              <Check size={16} aria-hidden="true" />
-              {ask === "model" ? "¡Correcto! Ese es el modelo." : ask === "number" ? "¡Correcto!" : "¡Correcto! Modelo y resultado bien."}
-            </Verdict>
+            <>
+              <Verdict tone="ok">
+                <Check size={16} aria-hidden="true" />
+                {ask === "model" ? "¡Correcto! Ese es el modelo." : ask === "number" ? "¡Correcto!" : "¡Correcto! Modelo y resultado bien."}
+              </Verdict>
+              {askNumber && parsed?.ok && parsed.plain !== undefined ? <span>{thousandsNote(parsed.plain)}</span> : null}
+            </>
           ) : (
             <>
               <Verdict tone="warn">
