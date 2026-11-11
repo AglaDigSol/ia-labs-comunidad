@@ -408,7 +408,8 @@ function ExamView({
   const questionHeading = useRef<HTMLHeadingElement>(null);
   const card = useRef<HTMLElement>(null);
   const bar = useRef<HTMLDivElement>(null);
-  const barStyle = useStickyHeight(bar);
+  const root = useRef<HTMLDivElement>(null);
+  useStickyHeight(bar, root);
   const moved = useRef(false);
   const finished = useRef(false);
   const remaining = attemptRemaining(attempt, now);
@@ -492,7 +493,7 @@ function ExamView({
   const low = remaining <= 5 * 60_000;
 
   return (
-    <div className="flex min-w-0 flex-col gap-4" style={barStyle}>
+    <div ref={root} className="flex min-w-0 flex-col gap-4">
       {/* En el móvil, una sola línea: «Simulacro», contestadas (3/10) y el reloj; el resto, para el lector de pantalla. */}
       <div ref={bar} className={cn("sticky z-10 flex items-center justify-between gap-2 border-b border-border bg-base py-2", EXAM_STICKY_TOP)}>
         <h1 ref={heading} tabIndex={-1} className="min-w-0 truncate font-display text-[17px] font-semibold sm:text-[20px]">

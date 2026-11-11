@@ -347,7 +347,7 @@ function ExamView({
   const code = attempt.code;
   const root = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLDivElement>(null);
-  const barStyle = useStickyHeight(bar);
+  useStickyHeight(bar, root);
 
   useEffect(() => {
     const el = root.current;
@@ -411,7 +411,7 @@ function ExamView({
   const used = pyExamCodeSize(code);
 
   return (
-    <div ref={root} className={cn("flex min-w-0 flex-col gap-4", BELOW_LAB_TABS)} style={barStyle}>
+    <div ref={root} className={cn("flex min-w-0 flex-col gap-4", BELOW_LAB_TABS)}>
       <div ref={bar} className={cn("sticky z-10 flex flex-col gap-2 border-b border-border bg-base py-2", EXAM_STICKY_TOP)}>
         <div className="flex items-center justify-between gap-2">
           <h1 ref={heading} tabIndex={-1} className="min-w-0 truncate font-display text-[17px] font-semibold sm:text-[20px]">

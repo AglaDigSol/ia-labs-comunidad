@@ -188,15 +188,20 @@ describe("examen y resultados", () => {
 describe("en el móvil: la pregunta, a la vista y debajo de la cabecera fija", () => {
   it("«Empezar» y «Siguiente» desplazan la tarjeta de la pregunta, con margen para la cabecera; abrir la página, no", () => {
     const scrolled: Element[] = [];
+    // La altura de la cabecera fija ya está medida (--exam-sticky) cuando la pregunta se desplaza.
+    const sticky: string[] = [];
     const spy = vi.fn(function (this: Element) {
       scrolled.push(this);
+      sticky.push((this.parentElement as HTMLElement).style.getPropertyValue("--exam-sticky"));
     });
     Element.prototype.scrollIntoView = spy;
+    const height = vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(61);
     try {
       renderPage();
       fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
       const card = () => heading(scrolled.length === 1 ? 1 : 2).closest("article")!;
       expect(scrolled).toEqual([card()]);
+      expect(sticky).toEqual(["61px"]);
       expect(card().className).toMatch(/scroll-mt-\[calc\(3rem\+2\.75rem\+1px\+var\(--exam-sticky/);
       // La cabecera fija va debajo de las pestañas de los laboratorios, en una sola línea.
       const bar = screen.getByRole("timer").closest("div.sticky")!;
@@ -215,6 +220,7 @@ describe("en el móvil: la pregunta, a la vista y debajo de la cabecera fija", (
       expect(heading(2)).toBeTruthy();
       expect(scrolled).toEqual([]);
     } finally {
+      height.mockRestore();
       delete (Element.prototype as Partial<Element>).scrollIntoView;
     }
   });
