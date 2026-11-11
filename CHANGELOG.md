@@ -12,6 +12,38 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 
+## [0.17.0] - 2026-11-11
+
+Más correcciones de la revisión con usuarios: pistas, soluciones y rechazos (A3 a A5), notación (A6) y ejercicios de
+cadenas de Markov (A7).
+
+### Añadido
+
+- **Ejercicios de cadenas de Markov** (tema «Cadenas de Markov»), en tres niveles y con «Comprobar paso»: distribución
+  tras n pasos (vₙ = v₀·Pⁿ), distribución estacionaria, clasificación de estados (absorbente, recurrente, transitorio) y
+  probabilidad de absorción con N = (I − Q)⁻¹. Cadenas generadas al azar con fracciones exactas, pistas que no dan el
+  resultado y solución paso a paso.
+- **Simulacro (02MIAR)**: bloque «Cadenas de Markov» en «Por temas».
+- **Simbología**: fichas de ⊊, CR, VR y PR (con su equivalente en Python), estado absorbente y matriz fundamental.
+
+### Cambiado
+
+- Notación de los ejercicios alineada con la Simbología: ⊂ para el subconjunto propio (⊊ se sigue aceptando al
+  responder), ⊕ solo como suma booleana y ⊻ para el XOR, 𝒫(A) para el conjunto de partes y ℕ = {1, 2, 3, …} (sin el 0).
+
+### Corregido
+
+- **Pistas ajustadas al enunciado**: solo hablan de los operadores y funciones que tiene cada ejercicio (dominio,
+  función a trozos, L'Hôpital, puntos críticos, predicados numéricos, complejidad, tablas de verdad, propiedades del
+  determinante y normas).
+- **Soluciones con el paso clave**: los límites laterales y f(a) en las funciones a trozos, ∇f evaluado antes de
+  multiplicar en la regla de la cadena, por qué no hay ningún α en normas (|α| ≥ 0) y determinantes sin factores que
+  valen 1.
+- **Formas normales**: una respuesta equivalente pero no canónica recibe «Equivalente, pero se pide la forma canónica (un
+  término por mintérmino)».
+- **Combinatoria**: «5.040» y «5 040» se aceptan, con la nota «El número es correcto; escríbelo sin separador de miles:
+  5040».
+
 ## [0.16.0] - 2026-11-11
 
 Más correcciones de la revisión con usuarios: flashcards (A8) y Python en el móvil (A11).
@@ -623,7 +655,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.16.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.17.0
 [0.16.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.16.0
 [0.15.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.15.1
 [0.15.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.15.0
