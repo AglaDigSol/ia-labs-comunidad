@@ -1,4 +1,4 @@
-// Relaciones entre conjuntos: X ⊆ Y, X ⊊ Y (también ⊂), X ⊇ Y, X ⊋ Y (también ⊃), X = Y, X ≠ Y y
+// Relaciones entre conjuntos: X ⊆ Y, X ⊂ Y (también ⊊), X ⊇ Y, X ⊃ Y (también ⊋), X = Y, X ≠ Y y
 // X ⊈ Y (también ⊄), con X e Y expresiones de expr.ts. Una relación no es un conjunto: es verdadera o
 // falsa. Se admiten cadenas como «∅ ≠ A ⊆ B» (∅ ≠ A y A ⊆ B) y, para los supuestos, varias separadas
 // por comas o punto y coma. Alternativas ASCII: <=, <, >=, >, !=, == y las palabras de LaTeX (subseteq,
@@ -75,7 +75,7 @@ export function parseSetRelation(input: string, offset = 0): SetRelationParse {
     const what = e.ok ? `${setToPlain(e.expr)} es un conjunto, no una relación` : "Falta la relación";
     return {
       ok: false,
-      error: err("missing-operator", offset, offset + input.length, `${what}: compara dos conjuntos con ⊆, ⊊, ⊇, ⊋, = o ≠, por ejemplo A ⊆ B o A ∩ B = ∅.`),
+      error: err("missing-operator", offset, offset + input.length, `${what}: compara dos conjuntos con ⊆, ⊂, ⊇, ⊃, = o ≠, por ejemplo A ⊆ B o A ∩ B = ∅.`),
     };
   }
   const sides: SetExpr[] = [];
@@ -132,9 +132,9 @@ export function parseSetHypotheses(input: string): SetRelationParse {
 
 const TEX_OP: Record<SetRelationOp, string> = {
   subseteq: "\\subseteq",
-  subset: "\\subsetneq",
+  subset: "\\subset",
   supseteq: "\\supseteq",
-  supset: "\\supsetneq",
+  supset: "\\supset",
   eq: "=",
   neq: "\\neq",
   nsubseteq: "\\nsubseteq",

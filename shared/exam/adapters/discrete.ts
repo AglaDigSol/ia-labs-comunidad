@@ -49,8 +49,8 @@ const setsEqualAdapter = examAdapter({
         mode: "single",
         options: [
           opt("igual", "X = Y", right === "igual", undefined, "X = Y"),
-          opt("xy", "X ⊊ Y (X está contenido en Y, pero no son iguales)", right === "xy", undefined, "X \\subsetneq Y"),
-          opt("yx", "Y ⊊ X (Y está contenido en X, pero no son iguales)", right === "yx", undefined, "Y \\subsetneq X"),
+          opt("xy", "X ⊂ Y (X está contenido en Y, pero no son iguales)", right === "xy", undefined, "X \\subset Y"),
+          opt("yx", "Y ⊂ X (Y está contenido en X, pero no son iguales)", right === "yx", undefined, "Y \\subset X"),
           opt("ninguno", "En general, ninguno de los dos está contenido en el otro", right === "ninguno"),
         ],
       },
@@ -170,7 +170,7 @@ const functionsAdapter = examAdapter({
   build(inst) {
     if (inst.multi) return null;
     const data = [
-      ...(inst.subset ? [["A \\subsetneq B", "A es un subconjunto propio de B"]] : []),
+      ...(inst.subset ? [["A \\subset B", "A es un subconjunto propio de B"]] : []),
       [`|A| = ${inst.a}`, `cardinal de A igual a ${inst.a}`],
       [`|B| = ${inst.b}`, `cardinal de B igual a ${inst.b}`],
       ...(inst.image !== undefined ? [[`|f(A)| = ${inst.image}`, `cardinal de f de A igual a ${inst.image}`]] : []),

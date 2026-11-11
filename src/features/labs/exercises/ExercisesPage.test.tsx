@@ -61,7 +61,7 @@ describe("lista de ejercicios", () => {
     renderAt("/laboratorios/ejercicios");
     await page();
     const topics = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    expect(topics).toEqual(["Simulacro de examen (02MIAR)", "Lógica proposicional", "Lógica de predicados", "Conjuntos", "Combinatoria y complejidad", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad"]);
+    expect(topics).toEqual(["Simulacro de examen (02MIAR)", "Lógica proposicional", "Lógica de predicados", "Conjuntos", "Combinatoria y complejidad", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad", "Cadenas de Markov"]);
     expect(screen.getByRole("heading", { level: 3, name: "Tabla de verdad paso a paso" })).toBeTruthy();
     expect(screen.getByRole("heading", { level: 3, name: "Mapa de Karnaugh" })).toBeTruthy();
     expect(screen.getByRole("heading", { level: 3, name: "Inclusión–exclusión" })).toBeTruthy();
@@ -74,7 +74,7 @@ describe("lista de ejercicios", () => {
     await page();
     const index = screen.getByRole("navigation", { name: "Temas del banco de ejercicios" });
     const links = within(index).getAllByRole("link");
-    expect(links.map((l) => l.textContent)).toEqual(["Lógica proposicional", "Lógica de predicados", "Conjuntos", "Combinatoria y complejidad", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad"]);
+    expect(links.map((l) => l.textContent)).toEqual(["Lógica proposicional", "Lógica de predicados", "Conjuntos", "Combinatoria y complejidad", "Álgebra de Boole", "Álgebra lineal", "Cálculo", "Probabilidad", "Cadenas de Markov"]);
     expect(links[2]!.getAttribute("href")).toBe("#tema-conjuntos");
     Element.prototype.scrollIntoView = () => {};
     fireEvent.click(links[2]!);

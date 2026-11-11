@@ -30,7 +30,7 @@ export interface FnSetting {
   b: number;
   /** |f(A)|, si se conoce. */
   image?: number;
-  /** A ⊊ B (subconjunto propio): solo cambia cómo se dice; implica |A| < |B|. */
+  /** A ⊂ B (subconjunto propio): solo cambia cómo se dice; implica |A| < |B|. */
   subset?: boolean;
 }
 
@@ -40,7 +40,7 @@ export const MAX_FN_CARD = 12;
 export function settingProblem(s: FnSetting): string | null {
   const ok = (x: number) => Number.isSafeInteger(x) && x >= 1 && x <= MAX_FN_CARD;
   if (!ok(s.a) || !ok(s.b)) return `|A| y |B| tienen que ser naturales entre 1 y ${MAX_FN_CARD}.`;
-  if (s.subset && s.a >= s.b) return "Si A ⊊ B, |A| tiene que ser menor que |B|.";
+  if (s.subset && s.a >= s.b) return "Si A ⊂ B, |A| tiene que ser menor que |B|.";
   if (s.image !== undefined && (!ok(s.image) || s.image > Math.min(s.a, s.b))) return "|f(A)| no puede ser mayor que |A| ni que |B|.";
   return null;
 }
@@ -168,7 +168,7 @@ export function functionHints(s: FnSetting): string[] {
     "Biyectiva = inyectiva y sobreyectiva; solo entonces hay inversa. Hace falta |A| = |B|.",
     "«Puede» pide que exista al menos una función así; «necesariamente», que lo sean todas (piensa en una función constante como contraejemplo).",
   ];
-  if (s.subset) out.push("A ⊊ B quiere decir que A está dentro de B y le falta algún elemento: |A| < |B|.");
+  if (s.subset) out.push("A ⊂ B quiere decir que A está dentro de B y le falta algún elemento: |A| < |B|.");
   if (s.image !== undefined) out.push("Con |f(A)| conocido: f es inyectiva si |f(A)| = |A| y sobreyectiva si |f(A)| = |B|. Y A → f(A) siempre es sobreyectiva.");
   out.push("Para contar funciones: cada elemento de A elige su imagen en B (variaciones con repetición); si son inyectivas, sin repetir imagen (variaciones).");
   return out;

@@ -583,7 +583,7 @@ function pickStatements(r: Rng, pool: FnStatement[], count: number): FnStatement
 
 function settingFor(r: Rng, level: ExerciseLevel): FnSetting {
   const max = level === "básico" ? 6 : 8;
-  // Como en el examen: A ⊊ B dicho con palabras, o |A| = |B|.
+  // Como en el examen: A ⊂ B dicho con palabras, o |A| = |B|.
   if (r.chance(0.25)) {
     const b = r.int(3, max);
     return { a: r.int(2, b - 1), b, subset: true };
@@ -631,7 +631,7 @@ export const COMB_FUNCTIONS: ExerciseType<CombFunctionsInstance> = {
   id: "combinatoria-funciones",
   topic: "combinatoria",
   title: "Funciones por cardinal",
-  description: "Con |A| y |B| (o A ⊊ B, y a veces |f(A)|), elige la afirmación verdadera sobre f: A → B entre a) y d), o, en avanzado, marca todas las verdaderas: inyectiva, sobreyectiva, biyectiva, inversa, «puede» o «necesariamente», y cuántas funciones hay.",
+  description: "Con |A| y |B| (o A ⊂ B, y a veces |f(A)|), elige la afirmación verdadera sobre f: A → B entre a) y d), o, en avanzado, marca todas las verdaderas: inyectiva, sobreyectiva, biyectiva, inversa, «puede» o «necesariamente», y cuántas funciones hay.",
   levels: ALL_LEVELS,
   generate(seed, level) {
     return generateUntil(

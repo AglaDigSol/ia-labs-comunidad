@@ -26,6 +26,7 @@ export const EXERCISE_TOPICS = [
   { id: "algebra-lineal", label: "Álgebra lineal" },
   { id: "calculo", label: "Cálculo" },
   { id: "probabilidad", label: "Probabilidad" },
+  { id: "markov", label: "Cadenas de Markov" },
   { id: "python", label: "Python (01MIAR)" },
 ] as const;
 export type ExerciseTopic = (typeof EXERCISE_TOPICS)[number]["id"];

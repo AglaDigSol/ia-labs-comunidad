@@ -1,4 +1,4 @@
-// «Funciones y cardinales»: con |A| y |B| (o A ⊊ B, y a veces |f(A)|), elegir la afirmación verdadera
+// «Funciones y cardinales»: con |A| y |B| (o A ⊂ B, y a veces |f(A)|), elegir la afirmación verdadera
 // entre a) y d) o marcar todas las verdaderas. «Comprobar» dice si está bien o cuántas están bien
 // marcadas, sin decir cuáles; con todo bien se ven las explicaciones. La solución, detrás de
 // SolutionGate.
@@ -11,10 +11,10 @@ import { Chip } from "../../../components/ui/chip.tsx";
 import { Tex } from "../../../lib/tex.tsx";
 import { CheckList, Hints, OptionList, PracticeBox, Status, Verdict } from "./common.tsx";
 
-/** Los datos: |A|, |B| (o A ⊊ B) y |f(A)|. */
+/** Los datos: |A|, |B| (o A ⊂ B) y |f(A)|. */
 export function SettingView({ setting }: { setting: FnSetting }) {
   const parts = [
-    ...(setting.subset ? [{ tex: "A \\subsetneq B", label: "A es un subconjunto propio de B" }] : []),
+    ...(setting.subset ? [{ tex: "A \\subset B", label: "A es un subconjunto propio de B" }] : []),
     { tex: `|A| = ${setting.a}`, label: `cardinal de A igual a ${setting.a}` },
     { tex: `|B| = ${setting.b}`, label: `cardinal de B igual a ${setting.b}` },
     ...(setting.image !== undefined ? [{ tex: `|f(A)| = ${setting.image}`, label: `cardinal de f de A igual a ${setting.image}` }] : []),

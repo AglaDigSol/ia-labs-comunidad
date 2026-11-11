@@ -9,6 +9,7 @@ import { DISCRETE_EXERCISES } from "./discrete.ts";
 import { LINALG_EXERCISES } from "./linalg.ts";
 import { LOGIC_EXERCISES } from "./logic.ts";
 import { LOGIC_EXTRA_EXERCISES, PRED_EXTRA_EXERCISES } from "./logic-extra.ts";
+import { MARKOV_EXERCISES } from "./markov.ts";
 import { PREDICATE_EXERCISES } from "./predicates.ts";
 import { PROB_EXERCISES } from "./probability.ts";
 import { PYTHON_EXERCISES } from "./python.ts";
@@ -35,6 +36,7 @@ export const EXERCISE_TYPES: readonly AnyExerciseType[] = [
   ...LINALG_EXERCISES,
   ...CALC_EXERCISES,
   ...PROB_EXERCISES,
+  ...MARKOV_EXERCISES,
   ...(WITH_PYTHON ? PYTHON_EXERCISES : []),
 ];
 
