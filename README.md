@@ -26,7 +26,7 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Probabilidad | Árbol de probabilidad total y Bayes que rellenas casilla a casilla (ramas que faltan, productos, P(C) y P(Aᵢ \| C)), tabla de contingencia 2×2 con P(A \| B), P(B \| A) e independencia, condicionada con un dado (opciones a–d), independencia con P(A), P(B) y un dato más (selecciona la o las correctas), distribuciones discretas (Bernoulli, binomial, geométrica, Poisson y uniforme: diagrama de barras con la función de distribución, tabla, media y varianza, y práctica con historias: qué distribución es, P(X = k), P(X ≥ k), E[X] y Var(X)), tabla de un juego con dados o monedas (equilibrados o trucados) y su esperanza, penalización justa por fallo en un test, E[XY] con independientes y simulación con semilla de la frecuencia relativa. Fracciones exactas; las respuestas se aceptan como fracción o redondeadas a dos decimales con coma, como en el examen. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
 | Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias, FND/FNC y formalizar frases («es suficiente», «solo si», «a menos que», «ni… ni…»); evaluar y negar con cuantificadores, negar frases en lenguaje natural y predicados sobre ℕ, ℤ, ℚ y ℝ; Venn, igualdades, relaciones entre conjuntos con supuestos (cuál es siempre cierta o siempre falsa), inclusión–exclusión, partes y producto; problemas de combinatoria, ¿qué modelo es?, funciones por cardinal, complejidad de un algoritmo y P y NP; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente; probabilidad total y Bayes (también contada con porcentajes), condicionada con un dado, condicionada e independencia, binomial, geométrica, esperanza de un juego con un dado trucado, penalización en un test y E[XY] con independientes; distribución tras n pasos, distribución estacionaria, clasificación de estados (absorbente, recurrente, transitorio) y probabilidad de absorción con N = (I − Q)⁻¹ en cadenas de Markov generadas al azar; y teoría con el formato del examen: funciones a trozos, L'Hôpital, dominio, bisección, regla de la cadena (también con la jacobiana), cuencas del descenso, críticos tipo test, integración por partes, propiedades del determinante, verdadero o falso sobre matrices, normas, rango y dimensión de tensores y sistemas tipo test. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. La lista se filtra por tema y por nivel, con el recuento de tipos por nivel, y empieza por «Continúa donde lo dejaste» (el último tipo, nivel y semilla). Arriba, el **Simulacro de examen (02MIAR)**: ver [Simulacro de examen](#simulacro-de-examen-02miar). Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 13: de los tipos de datos a NumPy, pandas, gráficos y generadores) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)), y el [Simulacro de examen (01MIAR)](#simulacro-de-examen-01miar). | siempre activo |
-| Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
+| Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora, «Mis grupos» (grupo de prácticas y franja de examen de cada materia, que filtran la lista, «Lo próximo» y el inicio) y calendario `.ics` suscribible, también solo con tus grupos. | `calendario` |
 | Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
 | Notas | Calculadora de notas: nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
 | Python (opcional) | Pestaña de Laboratorios, tras «Ejercicios»: Python 3.12 en el navegador con Pyodide (numpy, pandas, matplotlib, seaborn, scikit-learn…), plantillas de 01MIAR, archivos propios, `%timeit`, borradores y «Ejecutar paso a paso». Ver [Python (opcional)](#python-opcional). | `python` (apagado) |
@@ -146,10 +146,11 @@ VITE_COMMUNITY_URL=https://… npm run build   # tarjeta «Comunidad» del inici
 ```
 
 `npm run build` hace `vite build` y después `node scripts/build-ics.ts dist`, que añade `calendario.ics`,
-`calendario-<materia>.ics` y `calendario.json`; `scripts/vendor-pyodide.ts`, que solo hace algo con Python encendido; y
+`calendario-<materia>.ics`, los `.ics` filtrados por grupo y franja (ver [Calendario suscribible](#calendario-suscribible))
+y `calendario.json`; `scripts/vendor-pyodide.ts`, que solo hace algo con Python encendido; y
 `scripts/check-python.ts`, que comprueba que Pyodide no está en el chunk de entrada (y que no hay nada de Python si está
 apagado). El resultado es una carpeta estática (unos 3,6 MB, con las fuentes de KaTeX y los iconos; unos 113 MB con
-Python) que se sirve con cualquier servidor web.
+Python; más unos 2 MB de `.ics` filtrados, que no se precargan) que se sirve con cualquier servidor web.
 
 ### Instalable y sin conexión
 
@@ -430,6 +431,28 @@ Calendar, Apple y Outlook, y «Descargar .ics» para una importación puntual. L
 Europe/Madrid, `TZID`, `UID` estables (`<id>@ia-labs-comunidad`), `DTSTAMP` y `SEQUENCE`. No llevan URL, descripciones
 ni asistentes.
 
+### Mis grupos y `.ics` filtrados
+
+En «Mis grupos» cada persona elige, por materia, su grupo de prácticas (Todos, G1, G2, G3) y su franja de examen
+(Todas, F1, F2). Solo aparecen los grupos y franjas que tienen los eventos de esa materia. La elección filtra la lista,
+«Lo próximo», el aviso de cambio de hora y el «Próximo» del inicio; los eventos sin grupo ni franja se ven siempre. Se
+guarda en la clave `pref/calGroups` del almacén (`{ "<materia>": { "grupo": "G2", "franja": "F1" } }`) y viaja en
+«Exportar mis datos». Un valor desconocido se lee como «Todos» / «Todas». Mientras no se elija nada, cada materia toma
+la elección global de antes (`pref/calGroup` y `pref/calSlot`, que se siguen aceptando al importar una copia).
+
+El build genera además un `.ics` estático por elección:
+
+- por materia: `calendario-<materia>-<G1|G2|G3|todos>-<F1|F2|todas>.ics` (11 por materia);
+- de todas las materias, si hay como mucho 200 combinaciones: `calendario-todas-01MIAR-G2-F1-02MIAR-todos-todas.ics`
+  (las materias por orden de código; hoy 143). Si hubiera más, solo los de cada materia.
+
+«Todos / Todas» no genera fichero: es el `.ics` de siempre, que se mantiene para quien ya está suscrito. Con
+`CALENDAR_ICS_KEY` todos llevan la clave detrás de `calendario` y siguen entrando en la regla
+`calendario[A-Za-z0-9-]*\.ics`. `calendario.json` los describe en `filtrados` (`file`, `materia` o `"todas"`, y la
+`seleccion` de cada materia), y «Suscribirme» enseña la URL de la elección actual: «Todas las materias con mis grupos»
+y una por materia. Son calendarios fijos: si cambias de grupo, hay que suscribirse a la URL nueva. El `UID` y el
+`SEQUENCE` de un evento son los mismos en todos los ficheros.
+
 ### Feed externo opcional (`CALENDAR_ICS_URL`)
 
 Puedes fusionar un feed iCalendar externo con el calendario de `content/`. Es una variable **solo de build**:
@@ -468,11 +491,14 @@ subdominio (gratis hasta 50 usuarios):
 5. **Excepción para el calendario (enlace con clave):** Google Calendar descarga las suscripciones desde sus
    servidores y no puede pasar por Access ni por ningún control propio del servidor. No abras `/calendario*` a todo el
    mundo: compila con una clave larga, por ejemplo `CALENDAR_ICS_KEY=$(openssl rand -hex 24) npm run build`. Los
-   ficheros se llamarán `calendario-<clave>.ics` y `calendario-<clave>-<materia>.ics`, y ya no existirá
+   ficheros se llamarán `calendario-<clave>.ics`, `calendario-<clave>-<materia>.ics` y los filtrados
+   (`calendario-<clave>-<materia>-<grupo>-<franja>.ics` y `calendario-<clave>-todas-….ics`), y ya no existirá
    `calendario.ics`. Después:
    - en Cloudflare Access, crea una aplicación *Self-hosted* con política **Bypass** solo para esas rutas exactas;
    - si el servidor tiene además su propio control de acceso (por ejemplo, un script que comprueba el pase de Access en
      cada petición), añade una excepción **solo para esos nombres exactos**.
+   - con los `.ics` filtrados son muchos ficheros (hoy 168): en vez de nombre a nombre, la regla puede ser el prefijo
+     `/calendario-<clave>` seguido de `[A-Za-z0-9-]*\.ics`. Sin la clave nadie adivina ningún nombre.
 
    La app muestra esos enlaces en «Suscribirme» únicamente a quien ya ha entrado, porque los lee de `calendario.json`,
    que sigue protegido. Si la clave se filtra, genera otra y vuelve a compilar: los enlaces antiguos dejan de existir y

@@ -1,6 +1,17 @@
-import { CalendarClock, Copy, Download, Info, Rss, TriangleAlert } from "lucide-react";
+import { CalendarClock, Copy, Download, Info, Rss, TriangleAlert, UsersRound } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
-import { applyFilters, byWeek, dstNotice, nextClass, nextDeadline, withTimes, type Filters, type TimedEvent } from "../../../shared/calendar/model.ts";
+import {
+  ALL_CHOICE,
+  applyGroupPrefs,
+  filteredFeeds,
+  isAllChoice,
+  pickFeed,
+  type FilteredFeed,
+  type GroupChoice,
+  type GroupPrefs,
+  type SubjectGroups,
+} from "../../../shared/calendar/groups.ts";
+import { applyFilters, byWeek, dstNotice, nextClass, nextDeadline, withTimes, type TimedEvent } from "../../../shared/calendar/model.ts";
 import { civilDate, dayShift, diffFromMadrid, ES, fmtDay, fmtDiff, fmtTime, formatCountdown, isValidZone } from "../../../shared/calendar/time.ts";
 import { EVENT_TYPE_LABELS, EVENT_TYPES, type EventType } from "../../../shared/calendar/types.ts";
 import { subjectLabel } from "../../../shared/courses/subjects.ts";
@@ -12,6 +23,7 @@ import { t } from "../../i18n/index.ts";
 import { setKv, useKv } from "../../lib/kv-store.ts";
 import { useNow } from "../../lib/use-now.ts";
 import { useEvents, type Subscription } from "./events.ts";
+import { useGroupPrefs } from "./use-groups.ts";
 import { allZones, CITIES, detectZone, zoneLabel } from "./zones.ts";
 
 const selectClass = "min-h-11 rounded-md border border-border bg-raised px-3 text-fg";
@@ -125,11 +137,40 @@ function ZonePicker({ tz, onChange }: { tz: string; onChange: (tz: string) => vo
   );
 }
 
-function SubscribeDialog({ materias, subs }: { materias: string[]; subs: Subscription[] | null }) {
+/** «(G2, F1)» o «(todos los grupos)»: lo que filtra una elección. */
+function choiceText(c: GroupChoice | undefined): string {
+  if (isAllChoice(c)) return "todos los grupos";
+  return [c!.grupo === "todos" ? null : c!.grupo, c!.franja === "todas" ? null : c!.franja].filter(Boolean).join(", ");
+}
+
+function SubscribeDialog({
+  materias,
+  subs,
+  feeds,
+  options,
+  prefs,
+}: {
+  materias: string[];
+  subs: Subscription[] | null;
+  feeds: FilteredFeed[] | null;
+  options: SubjectGroups[];
+  prefs: GroupPrefs;
+}) {
   const list: Subscription[] = subs ?? [
     { label: "Todas las materias", file: "calendario.ics" },
-    ...materias.map((m) => ({ label: subjectLabel(m), file: `calendario-${m}.ics` })),
+    ...materias.map((m) => ({ label: m, file: `calendario-${m}.ics` })),
   ];
+  // Sin calendario.json (desarrollo), los nombres sin clave que generaría el build.
+  const feedList = useMemo(() => feeds ?? (subs ? [] : filteredFeeds(options, "calendario")), [feeds, subs, options]);
+  const unfiltered = (m: string) => (m === "todas" ? list[0]?.file : list.find((x) => x.file.endsWith(`-${m}.ics`))?.file) ?? null;
+  const filtering = Object.values(prefs).some((c) => !isAllChoice(c));
+  const mine = [
+    { key: "todas", label: "Todas las materias con mis grupos", materia: "todas" },
+    ...materias.map((m) => ({ key: m, label: `${subjectLabel(m)} (${choiceText(prefs[m])})`, materia: m })),
+  ].map((x) => {
+    const pick = pickFeed(feedList, x.materia, prefs);
+    return { ...x, file: pick.kind === "feed" ? pick.file : pick.kind === "unfiltered" ? unfiltered(x.materia) : null };
+  });
   const base = typeof window === "undefined" ? "" : new URL(import.meta.env.BASE_URL, window.location.origin).toString();
   const url = (file: string) => `${base}${file}`;
   const [copied, setCopied] = useState<string | null>(null);
@@ -141,21 +182,34 @@ function SubscribeDialog({ materias, subs }: { materias: string[]; subs: Subscri
       setCopied(null);
     }
   };
-  const Row = ({ label, file }: { label: string; file: string }) => (
+  const Row = ({ label, file }: { label: string; file: string | null }) => (
     <li className="flex flex-col gap-1">
       <span className="text-[14px] font-semibold">{label}</span>
-      <code className="mono break-all rounded-md bg-sunken p-2 text-[14px]">{url(file)}</code>
-      <span className="flex flex-wrap gap-2">
-        <Button onClick={() => void copy(url(file))}>
-          <Copy size={16} aria-hidden="true" />
-          {copied === url(file) ? "Copiada" : "Copiar URL"}
-        </Button>
-        <a className="inline-flex min-h-11 items-center gap-2 rounded-md px-4 text-[14px] font-semibold hover:bg-sunken" href={url(file)} download>
-          <Download size={16} aria-hidden="true" />
-          Descargar .ics
-        </a>
-      </span>
+      {file ? (
+        <>
+          <code className="mono break-all rounded-md bg-sunken p-2 text-[14px]">{url(file)}</code>
+          <span className="flex flex-wrap gap-2">
+            <Button onClick={() => void copy(url(file))}>
+              <Copy size={16} aria-hidden="true" />
+              {copied === url(file) ? "Copiada" : "Copiar URL"}
+            </Button>
+            <a className="inline-flex min-h-11 items-center gap-2 rounded-md px-4 text-[14px] font-semibold hover:bg-sunken" href={url(file)} download>
+              <Download size={16} aria-hidden="true" />
+              Descargar .ics
+            </a>
+          </span>
+        </>
+      ) : (
+        <span className="text-[14px] text-muted">No hay un calendario con esta combinación. Suscríbete a cada materia.</span>
+      )}
     </li>
+  );
+  const all = (
+    <ul className="flex flex-col gap-3">
+      {list.map((x) => (
+        <Row key={x.file} label={subjectLabel(x.label)} file={x.file} />
+      ))}
+    </ul>
   );
   return (
     <Dialog>
@@ -165,17 +219,40 @@ function SubscribeDialog({ materias, subs }: { materias: string[]; subs: Subscri
           Suscribirme
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[calc(100dvh-32px)] overflow-y-auto">
         <DialogTitle>Suscribirme al calendario</DialogTitle>
         <DialogDescription>
           Añade el calendario a tu aplicación con la URL de suscripción: se actualizará solo. Las horas se ven en la zona de tu
           dispositivo.
         </DialogDescription>
-        <ul className="flex flex-col gap-3">
-          {list.map((x) => (
-            <Row key={x.file} label={x.label} file={x.file} />
-          ))}
-        </ul>
+        {filtering ? (
+          <>
+            <section aria-labelledby="sub-mine" className="flex flex-col gap-3">
+              <h3 id="sub-mine" className="text-[16px] font-semibold">
+                Con mis grupos
+              </h3>
+              <p className="text-[14px] text-muted">
+                Cada URL es un calendario fijo. Si cambias de grupo o de franja, vuelve aquí y suscríbete a la URL nueva.
+              </p>
+              <ul className="flex flex-col gap-3">
+                {mine.map((x) => (
+                  <Row key={x.key} label={x.label} file={x.file} />
+                ))}
+              </ul>
+            </section>
+            <details className="text-[14px]">
+              <summary className="flex min-h-11 cursor-pointer items-center">Con todos los grupos</summary>
+              {all}
+            </details>
+          </>
+        ) : (
+          <>
+            {options.length > 0 ? (
+              <p className="text-[14px] text-muted">Elige tu grupo en «Mis grupos» para suscribirte solo a lo tuyo.</p>
+            ) : null}
+            {all}
+          </>
+        )}
         <details className="text-[14px]">
           <summary className="flex min-h-11 cursor-pointer items-center">Cómo suscribirse</summary>
           <ul className="flex list-disc flex-col gap-1 pl-6">
@@ -193,6 +270,64 @@ function SubscribeDialog({ materias, subs }: { materias: string[]; subs: Subscri
   );
 }
 
+function MyGroups({
+  options,
+  prefs,
+  onChange,
+}: {
+  options: SubjectGroups[];
+  prefs: GroupPrefs;
+  onChange: (materia: string, choice: GroupChoice) => void;
+}) {
+  if (options.length === 0) return null;
+  return (
+    <section aria-labelledby="cal-grupos" className="flex flex-col gap-3 rounded-lg border border-border bg-raised p-3">
+      <h2 id="cal-grupos" className="flex items-center gap-2 text-[20px]">
+        <UsersRound size={20} strokeWidth={1.75} aria-hidden="true" />
+        Mis grupos
+      </h2>
+      <p className="text-[14px] text-muted">
+        Solo verás las prácticas de tu grupo y los exámenes de tu franja. Las clases y entregas comunes se ven siempre.
+      </p>
+      {options.map((s) => {
+        const c = prefs[s.materia] ?? ALL_CHOICE;
+        const id = `cal-grupos-${s.materia}`;
+        return (
+          <div key={s.materia} role="group" aria-labelledby={id} className="flex flex-wrap items-end gap-3 border-t border-border pt-3">
+            <span id={id} className="w-full font-semibold">
+              {subjectLabel(s.materia)}
+            </span>
+            {s.grupos.length > 0 ? (
+              <Labeled label="Grupo de prácticas">
+                <select className={selectClass} value={c.grupo} onChange={(e) => onChange(s.materia, { ...c, grupo: e.target.value as GroupChoice["grupo"] })}>
+                  <option value="todos">Todos</option>
+                  {s.grupos.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+              </Labeled>
+            ) : null}
+            {s.franjas.length > 0 ? (
+              <Labeled label="Franja de examen">
+                <select className={selectClass} value={c.franja} onChange={(e) => onChange(s.materia, { ...c, franja: e.target.value as GroupChoice["franja"] })}>
+                  <option value="todas">Todas</option>
+                  {s.franjas.map((f) => (
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
+                  ))}
+                </select>
+              </Labeled>
+            ) : null}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 function Labeled({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="flex flex-col gap-1 text-[14px] font-semibold">
@@ -203,20 +338,19 @@ function Labeled({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export function CalendarPage() {
-  const { events: raw, subs } = useEvents();
+  const { events: raw, subs, feeds } = useEvents();
   const events = useMemo(() => withTimes(raw), [raw]);
   const now = useNow(30_000);
   const storedTz = useKv<string | null>(keys.pref.timeZone, null);
   const tz = storedTz && isValidZone(storedTz) ? storedTz : detectZone();
-  const grupo = useKv<Filters["grupo"]>(keys.pref.calGroup, "todos");
-  const franja = useKv<Filters["franja"]>(keys.pref.calSlot, "todas");
+  const { options, prefs, setChoice } = useGroupPrefs(raw);
   const [materia, setMateria] = useState<string>("todas");
   const [tipo, setTipo] = useState<EventType | "todos">("todos");
   const [pasados, setPasados] = useState(false);
 
   const materias = useMemo(() => [...new Set(raw.map((e) => e.materia))].sort(), [raw]);
-  const personal = useMemo(() => applyFilters(events, { materia: "todas", tipo: "todos", grupo, franja }), [events, grupo, franja]);
-  const filtered = useMemo(() => applyFilters(events, { materia, tipo, grupo, franja }), [events, materia, tipo, grupo, franja]);
+  const personal = useMemo(() => applyGroupPrefs(events, prefs), [events, prefs]);
+  const filtered = useMemo(() => applyFilters(personal, { materia, tipo, grupo: "todos", franja: "todas" }), [personal, materia, tipo]);
   const visible = pasados ? filtered : filtered.filter((e) => (e.endMs ?? e.startMs) > now);
   const weeks = byWeek(visible);
   const notice = dstNotice(personal, tz, now);
@@ -274,12 +408,14 @@ export function CalendarPage() {
         </div>
       </section>
 
+      <MyGroups options={options} prefs={prefs} onChange={setChoice} />
+
       <section aria-labelledby="cal-list" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="cal-list" className="text-[20px]">
             Por semanas
           </h2>
-          <SubscribeDialog materias={materias} subs={subs} />
+          <SubscribeDialog materias={materias} subs={subs} feeds={feeds} options={options} prefs={prefs} />
         </div>
         <div className="flex flex-wrap gap-3">
           <Labeled label="Materia">
@@ -300,21 +436,6 @@ export function CalendarPage() {
                   {EVENT_TYPE_LABELS[x]}
                 </option>
               ))}
-            </select>
-          </Labeled>
-          <Labeled label="Mi grupo de prácticas">
-            <select className={selectClass} value={grupo} onChange={(e) => setKv(keys.pref.calGroup, e.target.value)}>
-              <option value="todos">Todos</option>
-              <option value="G1">G1</option>
-              <option value="G2">G2</option>
-              <option value="G3">G3</option>
-            </select>
-          </Labeled>
-          <Labeled label="Mi franja de examen">
-            <select className={selectClass} value={franja} onChange={(e) => setKv(keys.pref.calSlot, e.target.value)}>
-              <option value="todas">Todas</option>
-              <option value="F1">F1</option>
-              <option value="F2">F2</option>
             </select>
           </Labeled>
           <label className="flex min-h-11 items-center gap-2 self-end text-[14px]">

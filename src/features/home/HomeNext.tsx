@@ -1,11 +1,12 @@
 // «Próximo en el calendario» del inicio (módulo calendario): la próxima clase y la próxima entrega, con
-// la hora de España y la de la zona elegida en el calendario, y la cuenta atrás. Respeta el grupo y la
-// franja guardados. Chunk aparte: el calendario solo se carga si el módulo está encendido.
+// la hora de España y la de la zona elegida en el calendario, y la cuenta atrás. Respeta «Mis grupos» (el
+// grupo y la franja de cada materia). Chunk aparte: el calendario solo se carga si el módulo está encendido.
 import { CalendarClock } from "lucide-react";
 import { useMemo } from "react";
 import { Link } from "react-router";
 import { subjectLabel } from "../../../shared/courses/subjects.ts";
-import { applyFilters, nextClass, nextDeadline, withTimes, type Filters, type TimedEvent } from "../../../shared/calendar/model.ts";
+import { applyGroupPrefs } from "../../../shared/calendar/groups.ts";
+import { nextClass, nextDeadline, withTimes, type TimedEvent } from "../../../shared/calendar/model.ts";
 import { ES, fmtDay, fmtTime, formatCountdown, isValidZone } from "../../../shared/calendar/time.ts";
 import { keys } from "../../../shared/keys.ts";
 import { buttonVariants } from "../../components/ui/button.tsx";
@@ -13,6 +14,7 @@ import { t } from "../../i18n/index.ts";
 import { useKv } from "../../lib/kv-store.ts";
 import { useNow } from "../../lib/use-now.ts";
 import { useEvents } from "../calendar/events.ts";
+import { useGroupPrefs } from "../calendar/use-groups.ts";
 import { detectZone, zoneLabel } from "../calendar/zones.ts";
 import { HomeCard } from "./HomeCard.tsx";
 
@@ -54,9 +56,8 @@ export function HomeNext() {
   const now = useNow(30_000);
   const storedTz = useKv<string | null>(keys.pref.timeZone, null);
   const tz = storedTz && isValidZone(storedTz) ? storedTz : detectZone();
-  const grupo = useKv<Filters["grupo"]>(keys.pref.calGroup, "todos");
-  const franja = useKv<Filters["franja"]>(keys.pref.calSlot, "todas");
-  const mine = useMemo(() => applyFilters(events, { materia: "todas", tipo: "todos", grupo, franja }), [events, grupo, franja]);
+  const { prefs } = useGroupPrefs(raw);
+  const mine = useMemo(() => applyGroupPrefs(events, prefs), [events, prefs]);
   return (
     <HomeCard title={t.home.nextTitle} icon={CalendarClock}>
       <NextLine title="Próxima clase" e={nextClass(mine, now)} tz={tz} now={now} />

@@ -90,6 +90,17 @@ describe("inicio", () => {
     expect(within(card).getByRole("link", { name: "Ver el calendario" }).getAttribute("href")).toBe("/calendario");
   });
 
+  it("«Próximo» respeta «Mis grupos» de cada materia", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(Date.UTC(2026, 10, 10, 8, 0)));
+    setKv("pref/calGroups", { "02MIAR": { grupo: "G2", franja: "todas" } });
+    at("/", <HomePage calendar />);
+    const card = await screen.findByRole("region", { name: "Próximo en el calendario" }, { timeout: 5000 });
+    // La práctica de G1 del 10/11 no sale: lo próximo es la Sesión 6.
+    expect(card.textContent).toContain("02MIAR · Matemáticas · Sesión 6");
+    expect(card.textContent).not.toContain("(G1)");
+  });
+
   it("la ranura «Comunidad» no pinta nada por defecto ni con una dirección que no sea https", () => {
     at("/", <HomePage community={<CommunityCard href={undefined} />} />);
     expect(screen.queryByRole("region", { name: "Comunidad" })).toBeNull();

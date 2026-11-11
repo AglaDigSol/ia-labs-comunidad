@@ -2,22 +2,27 @@
 // no hay, los de content/. Los usan la página del calendario y «Próximo» del inicio.
 import { useEffect, useState } from "react";
 import { CALENDARIO } from "../../../content/calendario/index.ts";
+import { FilteredFeedSchema, type FilteredFeed } from "../../../shared/calendar/groups.ts";
 import { CalendarEventSchema, type CalendarEvent } from "../../../shared/calendar/types.ts";
 
 export type Subscription = { label: string; file: string };
 const SUB_FILE_RE = /^calendario[A-Za-z0-9-]*\.ics$/;
 
-/** Eventos del build (dist/calendario.json, que puede incluir el feed externo) o, si no hay, los de content/. */
-export function useEvents(): { events: CalendarEvent[]; subs: Subscription[] | null } {
+/**
+ * Eventos del build (dist/calendario.json, que puede incluir el feed externo) o, si no hay, los de content/.
+ * `subs` son los .ics sin filtrar y `feeds` los filtrados por grupo y franja (null: no hay calendario.json).
+ */
+export function useEvents(): { events: CalendarEvent[]; subs: Subscription[] | null; feeds: FilteredFeed[] | null } {
   const [events, setEvents] = useState<CalendarEvent[]>(CALENDARIO.eventos);
   const [subs, setSubs] = useState<Subscription[] | null>(null);
+  const [feeds, setFeeds] = useState<FilteredFeed[] | null>(null);
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         const res = await fetch(`${import.meta.env.BASE_URL}calendario.json`, { cache: "no-cache" });
         if (!res.ok) return;
-        const body = (await res.json()) as { version?: unknown; eventos?: unknown; suscripciones?: unknown };
+        const body = (await res.json()) as { version?: unknown; eventos?: unknown; suscripciones?: unknown; filtrados?: unknown };
         if (body.version !== 1 || !Array.isArray(body.eventos)) return;
         const parsed = body.eventos.map((e) => CalendarEventSchema.safeParse(e));
         if (alive && parsed.length > 0 && parsed.every((p) => p.success)) setEvents(parsed.map((p) => p.data!));
@@ -28,7 +33,13 @@ export function useEvents(): { events: CalendarEvent[]; subs: Subscription[] | n
             !!x && typeof x === "object" && typeof (x as Subscription).label === "string" &&
             typeof (x as Subscription).file === "string" && SUB_FILE_RE.test((x as Subscription).file),
         );
-        if (alive && ok.length > 0 && ok.length === list.length) setSubs(ok);
+        if (alive && ok.length > 0 && ok.length === list.length) {
+          setSubs(ok);
+          // .ics filtrados (desde «Mis grupos»). Un calendario.json sin ellos o con alguno raro: ninguno.
+          const raw = Array.isArray(body.filtrados) ? body.filtrados : [];
+          const fs = raw.map((x) => FilteredFeedSchema.safeParse(x));
+          setFeeds(fs.every((p) => p.success) ? fs.map((p) => p.data!) : []);
+        }
       } catch {
         // sin red o sin fichero (desarrollo): se usan los eventos de content/
       }
@@ -37,5 +48,5 @@ export function useEvents(): { events: CalendarEvent[]; subs: Subscription[] | n
       alive = false;
     };
   }, []);
-  return { events, subs };
+  return { events, subs, feeds };
 }
