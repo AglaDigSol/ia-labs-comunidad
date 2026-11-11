@@ -9,7 +9,7 @@ import { seedFromKey } from "../../exercises/choice.ts";
 import {
   alphaVecText,
   detRulesAnswer,
-  detRulesDets,
+  detRulesSolution,
   LINALG_DET_RULES,
   LINALG_DETERMINANT,
   LINALG_INDEPENDENCE,
@@ -18,6 +18,7 @@ import {
   LINALG_ROUCHE_CHOICE,
   LINALG_TENSOR_VOCAB,
   LINALG_THEORY,
+  normsExplanation,
   normsQuestion,
   roucheChoiceQuestion,
   tensorVocabQuestion,
@@ -28,7 +29,7 @@ import {
   type NamedQty,
 } from "../../exercises/linalg.ts";
 import { examAdapter, type ExamAdapter } from "../adapter.ts";
-import { examMath, examP, intMatrixTex, intMatrixText, intText } from "../blocks.ts";
+import { examList, examMath, examP, intMatrixTex, intMatrixText, intText } from "../blocks.ts";
 import type { ExamNumericFormat } from "../types.ts";
 
 /** Formato de un valor exacto: entero si lo es; si no, dos decimales. */
@@ -53,7 +54,6 @@ const detRulesAdapter = examAdapter({
     const value = detRulesAnswer(inst);
     if (!value) return null;
     const g = inst.given;
-    const dets = detRulesDets(inst);
     const given =
       g.kind === "det"
         ? [examMath(`\\det A = ${g.A}${g.B !== null ? `,\\quad \\det B = ${g.B}` : ""}`, `determinante de A igual a ${intText(g.A)}${g.B !== null ? `; determinante de B igual a ${intText(g.B)}` : ""}`)]
@@ -68,7 +68,7 @@ const detRulesAdapter = examAdapter({
       format: fmtOf(value),
       label: "Determinante",
       solution: [
-        examP(`det A = ${fracText(dets.A)}${g.B !== null ? `, det B = ${fracText(dets.B)}` : ""}. Con det(kA) = kⁿ·det A (n = ${inst.n}), det(AB) = det A·det B, det(A⁻¹) = 1/det A y det(Aᵀ) = det A:`),
+        examP(detRulesSolution(inst)),
         examMath(`\\det\\left(${detExprTex(inst.expr)}\\right) = ${value.d === 1n ? value.n : `\\frac{${value.n}}{${value.d}}`}`, `determinante de ${detExprText(inst.expr)} igual a ${fracText(value)}`),
       ],
     };
@@ -135,7 +135,7 @@ const normsAdapter = examAdapter({
       stem: [examP(`Sean u = ${alphaVecText(inst.u)}${inst.v ? ` y v = ${alphaVecText(inst.v)}` : ""}.`), examMath(condTex, condText)],
       prompt: `¿Para cuántos valores ${domain} se cumple${inst.conds.length > 1 ? "n las condiciones" : ""}?`,
       question: normsQuestion(inst),
-      solution: [examP("Cada condición es una ecuación (o inecuación) en α: u·v es la suma de productos, ‖u‖₁ la suma de valores absolutos, ‖u‖₂² la de cuadrados y ‖u‖∞ el mayor valor absoluto.")],
+      solution: [examList(normsExplanation(inst).map((t) => [t]))],
     };
   },
 });

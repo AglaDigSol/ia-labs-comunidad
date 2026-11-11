@@ -53,9 +53,13 @@ describe("Σm y ΠM", () => {
     expect(screen.getByText("Σm correcto.")).toBeTruthy();
     expect(screen.getByText("¡Correcto! Tus 2 respuestas están bien.")).toBeTruthy();
 
-    // Formas canónicas: no canónica, de otra función y correcta.
+    // Formas canónicas: equivalente pero no canónica, no canónica, de otra función y correcta.
     const sop = screen.getByLabelText("Suma de mintérminos: f =");
     fireEvent.change(sop, { target: { value: "x′y + xz" } });
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(screen.getAllByText("Equivalente, pero se pide la forma canónica (un término por mintérmino).").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/de 3 respuestas correctas/)).toBeNull();
+    fireEvent.change(sop, { target: { value: "x′y + xy" } });
     fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
     expect(screen.getByText("Cada producto debe llevar las 3 variables (x, y, z) una sola vez, con o sin ′.")).toBeTruthy();
     fireEvent.change(sop, { target: { value: "x′yz′ + x′yz + xy′z + xy′z′" } });

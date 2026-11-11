@@ -7,8 +7,8 @@
 import { Check, Lightbulb, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
+  canonicalFormVerdict,
   canonicalProduct,
-  canonicalShape,
   canonicalSum,
   compareIndexList,
   indexListText,
@@ -41,7 +41,7 @@ import { FormulaField } from "../logic/FormulaInput.tsx";
 import { MAX_EXPR } from "./boole-storage.ts";
 
 type Kind = "sop" | "pos";
-type Verdict = { ok: boolean; text: string } | null;
+type Verdict = { ok: boolean; text: string; equivalent?: true } | null;
 const cell = "border border-border px-2 py-1 text-center font-mono text-[14px]";
 
 const SUB = "₀₁₂₃₄₅₆₇₈₉";
@@ -159,33 +159,7 @@ export function CanonicalPractice({
       return null;
     }
     setError(null);
-    const shape = canonicalShape(r.expr, vars, kind);
-    const termName = kind === "sop" ? "mintérmino" : "maxtérmino";
-    if (!shape.ok) {
-      const texts: Record<typeof shape.reason, string> = {
-        "not-two-level": logica
-          ? kind === "sop"
-            ? "No es una disyunción de conjunciones: escribe mintérminos unidos con ∨."
-            : "No es una conjunción de disyunciones: escribe maxtérminos, entre paréntesis, unidos con ∧."
-          : kind === "sop"
-            ? "No es una suma de productos: escribe mintérminos sumados con ⊕."
-            : "No es un producto de sumas: escribe maxtérminos, entre paréntesis, multiplicados con ⊙.",
-        "incomplete-term": `Cada ${kind === "sop" ? (logica ? "conjunción" : "producto") : logica ? "disyunción" : "suma"} debe llevar las ${n} variables (${vars.join(", ")}) una sola vez, con o sin ′.`,
-        "repeated-term": `Hay un ${termName} repetido.`,
-      };
-      return { ok: false, text: texts[shape.reason] };
-    }
-    const c = compareIndexList(shape.indices, kind === "sop" ? ones : zeros, dc);
-    if (c.ok) {
-      const name = logica ? (kind === "sop" ? "Forma normal disyuntiva" : "Forma normal conjuntiva") : kind === "sop" ? "Forma canónica disyuntiva" : "Forma canónica conjuntiva";
-      return { ok: true, text: `${name} correcta.` };
-    }
-    const wrong = [...c.extra, ...c.dontCares];
-    const parts = [logica ? "Tiene forma normal, pero no es la de φ." : "Tiene forma canónica, pero no es la de f."];
-    const sym = kind === "sop" ? "m" : "M";
-    if (wrong.length > 0) parts.push(`${wrong.length === 1 ? `Sobra ${sym}${sub(wrong[0]!)}` : `Sobran ${wrong.map((k) => sym + sub(k)).join(", ")}`}.`);
-    if (c.missing > 0) parts.push(c.missing === 1 ? `Te falta 1 ${termName}.` : `Te faltan ${c.missing} ${termName}s.`);
-    return { ok: false, text: parts.join(" ") };
+    return canonicalFormVerdict(r.expr, vars, kind, vector, notation);
   };
 
   const check = () => {
@@ -373,7 +347,12 @@ export function CanonicalPractice({
               : `¡Correcto! ${answered.length === 1 ? "Tu respuesta está bien" : `Tus ${answered.length} respuestas están bien`}.`}
           </p>
         ) : (
-          <p className="font-semibold text-warn">{`${answered.filter((v) => v!.ok).length} de ${answered.length} respuestas correctas.`}</p>
+          <p className="font-semibold text-warn">
+            {/* Si lo único que falla es la forma (equivalente, pero no canónica), se dice eso y no «x de y». */}
+            {answered.every((v) => v!.ok || v!.equivalent)
+              ? answered.find((v) => !v!.ok)!.text
+              : `${answered.filter((v) => v!.ok).length} de ${answered.length} respuestas correctas.`}
+          </p>
         )}
       </div>
 

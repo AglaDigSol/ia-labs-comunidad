@@ -9,9 +9,10 @@ import { matrixInverse, matrixRank, rref } from "../linalg/rref.ts";
 import { analyzeSystem, splitAugmented, type SystemKind } from "../linalg/systems.ts";
 import { tensorOpResult, type Shape, type TensorOp } from "../linalg/tensors.ts";
 import { claimClass, CLAIM_CLASSES, DIAGONAL_WHY, diagonalClaimText, diagonalClaimTruth, type DiagonalClaim } from "../linalg/claims.ts";
-import { countAlpha, detOfExpr, permutationDeterminant, type AlphaCondition, type AlphaEntry, type AlphaQty, type DetExpr } from "../linalg/theory.ts";
+import { countAlpha, detExprText, detOfExpr, permutationDeterminant, type AlphaCondition, type AlphaEntry, type AlphaQty, type DetExpr } from "../linalg/theory.ts";
 import { frac, type Frac } from "../rational.ts";
 import { seedFromKey, type ChoiceOption, type ChoiceQuestion } from "./choice.ts";
+import { pickHints, type TaggedHint } from "./hints.ts";
 import { createRng, generateUntil, rngFor, type Rng } from "./random.ts";
 import type { ExerciseLevel, ExerciseType } from "./types.ts";
 
@@ -485,6 +486,73 @@ function detRulesTemplate(rng: Rng, level: ExerciseLevel): DetRulesInstance {
   return { n, expr: { k: rng.pick([-1, 2, -2, 1]), factors: rng.chance(0.5) ? factors : [{ m: "A", pow: rng.pick([1, -1, 2]) }] }, given: { kind: "matriz", A: permLike(rng, n), B: rng.pick([-2, -1, 2, 3]) } };
 }
 
+const SUP: Record<string, string> = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+const supText = (p: number) => [...String(p)].map((c) => SUP[c] ?? c).join("");
+const signText = (x: number | bigint) => String(x).replace("-", "−");
+const fracPlain = (x: Frac) => `${signText(x.n)}${x.d === 1n ? "" : `/${x.d}`}`;
+/** Factor de un producto: entre paréntesis si es negativo o una fracción. */
+const fracFactor = (x: Frac) => (x.n < 0n || x.d !== 1n ? `(${fracPlain(x)})` : fracPlain(x));
+
+/** Lo que hay en la expresión: «escalar», «producto» (dos matrices), «inversa», «traspuesta», «cuadrado». */
+export function detRulesTokens(inst: DetRulesInstance): string[] {
+  const e = inst.expr;
+  const out = new Set<string>();
+  if (e.k !== 1) out.add("escalar");
+  if (e.factors.length > 1) out.add("producto");
+  for (const f of e.factors) {
+    if (f.pow < 0) out.add("inversa");
+    if (f.T) out.add("traspuesta");
+    if (Math.abs(f.pow) >= 2) out.add("cuadrado");
+  }
+  out.add(inst.given.kind);
+  return [...out];
+}
+
+/** Pistas: la regla de cada operación que aparece en la expresión. */
+export function detRulesHints(inst: DetRulesInstance): string[] {
+  const hints: TaggedHint[] = [
+    { needs: ["escalar"], text: `det(kA) = kⁿ·det A: el número sale elevado a n = ${inst.n} (una vez por fila).` },
+    { needs: ["producto"], text: "det(AB) = det A·det B." },
+    { needs: ["inversa"], text: "det(A⁻¹) = 1/det A." },
+    { needs: ["traspuesta"], text: "det(Aᵀ) = det A: trasponer no cambia el determinante." },
+    { needs: ["cuadrado"], text: "det(A²) = (det A)²." },
+    { needs: ["autovalores"], text: "Si A es diagonalizable, det A es el producto de sus autovalores (con su multiplicidad)." },
+    {
+      needs: ["matriz"],
+      text: "Con una sola entrada no nula en cada fila y columna, det A = ± el producto de esas entradas: el signo es el de la permutación (cuenta los intercambios de filas para llegar a la diagonal).",
+    },
+    { needs: ["det"], text: "Primero aplica las reglas con letras y al final sustituye los números." },
+  ];
+  return pickHints(hints, detRulesTokens(inst));
+}
+
+/**
+ * La solución: det A (y det B), la expresión con las reglas y con los números, sin factores que valen
+ * 1 (ni el 1ⁿ de k = 1 ni un (det B)² = 1).
+ */
+export function detRulesSolution(inst: DetRulesInstance): string {
+  const dets = detRulesDets(inst);
+  const { k, factors } = inst.expr;
+  const n = inst.n;
+  const value = detRulesAnswer(inst)!;
+  const g = inst.given;
+  const detA = g.kind === "autovalores" ? `det A = ${g.eig.map((l) => (l < 0 ? `(${signText(l)})` : String(l))).join("·")} = ${fracPlain(dets.A)} (producto de los autovalores)` : `det A = ${fracPlain(dets.A)}`;
+  const givenText = `${detA}${g.B !== null ? `, det B = ${fracPlain(dets.B)}` : ""}.`;
+  const symbolic = [
+    ...(k === 1 ? [] : [`${k < 0 ? `(${signText(k)})` : k}${supText(n)}`]),
+    ...factors.map((f) => (f.pow === 1 ? `det ${f.m}` : `(det ${f.m})${supText(f.pow)}`)),
+  ];
+  const values = [...(k === 1 ? [] : [detOfExpr({ k, factors: [] }, n, dets)!]), ...factors.map((f) => detOfExpr({ k: 1, factors: [f] }, n, dets)!)];
+  const shown = values.filter((v) => !(v.n === 1n && v.d === 1n));
+  const numeric = shown.length === 0 ? "1" : shown.map((v, i) => (i === 0 && shown.length === 1 ? fracPlain(v) : fracFactor(v))).join("·");
+  const result = fracPlain(value);
+  const steps = [`det(${detExprText(inst.expr)})`, symbolic.join("·"), ...(numeric === result ? [] : [numeric]), result];
+  // Sin pasos repetidos (det(A²) = (det A)² se queda; «det A = det A» no).
+  const unique = steps.filter((x, i) => i === 0 || x !== steps[i - 1]);
+  const T = factors.some((f) => f.T) ? " (det(Aᵀ) = det A)" : "";
+  return `${givenText} ${unique.join(" = ")}${T}.`;
+}
+
 export const LINALG_DET_RULES: ExerciseType<DetRulesInstance> = {
   id: "algebra-det-propiedades",
   topic: "algebra-lineal",
@@ -619,11 +687,129 @@ export function normsQuestion(inst: Extract<NormsInstance, { kind: "contar" }>):
   const rng = rngOf(inst);
   const others = rng.shuffle(COUNT_OPTIONS.filter((x) => x !== right)).slice(0, 3);
   const label = (x: string) => (x === "infinitos" ? "Infinitos" : x === "1" ? "Exactamente 1" : `Exactamente ${x}`);
-  const values = r.kind === "finito" && r.values.length > 0 ? ` Son α = ${r.values.map((x) => String(Math.round(x * 1e4) / 1e4).replace(".", ",").replace("-", "−")).join(", ")}.` : "";
+  const why = normsExplanation(inst).join(" ");
   return {
     mode: "single",
-    options: [...[right, ...others].sort((a, b) => COUNT_OPTIONS.indexOf(a as never) - COUNT_OPTIONS.indexOf(b as never))].map((x) => opt(`n${x}`, label(x), undefined, x === right, x === right ? `Correcta.${values}` : undefined)),
+    options: [...[right, ...others].sort((a, b) => COUNT_OPTIONS.indexOf(a as never) - COUNT_OPTIONS.indexOf(b as never))].map((x) => opt(`n${x}`, label(x), undefined, x === right, x === right ? `Correcta. ${why}` : undefined)),
   };
+}
+
+/** a·|α| + b·α² + c·α + d, la forma de las cantidades de los enunciados (null si no la tiene). */
+type AlphaPoly = { abs: number; sq: number; lin: number; c: number };
+const P0: AlphaPoly = { abs: 0, sq: 0, lin: 0, c: 0 };
+const padd = (p: AlphaPoly, q: AlphaPoly, s = 1): AlphaPoly => ({ abs: p.abs + s * q.abs, sq: p.sq + s * q.sq, lin: p.lin + s * q.lin, c: p.c + s * q.c });
+
+function qtyPoly(q: NamedQty, u: AlphaEntry[], v: AlphaEntry[] | null): AlphaPoly | null {
+  if (q.k === "num") return { ...P0, c: q.value };
+  if (q.k === "normInf") return null;
+  if (q.k === "dot") {
+    let p = P0;
+    for (let i = 0; i < u.length; i++) {
+      const [c1, a1] = u[i]!;
+      const [c2, a2] = v![i]!;
+      p = padd(p, { abs: 0, sq: a1 * a2, lin: c1 * a2 + c2 * a1, c: c1 * c2 });
+    }
+    return p;
+  }
+  const w = q.of === "u" ? u : v!;
+  let p = P0;
+  for (const [c, a] of w) {
+    if (a !== 0 && c !== 0) return null;
+    p = q.k === "norm1" ? padd(p, a === 0 ? { ...P0, c: Math.abs(c) } : { ...P0, abs: Math.abs(a) }) : padd(p, a === 0 ? { ...P0, c: c * c } : { ...P0, sq: a * a });
+  }
+  return p;
+}
+
+const coefTerm = (k: number, body: string, first: boolean) => {
+  const sign = k < 0 ? (first ? "−" : " − ") : first ? "" : " + ";
+  const m = Math.abs(k);
+  return `${sign}${m === 1 ? "" : m}${body}`;
+};
+function polyText(p: AlphaPoly): string {
+  const parts: string[] = [];
+  for (const [k, body] of [
+    [p.sq, "α²"],
+    [p.abs, "|α|"],
+    [p.lin, "α"],
+  ] as const) {
+    if (k !== 0) parts.push(coefTerm(k, body, parts.length === 0));
+  }
+  if (p.c !== 0 || parts.length === 0) parts.push(parts.length === 0 ? signText(p.c) : `${p.c < 0 ? " − " : " + "}${Math.abs(p.c)}`);
+  return parts.join("");
+}
+
+const NQTY: Record<Exclude<NamedQty["k"], "num">, (of: string) => string> = { dot: () => "u·v", norm1: (o) => `‖${o}‖₁`, norm2sq: (o) => `‖${o}‖₂²`, normInf: (o) => `‖${o}‖∞` };
+const nqText = (q: NamedQty) => (q.k === "num" ? signText(q.value) : NQTY[q.k](q.k === "dot" ? "" : q.of));
+const alphaNum = (x: number) => String(Math.round(x * 1e4) / 1e4).replace(".", ",").replace("-", "−");
+
+/** Una igualdad con una sola clase de término en α (|α|, α² o α), despejada; null si no es así. */
+function isolate(p: AlphaPoly, domain: "nonneg" | "real"): string | null {
+  const only = (["abs", "sq", "lin"] as const).filter((k) => p[k] !== 0);
+  if (only.length === 2 && p.lin === 0) return `con t = |α| ≥ 0 (y α² = t²) es una ecuación de segundo grado en t: solo valen sus raíces t ≥ 0, y ${domain === "nonneg" ? "como α ≥ 0, cada una da α = t" : "cada t > 0 da dos α (t y −t)"}.`;
+  if (only.length !== 1) return null;
+  const k = only[0]!;
+  const r = -p.c / p[k];
+  const body = k === "abs" ? "|α|" : k === "sq" ? "α²" : "α";
+  const head = `${body} = ${alphaNum(r)}`;
+  if (k === "lin") return `${head}${domain === "nonneg" && r < 0 ? ": no vale, porque se pide α ≥ 0" : ""}.`;
+  if (r < 0) return `${head}: imposible, porque ${body} ≥ 0 para todo α.`;
+  if (r === 0) return `${head}: solo α = 0.`;
+  const root = k === "abs" ? r : Math.sqrt(r);
+  return `${head}: α = ${alphaNum(root)} o α = ${alphaNum(-root)}${domain === "nonneg" ? `; con α ≥ 0, solo α = ${alphaNum(root)}` : ""}.`;
+}
+
+/** Explicación del recuento: cada condición escrita en α, despejada si se puede, y la conclusión. */
+export function normsExplanation(inst: Extract<NormsInstance, { kind: "contar" }>): string[] {
+  const out: string[] = [];
+  for (const c of inst.conds) {
+    const l = qtyPoly(c.lhs, inst.u, inst.v);
+    const r = qtyPoly(c.rhs, inst.u, inst.v);
+    const name = `${nqText(c.lhs)} ${c.op} ${nqText(c.rhs)}`;
+    if (c.lhs.k === "normInf") {
+      const w = c.lhs.of === "u" ? inst.u : inst.v!;
+      out.push(`${nqText(c.lhs)} = máx(${w.map(([k0, a]) => (a === 0 ? String(Math.abs(k0)) : `|${entryText([k0, a])}|`)).join(", ")}), así que ${name} pide que ese máximo valga ${nqText(c.rhs)}.`);
+      continue;
+    }
+    if (!l || !r) {
+      out.push(`${name}: escríbela como una ecuación en α.`);
+      continue;
+    }
+    const diff = padd(l, r, -1);
+    const eq = `${polyText(diff)} ${c.op} 0`;
+    const expanded = `${polyText(l)} ${c.op} ${polyText(r)}`;
+    const solved = c.op === "=" ? isolate(diff, inst.domain) : null;
+    out.push(`${name} es ${expanded}${expanded === eq ? "" : `, es decir, ${eq}`}${solved ? `; ${solved}` : "."}`);
+  }
+  const n = normsCount(inst);
+  out.push(
+    n.kind === "infinitos"
+      ? "Se cumple en todo un intervalo de α: hay infinitos valores."
+      : n.count === 0
+        ? "Ningún valor de α cumple todo lo que se pide: la respuesta es 0."
+        : `Lo cumple${n.count === 1 ? "" : "n"} α = ${n.values.map(alphaNum).join(", ")}: ${n.count === 1 ? "un valor" : `${n.count} valores`}.`,
+  );
+  return out;
+}
+
+const NORMS_HINTS: readonly TaggedHint[] = [
+  { needs: ["dot"], text: "u·v es la suma de los productos componente a componente: escríbelo como una expresión en α." },
+  { needs: ["norm1"], text: "‖u‖₁ es la suma de los valores absolutos: |α| más los de las componentes fijas." },
+  { needs: ["norm2sq"], text: "‖u‖₂² es la suma de los cuadrados (sin raíz)." },
+  { needs: ["normInf"], text: "‖u‖∞ es el mayor valor absoluto de las componentes." },
+  { needs: ["abs"], text: "Con |α| salen dos casos (α y −α); si solo valen α ≥ 0, quédate con los no negativos. |α| nunca es negativo." },
+  { needs: ["normInf"], text: "‖u‖∞ = c se cumple para todo un intervalo de α si otra componente ya vale c en valor absoluto: entonces hay infinitos." },
+  { needs: ["desigualdad"], text: "Una desigualdad no da valores sueltos: se queda con los α de la igualdad que la cumplen." },
+];
+
+/** Pistas de «¿para cuántos α?»: solo las de las cantidades que hay en las condiciones. */
+export function normsHints(inst: Extract<NormsInstance, { kind: "contar" }>): string[] {
+  const t = new Set<string>();
+  for (const c of inst.conds) {
+    for (const q of [c.lhs, c.rhs]) if (q.k !== "num") t.add(q.k);
+    if (c.op !== "=") t.add("desigualdad");
+  }
+  if (t.has("norm1") || t.has("normInf")) t.add("abs");
+  return pickHints(NORMS_HINTS, t);
 }
 
 const entryText = ([c, a]: AlphaEntry) => (a === 0 ? String(c) : `${c === 0 ? "" : `${c} + `}${a === 1 ? "" : a === -1 ? "−" : a}α`).replace(/-/g, "−");

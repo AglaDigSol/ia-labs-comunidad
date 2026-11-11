@@ -16,17 +16,23 @@ import {
   bisectionOf,
   calcExpr,
   chainAnswer,
+  chainSolution,
   criticalAskText,
+  criticalChoiceHints,
   criticalChoiceQuestion,
   curveTex,
+  domainHints,
   domainQuestion,
+  lhopitalHints,
   lhopitalOf,
   niceTex,
   niceText,
   partsIntegral,
   partsQuestion,
   PIECEWISE_ASK,
+  piecewiseHints,
   piecewiseQuestion,
+  piecewiseSolution,
   type CalcBasinInstance,
   type CalcBisectionInstance,
   type CalcChainInstance,
@@ -47,6 +53,17 @@ import { FnTex, Hints, NumberField, PracticeBox, Status, Verdict } from "./commo
 
 type Props<I> = { instance: I; onSolved?: () => void };
 const key = (x: unknown) => JSON.stringify(x);
+
+/** Pasos de una solución, en orden, con los valores intermedios. */
+function SolutionSteps({ steps, label }: { steps: readonly string[]; label: string }) {
+  return (
+    <ol className="flex list-decimal flex-col gap-1 rounded-lg border border-border bg-raised p-3 pl-8 text-[14px]" aria-label={label}>
+      {steps.map((s) => (
+        <li key={s}>{s}</li>
+      ))}
+    </ol>
+  );
+}
 
 // ---------------------------------------------------------------- Respuestas numéricas
 
@@ -157,19 +174,20 @@ function piecewiseTex(inst: CalcPiecewiseInstance): { tex: string; label: string
   };
 }
 
-const PIECEWISE_HINTS = [
-  "Límite por la izquierda: usa la fórmula de los x < a; por la derecha, la de los x > a. Si sale 0/0, simplifica o usa L'Hôpital.",
-  "El límite en a existe si los dos laterales existen y valen lo mismo. Continua: además, ese límite es f(a).",
-  "Derivable en a: tiene que ser continua y las dos derivadas laterales (la derivada de cada trozo, en a) tienen que coincidir.",
-];
-
 export function PiecewisePractice({ instance, onSolved }: Props<CalcPiecewiseInstance>) {
   const q = useMemo(() => piecewiseQuestion(instance), [instance]);
   const t = piecewiseTex(instance);
   return (
     <PracticeBox title="Función a trozos">
       <Tex display tex={t.tex} label={t.label} className="text-[18px]" />
-      <ChoicePractice legend={PIECEWISE_ASK[instance.ask]} question={q} seedKey={key(instance)} onSolved={onSolved} actions={<Hints hints={PIECEWISE_HINTS} />} />
+      <ChoicePractice
+        legend={PIECEWISE_ASK[instance.ask]}
+        question={q}
+        seedKey={key(instance)}
+        onSolved={onSolved}
+        actions={<Hints hints={piecewiseHints(instance)} />}
+        extraSolution={<SolutionSteps label="Límites laterales, valor y conclusión" steps={piecewiseSolution(instance)} />}
+      />
     </PracticeBox>
   );
 }
@@ -222,11 +240,7 @@ export function LhopitalPractice({ instance, onSolved }: Props<CalcLhopitalInsta
             </select>
           </div>
         )}
-        hints={[
-          "Sustituye x por el punto (o mira hacia dónde van numerador y denominador si x → ∞). Si los dos van a 0, o los dos a ∞, es una indeterminación.",
-          "L'Hôpital: lím f/g = lím f′/g′. Deriva numerador y denominador por separado (no es la derivada del cociente).",
-          "Si al derivar sigue siendo indeterminado, vuelve a aplicarla.",
-        ]}
+        hints={lhopitalHints(instance)}
       />
       <SolutionGate resetKey={key(instance)}>
         <ol className="flex list-decimal flex-col gap-2 rounded-lg border border-border bg-raised p-3 pl-8 text-[16px]" aria-label="Pasos de L'Hôpital">
@@ -260,13 +274,7 @@ export function DomainPractice({ instance, onSolved }: Props<CalcDomainInstance>
         seedKey={key(instance)}
         onSolved={onSolved}
         actions={
-          <Hints
-            hints={[
-              "√u pide u ≥ 0; ln u pide u > 0; un cociente pide denominador ≠ 0. Escribe todas las condiciones y júntalas (todas a la vez).",
-              "Para u = k² − x² ≥ 0, mira el signo de la parábola: es positiva entre sus raíces.",
-              "Corchete [ si el extremo está incluido (√0 = 0 vale); paréntesis ( si no (ln 0 o dividir entre 0 no valen).",
-            ]}
-          />
+          <Hints hints={domainHints(instance)} />
         }
       />
     </PracticeBox>
@@ -436,11 +444,7 @@ export function ChainPractice({ instance, onSolved }: Props<CalcChainInstance>) 
         }
       />
       <SolutionGate resetKey={key(instance)}>
-        <p className="rounded-lg border border-border bg-raised p-3">
-          {instance.kind === "jacobiana"
-            ? `Con la jacobiana de ${c} en ${vecText(instance.p)}, ∂/∂x + ∂/∂y = ${niceText(value)}.`
-            : `${c}(t₀) = ${vecText(instance.point)}, ${c}′(t₀) = ${vecText(instance.velocity)}; ∇${h} en ${vecText(instance.point)} por ${c}′(t₀) = ${niceText(value)}.`}
-        </p>
+        <SolutionSteps label="Pasos de la regla de la cadena" steps={chainSolution(instance)} />
       </SolutionGate>
     </PracticeBox>
   );
@@ -503,13 +507,7 @@ export function CriticalChoicePractice({ instance, onSolved }: Props<CalcCritica
         seedKey={key(instance)}
         onSolved={onSolved}
         actions={
-          <Hints
-            hints={[
-              "Punto crítico: ∂f/∂x = 0 y ∂f/∂y = 0 a la vez. Sustituye cada punto en las dos parciales.",
-              "Hessiana: |H| = f_xx·f_yy − f_xy². |H| > 0 y f_xx > 0: mínimo; |H| > 0 y f_xx < 0: máximo; |H| < 0: silla.",
-              "Si una parcial no puede valer 0 nunca (por ejemplo, k·eˣ), no hay puntos críticos.",
-            ]}
-          />
+          <Hints hints={criticalChoiceHints(instance)} />
         }
       />
     </PracticeBox>

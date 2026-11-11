@@ -6,7 +6,9 @@ import { useMemo } from "react";
 import {
   alphaVecText,
   detRulesAnswer,
-  detRulesDets,
+  detRulesHints,
+  detRulesSolution,
+  normsHints,
   normsQuestion,
   roucheChoiceQuestion,
   tensorVocabQuestion,
@@ -41,7 +43,6 @@ const num = (v: number) => String(v).replace("-", "−");
 export function DetRulesPractice({ instance, onSolved }: Props<DetRulesInstance>) {
   const g = instance.given;
   const value = detRulesAnswer(instance)!;
-  const dets = detRulesDets(instance);
   const n = instance.n;
   return (
     <PracticeBox title="Propiedades del determinante">
@@ -69,22 +70,10 @@ export function DetRulesPractice({ instance, onSolved }: Props<DetRulesInstance>
       <NumericAnswers
         fields={[{ label: "Determinante =", expected: toNumber(value) }]}
         onSolved={onSolved}
-        hints={[
-          `det(kA) = kⁿ·det A: el número sale elevado a n = ${n} (una vez por fila).`,
-          "det(AB) = det A·det B; det(A⁻¹) = 1/det A; det(Aᵀ) = det A; det(A²) = (det A)².",
-          g.kind === "autovalores"
-            ? "Si A es diagonalizable, det A es el producto de sus autovalores (con su multiplicidad)."
-            : g.kind === "matriz"
-              ? "Con una sola entrada no nula en cada fila y columna, det A = ± el producto de esas entradas: el signo es el de la permutación (cuenta los intercambios de filas para llegar a la diagonal)."
-              : "Primero aplica las reglas con letras y al final sustituye los números.",
-        ]}
+        hints={detRulesHints(instance)}
       />
       <SolutionGate resetKey={key(instance)}>
-        <p className="rounded-lg border border-border bg-raised p-3">
-          {`det A = ${num(toNumber(dets.A))}${g.B !== null ? `, det B = ${num(toNumber(dets.B))}` : ""}. det(${detExprText(instance.expr)}) = ${num(instance.expr.k)}^${n}·${instance.expr.factors
-            .map((f) => `(det ${f.m})${f.pow === 1 ? "" : `^${f.pow}`}`)
-            .join("·")} = ${num(Number(value.n))}${value.d === 1n ? "" : `/${value.d}`}.`}
-        </p>
+        <p className="rounded-lg border border-border bg-raised p-3">{detRulesSolution(instance)}</p>
       </SolutionGate>
     </PracticeBox>
   );
@@ -163,13 +152,7 @@ function NormsCount({ instance, onSolved }: Props<Extract<NormsInstance, { kind:
         seedKey={key(instance)}
         onSolved={onSolved}
         actions={
-          <Hints
-            hints={[
-              "Escribe cada condición como una ecuación en α: u·v = suma de productos; ‖u‖₁ = suma de |·|; ‖u‖₂² = suma de cuadrados; ‖u‖∞ = el mayor |·|.",
-              "Con |α| salen dos casos (α y −α); si solo valen α ≥ 0, quédate con los no negativos.",
-              "‖u‖∞ = c se cumple para todo un intervalo de α si otra componente ya vale c en valor absoluto: entonces hay infinitos.",
-            ]}
-          />
+          <Hints hints={normsHints(instance)} />
         }
       />
     </PracticeBox>

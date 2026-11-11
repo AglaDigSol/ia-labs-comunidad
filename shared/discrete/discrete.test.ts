@@ -3,7 +3,7 @@
 // de costes y fragmentos, y las funciones por cardinal contra todas las funciones posibles.
 import { describe, expect, it } from "vitest";
 import { algorithmCost, algorithmGrowth, algorithmLines, type Algorithm } from "./algorithms.ts";
-import { commaWarning, equalsInteger, parseExamNumber } from "./answer.ts";
+import { commaWarning, equalsInteger, parseExamNumber, thousandsNote, thousandsWarning } from "./answer.ts";
 import { bigOText, costOf, costTex, distractors, growthOf, growthTex, growthText, optionIsCorrect, parseCost, prune, sameGrowth, type Growth } from "./bigo.ts";
 import {
   acceptedFormulas,
@@ -145,14 +145,21 @@ describe("respuestas como en el examen", () => {
     expect(neg.ok && equalsInteger(neg.value, -3n)).toBe(true);
   });
 
-  it("rechaza separadores de miles y el punto decimal con un mensaje que repite tus cifras", () => {
-    for (const t of ["12.870", "1.234.567", "12 870", "12 870"]) {
+  it("lee el número con separador de miles y dice cómo escribirlo sin él", () => {
+    for (const [t, n, plain] of [["12.870", 12870n, "12870"], ["1.234.567", 1234567n, "1234567"], ["12 870", 12870n, "12870"], ["12\u00a0870", 12870n, "12870"], ["5 040", 5040n, "5040"], ["−5.040", -5040n, "−5040"]] as const) {
       const r = parseExamNumber(t);
-      expect(r.ok, t).toBe(false);
-      if (!r.ok) expect(r.error).toMatch(/Sin separador de miles/);
+      expect(r.ok, t).toBe(true);
+      if (r.ok) {
+        expect(equalsInteger(r.value, n), t).toBe(true);
+        expect(r.plain, t).toBe(plain);
+      }
     }
-    const r = parseExamNumber("12.870");
-    expect(!r.ok && r.error).toContain("12870");
+    expect(parseExamNumber("5040").ok && (parseExamNumber("5040") as { plain?: string }).plain).toBeUndefined();
+    expect(thousandsNote("5040")).toBe("El número es correcto; escríbelo sin separador de miles: 5040");
+    expect(thousandsWarning("5000")).toBe("Sin separador de miles, como en el examen: escribe 5000.");
+  });
+
+  it("rechaza el punto decimal con un mensaje que repite tus cifras", () => {
     const p = parseExamNumber("2.5");
     expect(!p.ok && p.error).toMatch(/coma es la decimal.*2,5/);
     for (const t of ["", "1e5", "12a", "1,2,3", "12..3"]) expect(parseExamNumber(t).ok, t).toBe(false);

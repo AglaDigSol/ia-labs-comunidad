@@ -30,9 +30,11 @@ import {
   calcExpr,
   calcNumber,
   chainAnswer,
+  chainSolution,
   criticalAskText,
   criticalChoiceQuestion,
   curveTex,
+  domainConditions,
   domainQuestion,
   lhopitalOf,
   niceTex,
@@ -41,6 +43,7 @@ import {
   partsQuestion,
   PIECEWISE_ASK,
   piecewiseQuestion,
+  piecewiseSolution,
   type CalcChainInstance,
   type CalcPiecewiseInstance,
 } from "../../exercises/calculus.ts";
@@ -104,7 +107,7 @@ const piecewiseAdapter = examAdapter({
       stem: [examP("Sea la función"), examMath(t.tex, t.label)],
       prompt: PIECEWISE_ASK[inst.ask],
       question: piecewiseQuestion(inst),
-      solution: [examP("Límites laterales con la fórmula de cada lado; continua si existe el límite y vale f(a); derivable si además coinciden las derivadas laterales.")],
+      solution: [examList(piecewiseSolution(inst).map((t) => [t]))],
     };
   },
 });
@@ -146,7 +149,7 @@ const domainAdapter = examAdapter({
       stem: [examP("Sea"), fnBlock(calcExpr(inst.f))],
       prompt: "¿Cuál es el dominio de f?",
       question: domainQuestion(inst),
-      solution: [examP("√u pide u ≥ 0; ln u pide u > 0; un cociente, denominador ≠ 0. El dominio cumple todas las condiciones a la vez.")],
+      solution: [examP(`${domainConditions(inst).join("; ")}. El dominio cumple ${domainConditions(inst).length > 1 ? "todas las condiciones a la vez" : "esa condición"}.`.replace(/^(?!ln)./, (c) => c.toUpperCase()))],
     };
   },
 });
@@ -249,8 +252,6 @@ const chainAdapter = examAdapter({
   ask: "Regla de la cadena en varias variables (numérica, entero).",
   build(inst) {
     const v = chainAnswer(inst);
-    const h = inst.outer;
-    const c = h === "f" ? "g" : "f";
     return {
       kind: "numeric",
       stem: chainStem(inst),
@@ -258,13 +259,7 @@ const chainAdapter = examAdapter({
       expected: BigInt(Math.round(v)),
       format: "entero",
       label: "Resultado",
-      solution: [
-        examP(
-          inst.kind === "jacobiana"
-            ? `∇(${h}∘${c})(p) = ∇${h}(${c}(p))·J${c}(p): el gradiente por la matriz jacobiana de ${c} en p = ${vecText(inst.p)}; la suma de las dos componentes da ${niceText(v)}.`
-            : `[${h}∘${c}]′(t₀) = ∇${h}(${c}(t₀))·${c}′(t₀), con ${c}(t₀) = ${vecText(inst.point)} y ${c}′(t₀) = ${vecText(inst.velocity)}: ${niceText(v)}.`,
-        ),
-      ],
+      solution: [examList(chainSolution(inst).map((t) => [t]))],
     };
   },
 });

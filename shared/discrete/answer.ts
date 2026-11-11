@@ -1,12 +1,19 @@
 // Respuestas numéricas como en el examen: cifras, coma decimal y sin separador de miles. Se leen como
 // decimales exactos (BigInt), así que un 20! se compara cifra a cifra. Si alguien escribe 12.870 o
-// 12 870, se le avisa de que en el examen no se usa separador de miles; si escribe 2.5, de que la coma
-// es la decimal. Los mensajes repiten las cifras de la persona, nunca las de la solución.
+// 12 870, se lee el número (es el mismo) y se le avisa de que en el examen se escribe sin separador de
+// miles; si escribe 2.5, de que la coma es la decimal. Los mensajes repiten las cifras de la persona,
+// nunca las de la solución.
 
 /** Un decimal exacto: valor = units / 10^scale. */
 export type ExactDecimal = { units: bigint; scale: number };
 
-export type ExamNumber = { ok: true; value: ExactDecimal } | { ok: false; error: string };
+/** `plain`: la respuesta llevaba separador de miles; es la misma sin él («5040» para «5.040»). */
+export type ExamNumber = { ok: true; value: ExactDecimal; plain?: string } | { ok: false; error: string };
+
+/** Nota para un número bien leído que llevaba separador de miles. */
+export const thousandsNote = (plain: string) => `El número es correcto; escríbelo sin separador de miles: ${plain}`;
+/** Aviso para el mismo caso cuando el número no es el bueno. */
+export const thousandsWarning = (plain: string) => `Sin separador de miles, como en el examen: escribe ${plain}.`;
 
 /** Longitud máxima de una respuesta (400 cifras dan para 200!). */
 export const MAX_ANSWER_TEXT = 420;
@@ -22,10 +29,11 @@ export function parseExamNumber(raw: string): ExamNumber {
     const units = BigInt(m[2]! + dec) * (m[1] === "-" ? -1n : 1n);
     return { ok: true, value: { units, scale: dec.length } };
   }
-  const digits = text.replace(/[^\d,]/g, "");
-  // 12.870 · 1.234.567 · 12 870 · 12 870 · 12'870: separador de miles.
+  // 12.870 · 1.234.567 · 12 870 · 12 870 · 12'870: separador de miles. Es el mismo número: se lee y se avisa.
   if (/^[+-]?\d{1,3}(?:([.\s'’])\d{3})(?:\1\d{3})*(?:,\d+)?$/.test(text)) {
-    return { ok: false, error: `Sin separador de miles, como en el examen: escribe ${digits}.` };
+    const plain = text.replace(/[^\d,+-]/g, "").replace("-", "−");
+    const r = parseExamNumber(plain.replace("−", "-"));
+    return r.ok ? { ok: true, value: r.value, plain } : r;
   }
   // 2.5: punto decimal.
   if (/^[+-]?\d+\.\d+$/.test(text)) {

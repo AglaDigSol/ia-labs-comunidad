@@ -13,6 +13,7 @@ import { toPlain } from "../logic/ast.ts";
 import { compareFormulas } from "../logic/compare.ts";
 import { parseFormula } from "../logic/parser.ts";
 import { negationOf, type NegationOption } from "./logic-extra-negation.ts";
+import { pickHints, type TaggedHint } from "./hints.ts";
 import { generateUntil, rngFor, type Rng } from "./random.ts";
 import type { ExerciseLevel, ExerciseType } from "./types.ts";
 
@@ -470,6 +471,45 @@ function numbersTemplate(r: Rng, level: ExerciseLevel): PredNumbersInstance {
   const wrong = r.shuffle(SET_CHOICES.filter((s) => !sameSets(s, truth))).slice(0, 3);
   return { kind: "conjuntos", family: family.id, c, options: r.shuffle([truth, ...wrong]) };
 }
+
+/** Qué tiene el enunciado de cada familia: el orden de los cuantificadores y lo que hay que despejar. */
+const FAMILY_TOKENS: Record<string, readonly string[]> = {
+  cubo: ["∀∃", "ecuación", "cubo"],
+  suma: ["∀∃", "ecuación", "resta"],
+  producto: ["∀∃", "ecuación", "fracción"],
+  "inverso-cubo": ["∀∃", "ecuación", "cubo", "fracción"],
+  inverso: ["∀∃", "ecuación", "fracción"],
+  menor: ["∀∃", "orden", "mínimo"],
+  minimo: ["∃∀", "orden", "mínimo"],
+  densidad: ["∀→∃", "orden", "densidad"],
+  "raiz-dos": ["∃", "ecuación", "cuadrado"],
+  opuesto: ["∃", "ecuación", "resta"],
+  fraccion: ["∃", "ecuación", "fracción"],
+};
+
+/** Lo que hay en el enunciado (para elegir las pistas). */
+export const numbersTokens = (inst: PredNumbersInstance): readonly string[] => (inst.kind === "divide" ? ["divide", ...(inst.pairs.some(([a, b]) => a === 0 || b === 0) ? ["cero"] : [])] : (FAMILY_TOKENS[inst.family] ?? []));
+
+const NUMBERS_HINTS: readonly TaggedHint[] = [
+  { needs: ["divide"], text: "p(x, y) dice que y es un múltiplo entero de x (x divide a y)." },
+  { needs: ["divide"], text: "Para cada par (x, y), divide y entre x: ¿sale un número entero?" },
+  { needs: ["divide", "cero"], text: "Cuidado con el 0: 0 = 0·x para cualquier x, pero y = k·0 solo da y = 0." },
+  { needs: ["∀∃"], text: "∀…∃: para cada valor tiene que haber un testigo dentro de A. Basta un valor sin testigo para que sea falso." },
+  { needs: ["∃∀"], text: "∃…∀: hace falta un solo x de A que sirva para todos los y a la vez. Si para cada candidato hay un y que falla, es falso." },
+  { needs: ["∀→∃"], text: "Para cada par x < y de A tiene que haber un z de A entre los dos. Basta un par sin ninguno en medio para que sea falso." },
+  { needs: ["∃"], text: "∃: basta un valor de A que cumpla la igualdad; es falso si ninguno de A la cumple." },
+  { needs: ["ecuación"], text: "En cada conjunto, despeja la incógnita con valores pequeños (1, 2): ¿la solución está en A?" },
+  { needs: ["orden"], text: "Prueba en cada conjunto con valores pequeños (1, 2) y mira si hay algo por debajo o en medio." },
+  { needs: ["cuadrado"], text: "La raíz cuadrada de un natural que no es un cuadrado perfecto es irracional." },
+  { needs: ["cubo"], text: "La raíz cúbica de un entero que no es un cubo perfecto es irracional; en ℝ, todo número tiene raíz cúbica." },
+  { needs: ["fracción"], text: "1/k con k ≥ 2 no es entero, pero sí racional." },
+  { needs: ["resta"], text: "ℕ = {1, 2, 3, …} no tiene ni el 0 ni los negativos; ℤ, sí." },
+  { needs: ["mínimo"], text: "ℕ tiene mínimo (el 1) y ℤ no: en ℤ siempre hay un número más pequeño." },
+  { needs: ["densidad"], text: "Entre dos racionales siempre hay otro (su punto medio); entre dos enteros seguidos, ninguno." },
+];
+
+/** Pistas de «Predicados sobre conjuntos numéricos»: solo las de lo que tiene el enunciado. */
+export const numbersHints = (inst: PredNumbersInstance): string[] => pickHints(NUMBERS_HINTS, numbersTokens(inst));
 
 export const PRED_NUMBERS: ExerciseType<PredNumbersInstance> = {
   id: "predicados-conjuntos-numericos",

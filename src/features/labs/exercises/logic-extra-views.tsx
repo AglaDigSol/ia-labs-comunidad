@@ -18,6 +18,7 @@ import {
   formalizeTarget,
   LOGIC_FORMALIZE,
   numberFamily,
+  numbersHints,
   NUMBER_SETS,
   PRED_NEGATE_NL,
   PRED_NUMBERS,
@@ -237,7 +238,7 @@ function NumbersExercise({ instance, onSolved }: ExerciseViewProps<PredNumbersIn
               setChecked(true);
               if (solved) onSolved();
             }}
-            hints={["p(x, y) dice que y es un múltiplo entero de x (x divide a y).", "Cuidado con el 0: 0 = 0·x para cualquier x, pero y = k·0 solo da y = 0."]}
+            hints={numbersHints(instance)}
           />
           <Verdicts checked={checked} solved={solved} message={choice === null ? "Elige una opción." : "Esa no es verdadera."} />
           <SolutionGate resetKey={JSON.stringify(instance)}>
@@ -272,11 +273,7 @@ function NumbersExercise({ instance, onSolved }: ExerciseViewProps<PredNumbersIn
             setChecked(true);
             if (solved) onSolved();
           }}
-          hints={[
-            "∀…∃: para cada valor tiene que haber un testigo dentro de A. Basta un valor sin testigo para que sea falso.",
-            "Prueba en cada conjunto con valores pequeños (1, 2) y despeja: ¿la solución está en A?",
-            "√2 y ∛2 son irracionales; 1/2 no es entero; ℕ tiene mínimo y ℤ no; entre dos racionales siempre hay otro.",
-          ]}
+          hints={numbersHints(instance)}
         />
         <Verdicts checked={checked} solved={solved} message={choice === null ? "Elige una opción." : "No es esa. Busca un contraejemplo en cada conjunto."} />
         <SolutionGate resetKey={JSON.stringify(instance)}>

@@ -157,3 +157,67 @@ export function canonicalShape(e: BExpr, vars: string[], kind: "sop" | "pos"): C
   }
   return { ok: true, indices: indices.sort((a, b) => a - b) };
 }
+
+/** ¿Vale lo mismo que el vector en todas las filas (las X valen cualquier cosa)? */
+export function matchesVector(e: BExpr, vars: string[], vector: BooleVector): boolean {
+  const got = booleVector(e, vars);
+  return [...vector].every((c, i) => c === "X" || c === got[i]);
+}
+
+/** Aviso cuando la forma escrita es equivalente pero no canónica (p ∧ r en vez de sus mintérminos). */
+export const NOT_CANONICAL_TEXT: Record<"sop" | "pos", string> = {
+  sop: "Equivalente, pero se pide la forma canónica (un término por mintérmino).",
+  pos: "Equivalente, pero se pide la forma canónica (un término por maxtérmino).",
+};
+
+export type CanonicalFormVerdict = {
+  ok: boolean;
+  text: string;
+  /** Equivale a la función pero no tiene forma canónica: la respuesta es buena, la forma no. */
+  equivalent?: true;
+};
+
+const SUBS = "₀₁₂₃₄₅₆₇₈₉";
+const subIndex = (k: number) => [...String(k)].map((d) => SUBS[Number(d)]).join("");
+
+/**
+ * Corrige una forma canónica escrita (ya leída, con variables de `vars`): si no tiene la forma pero es
+ * equivalente, lo dice; si tiene la forma, dice qué términos sobran y cuántos faltan (sin decir cuáles).
+ * `notation` «logica» habla de FND y FNC, de conjunciones y disyunciones y de φ; «boole», de sumas y
+ * productos y de f.
+ */
+export function canonicalFormVerdict(e: BExpr, vars: string[], kind: "sop" | "pos", vector: BooleVector, notation: "boole" | "logica"): CanonicalFormVerdict {
+  const logica = notation === "logica";
+  const n = vars.length;
+  const ones = vectorOnes(vector);
+  const zeros = vectorZeros(vector);
+  const dc = vectorDontCares(vector);
+  const shape = canonicalShape(e, vars, kind);
+  const termName = kind === "sop" ? "mintérmino" : "maxtérmino";
+  if (!shape.ok) {
+    if (matchesVector(e, vars, vector)) return { ok: false, text: NOT_CANONICAL_TEXT[kind], equivalent: true };
+    const texts: Record<typeof shape.reason, string> = {
+      "not-two-level": logica
+        ? kind === "sop"
+          ? "No es una disyunción de conjunciones: escribe mintérminos unidos con ∨."
+          : "No es una conjunción de disyunciones: escribe maxtérminos, entre paréntesis, unidos con ∧."
+        : kind === "sop"
+          ? "No es una suma de productos: escribe mintérminos sumados con ⊕."
+          : "No es un producto de sumas: escribe maxtérminos, entre paréntesis, multiplicados con ⊙.",
+      "incomplete-term": `Cada ${kind === "sop" ? (logica ? "conjunción" : "producto") : logica ? "disyunción" : "suma"} debe llevar las ${n} variables (${vars.join(", ")}) una sola vez, con o sin ′.`,
+      "repeated-term": `Hay un ${termName} repetido.`,
+    };
+    return { ok: false, text: texts[shape.reason] };
+  }
+  const c = compareIndexList(shape.indices, kind === "sop" ? ones : zeros, dc);
+  if (c.ok) {
+    const name = logica ? (kind === "sop" ? "Forma normal disyuntiva" : "Forma normal conjuntiva") : kind === "sop" ? "Forma canónica disyuntiva" : "Forma canónica conjuntiva";
+    return { ok: true, text: `${name} correcta.` };
+  }
+  const wrong = [...c.extra, ...c.dontCares];
+  const parts = [logica ? "Tiene forma normal, pero no es la de φ." : "Tiene forma canónica, pero no es la de f."];
+  const sym = kind === "sop" ? "m" : "M";
+  if (wrong.length > 0) parts.push(`${wrong.length === 1 ? `Sobra ${sym}${subIndex(wrong[0]!)}` : `Sobran ${wrong.map((k) => sym + subIndex(k)).join(", ")}`}.`);
+  if (c.missing > 0) parts.push(c.missing === 1 ? `Te falta 1 ${termName}.` : `Te faltan ${c.missing} ${termName}s.`);
+  return { ok: false, text: parts.join(" ") };
+}

@@ -9,6 +9,7 @@
 import { Check, Lightbulb, RotateCcw, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toPlain, type Node } from "../../../../shared/logic/ast.ts";
+import { connectiveRulesHint } from "../../../../shared/exercises/hints.ts";
 import { classify, type Table } from "../../../../shared/logic/truth-table.ts";
 import { Button } from "../../../components/ui/button.tsx";
 import { Chip } from "../../../components/ui/chip.tsx";
@@ -456,6 +457,10 @@ function ResultPractice({ table, format, formula, onSolved }: PartProps) {
 
   const verdict = useMemo(() => classify(table.rows).kind, [table.rows]);
   const steps = useMemo(() => table.subformulas.slice(0, -1).map((n) => toPlain(n)), [table.subformulas]);
+  const rulesHint = useMemo(() => {
+    const whole = table.subformulas.at(-1);
+    return whole ? connectiveRulesHint(whole) : null;
+  }, [table.subformulas]);
   const wrongRows = table.rows.map((r, i) => answers[i] !== null && answers[i] !== r.result);
   const missing = answers.filter((a) => a === null).length;
   const correct = table.rows.filter((r, i) => answers[i] === r.result).length;
@@ -465,7 +470,8 @@ function ResultPractice({ table, format, formula, onSolved }: PartProps) {
     steps.length > 0
       ? `Calcula las subfórmulas de dentro hacia fuera: ${steps.join(", ")} y, por último, ${formula}.`
       : `La fórmula es una sola variable o constante: copia su valor en cada fila.`,
-    "Recuerda: p → q solo es falsa cuando p es verdadera y q es falsa; p ↔ q es verdadera cuando ambas coinciden; p ⊻ q, cuando difieren.",
+    // Solo las reglas de las conectivas que tiene la fórmula.
+    ...(rulesHint ? [rulesHint] : []),
     CLASSIFY_HINT,
   ];
 

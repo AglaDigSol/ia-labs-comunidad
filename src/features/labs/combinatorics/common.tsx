@@ -3,7 +3,7 @@
 // examen (coma decimal, sin separador de miles) y el bloque de pseudocódigo. Reutiliza las cajas,
 // pistas y avisos del laboratorio de álgebra lineal.
 import { useId, type ReactNode } from "react";
-import { commaWarning, MAX_ANSWER_TEXT, parseExamNumber } from "../../../../shared/discrete/answer.ts";
+import { commaWarning, MAX_ANSWER_TEXT, parseExamNumber, thousandsWarning } from "../../../../shared/discrete/answer.ts";
 import { Input } from "../../../components/ui/input.tsx";
 import { cn } from "../../../lib/cn.ts";
 
@@ -118,13 +118,16 @@ export function YesNo({
 }
 
 /**
- * Respuesta numérica como en el examen. Tras comprobar, si no se lee, dice por qué (separador de
- * miles, punto decimal…) con las cifras de la persona.
+ * Respuesta numérica como en el examen. Tras comprobar, si no se lee, dice por qué (punto decimal…)
+ * con las cifras de la persona; con separador de miles se lee igual y se avisa de cómo escribirlo.
  */
 export function ExamNumberField({ label, value, onChange, invalid = false, checked = false }: { label: string; value: string; onChange: (v: string) => void; invalid?: boolean; checked?: boolean }) {
   const id = useId();
   const parsed = value.trim() === "" ? null : parseExamNumber(value);
-  const message = checked && parsed && !parsed.ok ? parsed.error : checked && invalid ? commaWarning(value) : null;
+  // Con separador de miles el número se lee: si no es el bueno, se avisa igual de cómo escribirlo (si
+  // lo es, la nota va con el «¡Correcto!» de la práctica).
+  const thousands = checked && invalid && parsed?.ok && parsed.plain !== undefined ? thousandsWarning(parsed.plain) : null;
+  const message = checked && parsed && !parsed.ok ? parsed.error : (thousands ?? (checked && invalid ? commaWarning(value) : null));
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-[14px] font-semibold">
