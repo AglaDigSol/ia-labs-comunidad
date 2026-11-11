@@ -318,6 +318,10 @@ export * from "../../shared/srs/decks.ts";
 export * from "../../shared/srs/due.ts";
 export * from "../../shared/srs/types.ts";
 
+// Asignaturas del máster (código, nombre largo, nombre corto y etiqueta): la tabla única que usan el
+// calendario, las flashcards, las notas, los simulacros y los laboratorios.
+export * from "../../shared/courses/subjects.ts";
+
 // ---------------------------------------------------------------- Contenido (CC BY 4.0)
 export { SYMBOL_PACKS, type SymbolPack } from "../../content/symbols/index.ts";
 export { NOTATION } from "../../content/notation/index.ts";

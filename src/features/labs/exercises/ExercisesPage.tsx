@@ -8,6 +8,7 @@ import { ArrowLeft, Check, ClipboardCheck, Shuffle, SkipForward } from "lucide-r
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { exerciseTopics, exercisesOfTopic, exerciseType, mixedType, type AnyExerciseType } from "../../../../shared/exercises/registry.ts";
+import { subject } from "../../../../shared/courses/subjects.ts";
 import { randomSeed, seedFromText, seedToText } from "../../../../shared/exercises/random.ts";
 import {
   EXERCISE_LEVELS,
@@ -150,7 +151,7 @@ function ExamCard({ to }: { to: string }) {
         Simulacro de examen (02MIAR)
       </h2>
       <p className="text-muted">
-        Un examen como el final, con preguntas nuevas del banco: 20 preguntas en 2 horas (o 10 en 1 hora, o por temas), opción múltiple a)–d) y respuestas numéricas, con reloj, nota sobre 10 y la solución de cada pregunta al entregar.
+        {`Un examen como el final de «${subject("02MIAR").short}», con preguntas nuevas del banco: 20 preguntas en 2 horas (o 10 en 1 hora, o por temas), opción múltiple a)–d) y respuestas numéricas, con reloj, nota sobre 10 y la solución de cada pregunta al entregar.`}
       </p>
       <div>
         <Link to={to} relative="path" className={buttonVariants({ variant: "primary" })}>
@@ -171,7 +172,7 @@ function PyExamCard({ to }: { to: string }) {
         Simulacro de examen (01MIAR)
       </h3>
       <p className="text-muted">
-        El final de «Python para la IA» como un cuaderno: cuatro ejercicios cortos y un proyecto de datos por pasos en 2 horas, con «Test Use Case» a la vista, pruebas ocultas al entregar, nota sobre 10 y la solución de cada ejercicio. También se descarga como .ipynb.
+        {`El final de «${subject("01MIAR").short}» como un cuaderno: cuatro ejercicios cortos y un proyecto de datos por pasos en 2 horas, con «Test Use Case» a la vista, pruebas ocultas al entregar, nota sobre 10 y la solución de cada ejercicio. También se descarga como .ipynb.`}
       </p>
       <div>
         <Link to={to} relative="path" className={buttonVariants({ variant: "primary" })}>

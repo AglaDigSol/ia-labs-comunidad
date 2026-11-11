@@ -2,6 +2,7 @@ import { Info } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { COURSES } from "../../../content/courses/index.ts";
+import { subjectByCode } from "../../../shared/courses/subjects.ts";
 import type { GradeComponent } from "../../../shared/courses/types.ts";
 import { MH_THRESHOLD, accumulate, parseGrade } from "../../../shared/grades.ts";
 import { keys } from "../../../shared/keys.ts";
@@ -145,7 +146,7 @@ export function GradesPage() {
           ))}
         </ToggleGroup>
       </header>
-      <p className="text-muted">{course.name}</p>
+      <p className="text-muted">{subjectByCode(course.id)?.name ?? course.name}</p>
       <p role="note" className="flex items-start gap-2 rounded-md border border-warn bg-warn-bg p-3 text-warn">
         <Info size={20} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
         <span>{t.grades.notice}</span>

@@ -4,6 +4,7 @@
 import { Compass, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
+import { subject } from "../../../shared/courses/subjects.ts";
 import { Button } from "../../components/ui/button.tsx";
 import { readLabItem, writeLabItem } from "./labs-storage.ts";
 
@@ -39,11 +40,11 @@ export function LabsIntro({ base, python }: { base: string; python: boolean }) {
       </ul>
       <div className="flex flex-wrap gap-2">
         <Link to={`${base}/ejercicios/simulacro`} className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-[14px] font-semibold text-accent hover:bg-sunken">
-          Simulacro de examen de 02MIAR (Matemáticas)
+          {`Simulacro de examen de 02MIAR (${subject("02MIAR").tag})`}
         </Link>
         {python ? (
           <Link to={`${base}/python/simulacro`} className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-[14px] font-semibold text-accent hover:bg-sunken">
-            Simulacro de examen de 01MIAR (Python)
+            {`Simulacro de examen de 01MIAR (${subject("01MIAR").tag})`}
           </Link>
         ) : null}
         <Button variant="primary" onClick={close}>

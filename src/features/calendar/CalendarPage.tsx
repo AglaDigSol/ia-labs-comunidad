@@ -4,6 +4,7 @@ import { CALENDARIO } from "../../../content/calendario/index.ts";
 import { applyFilters, byWeek, dstNotice, nextClass, nextDeadline, withTimes, type Filters, type TimedEvent } from "../../../shared/calendar/model.ts";
 import { civilDate, dayShift, diffFromMadrid, ES, fmtDay, fmtDiff, fmtTime, formatCountdown, isValidZone } from "../../../shared/calendar/time.ts";
 import { CalendarEventSchema, EVENT_TYPE_LABELS, EVENT_TYPES, type CalendarEvent, type EventType } from "../../../shared/calendar/types.ts";
+import { subjectLabel } from "../../../shared/courses/subjects.ts";
 import { keys } from "../../../shared/keys.ts";
 import { Button } from "../../components/ui/button.tsx";
 import { Chip } from "../../components/ui/chip.tsx";
@@ -81,7 +82,7 @@ function EventRow({ e, tz }: { e: TimedEvent; tz: string }) {
       <span className="mono w-24 shrink-0 text-[14px] text-muted">{fmtDay(ES, e.startMs)}</span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex flex-wrap items-center gap-2">
-          <Chip tone="info">{e.materia}</Chip>
+          <Chip tone="info">{subjectLabel(e.materia, "tag")}</Chip>
           <Chip tone={e.tipo === "examen" || e.tipo === "entrega" || e.tipo === "foro" || e.tipo === "test" ? "warn" : "outline"}>
             {EVENT_TYPE_LABELS[e.tipo]}
           </Chip>
@@ -102,7 +103,7 @@ function NextCard({ title, e, tz, now }: { title: string; e: TimedEvent | null; 
       <h3 className="text-[16px]">{title}</h3>
       {e ? (
         <>
-          <p className="font-semibold">{`${e.materia} · ${e.titulo}${e.grupo ? ` (${e.grupo})` : e.franja ? ` (${e.franja})` : ""}`}</p>
+          <p className="font-semibold">{`${subjectLabel(e.materia, "tag")} · ${e.titulo}${e.grupo ? ` (${e.grupo})` : e.franja ? ` (${e.franja})` : ""}`}</p>
           <p className="text-[14px]">
             <DualTime e={e} tz={tz} withDay />
           </p>
@@ -163,7 +164,7 @@ function ZonePicker({ tz, onChange }: { tz: string; onChange: (tz: string) => vo
 function SubscribeDialog({ materias, subs }: { materias: string[]; subs: Subscription[] | null }) {
   const list: Subscription[] = subs ?? [
     { label: "Todas las materias", file: "calendario.ics" },
-    ...materias.map((m) => ({ label: m, file: `calendario-${m}.ics` })),
+    ...materias.map((m) => ({ label: subjectLabel(m), file: `calendario-${m}.ics` })),
   ];
   const base = typeof window === "undefined" ? "" : new URL(import.meta.env.BASE_URL, window.location.origin).toString();
   const url = (file: string) => `${base}${file}`;
@@ -288,7 +289,7 @@ export function CalendarPage() {
               <ul className="list-disc pl-6 text-[14px]">
                 {notice.affected.map((e) => (
                   <li key={e.id}>
-                    {`${fmtDay(ES, e.startMs)} · ${e.materia} · ${e.titulo}: `}
+                    {`${fmtDay(ES, e.startMs)} · ${subjectLabel(e.materia, "tag")} · ${e.titulo}: `}
                     <DualTime e={e} tz={tz} />
                   </li>
                 ))}
@@ -322,7 +323,7 @@ export function CalendarPage() {
               <option value="todas">Todas</option>
               {materias.map((m) => (
                 <option key={m} value={m}>
-                  {m}
+                  {subjectLabel(m)}
                 </option>
               ))}
             </select>

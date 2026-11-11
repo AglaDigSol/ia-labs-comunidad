@@ -550,6 +550,12 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
   Markov (matrices, evolución, sistemas, validación, clasificación de estados, absorción), racionales exactos y
   repaso espaciado SM-2 (`review`, barajas, `dueSummary`, esquemas). Con `"sideEffects"` declarado, lo que no se usa
   no entra en el bundle.
+- Asignaturas: `SUBJECTS` es la tabla única de asignaturas (`code`, `name`, `short`, `tag`), la que usan el calendario,
+  las flashcards, las notas, los simulacros y los laboratorios. `subjectLabel("02MIAR")` da «02MIAR · Matemáticas para
+  la IA» (`"long"`: el nombre de la guía docente; `"tag"`: «02MIAR · Matemáticas») y `subjectByCode` devuelve la fila o
+  `null`. Según las guías docentes 2026-2027, 01MIAR es «Python para la Inteligencia Artificial» y 02MIAR,
+  «Matemáticas para la Inteligencia Artificial»: una app anfitriona debería leer los nombres de aquí y no escribirlos a
+  mano.
 - Subrutas: `ia-labs-comunidad/shared/*` y `ia-labs-comunidad/content/*` para importar un módulo concreto, y
   `ia-labs-comunidad/tokens.css` para una app sin tokens de diseño propios.
 

@@ -38,6 +38,8 @@ import {
   compareSetExprs,
   parseSetExpr,
   SETS_PACK,
+  SUBJECTS,
+  subjectLabel,
   configureLabs,
   createLocalStorageLabsAdapter,
   DEFAULT_LABS_KEYS,
@@ -219,6 +221,12 @@ describe("LabsRoutes como dependencia", () => {
     fireEvent.click(await screen.findByRole("radio", { name: "V / F" }, { timeout: 5000 }));
     await waitFor(() => expect(storage.load()?.logicFormat).toBe("VF"));
     expect(localStorage.length).toBe(0);
+  });
+
+  it("exporta la tabla de asignaturas con los nombres de las guías 2026-2027", () => {
+    expect(SUBJECTS.map((x) => x.code)).toEqual(["01MIAR", "02MIAR"]);
+    expect(subjectLabel("01MIAR")).toBe("01MIAR · Python para la IA");
+    expect(subjectLabel("02MIAR", "long")).toBe("02MIAR · Matemáticas para la Inteligencia Artificial");
   });
 
   it("exporta los motores", () => {

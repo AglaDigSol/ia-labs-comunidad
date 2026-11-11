@@ -1,6 +1,7 @@
 // «Nuevo mazo» / «Editar mazo». Decks are per course and session.
 import { COURSES as COURSE_DATA } from "../../../content/courses/index.ts";
 import { useEffect, useId, useState } from "react";
+import { subjectLabel } from "../../../shared/courses/subjects.ts";
 import type { Course } from "../../../shared/srs/decks.ts";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog.tsx";
@@ -74,13 +75,13 @@ export function NewDeckDialog({ open, onOpenChange, deck, onSaved }: NewDeckDial
               Asignatura
             </label>
             <Select value={course} onValueChange={(v) => setCourse(v as Course)}>
-              <SelectTrigger aria-labelledby={ids.course} className="mono">
+              <SelectTrigger aria-labelledby={ids.course}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {COURSES.map((c) => (
                   <SelectItem key={c} value={c}>
-                    {c}
+                    {subjectLabel(c)}
                   </SelectItem>
                 ))}
               </SelectContent>
