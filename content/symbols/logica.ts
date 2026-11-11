@@ -85,8 +85,8 @@ export const LOGICA_SYMBOLS: SymbolEntry[] = [
       { text: "p ^ q", convention: "Computación" },
       { tex: T`p \oplus q`, convention: "Computación" },
     ],
-    reading: "o p o q",
-    spoken: "o pe o cu",
+    reading: "o p o q, pero no ambas",
+    spoken: "o pe o cu, pero no ambas",
     code: [
       { lib: "python", code: "p != q   # con bool\np ^ q    # también con bool" },
       { lib: "numpy", code: `${NP_BOOL}\np ^ q   # o np.logical_xor(p, q)` },

@@ -41,3 +41,13 @@ export const SrsSchema = z.strictObject({
   lapses: z.number().int().min(0),
 });
 export type Srs = z.infer<typeof SrsSchema>;
+
+/**
+ * «Repasar 5 más»: extra new cards a deck may introduce on `date` (newx/<deckId>). Ignored on any
+ * other day, so it never carries over.
+ */
+export const NewExtraSchema = z.strictObject({
+  date: civilDate,
+  n: z.number().int().min(1).max(1000),
+});
+export type NewExtraEntry = z.infer<typeof NewExtraSchema>;

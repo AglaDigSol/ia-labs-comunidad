@@ -1,7 +1,7 @@
 // Detalle del mazo: cards rendered with KaTeX, schedule per card,
 // suspend/reactivate, delete with 6 s undo, and deck edit/delete. Dictionary decks are read-only.
 import { ArrowLeft, EllipsisVertical, Pencil, Trash2 } from "lucide-react";
-import { useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";
+import { useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import type { CardView, DeckView } from "../../../shared/srs/due.ts";
 import { Button, buttonVariants } from "../../components/ui/button.tsx";
@@ -9,10 +9,20 @@ import { Chip } from "../../components/ui/chip.tsx";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/popover.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
-import { deleteCard, deleteDeck, restoreCard, setSuspended, useAllCards, useDeckCards, useDecks } from "../../lib/cards-store.ts";
+import { deleteCard, deleteDeck, restoreCard, setSuspended, useDeckCards, useDecks } from "../../lib/cards-store.ts";
 import { RichText } from "../../lib/tex.tsx";
 import { CardEditorDialog } from "./CardEditorDialog.tsx";
-import { CARDS_BASE, ddmm, reviewHref, sessionLabel, tarjetas, useTodayQueue } from "./DecksPage.tsx";
+import {
+  canPullMore,
+  CARDS_BASE,
+  ddmm,
+  emptyReason,
+  PullMoreButton,
+  reviewHref,
+  sessionLabel,
+  tarjetas,
+  useDeckDays,
+} from "./DecksPage.tsx";
 import { NewDeckDialog } from "./NewDeckDialog.tsx";
 
 const ITEM =
@@ -175,9 +185,10 @@ function BackLink() {
 
 function DeckDetail({ deck }: { deck: DeckView }) {
   const cards = useDeckCards(deck.id);
-  const all = useAllCards();
-  const queue = useTodayQueue(all);
-  const dueHere = useMemo(() => queue.filter((c) => c.deckId === deck.id).length, [queue, deck.id]);
+  const empty = cards.length === 0;
+  const day = useDeckDays(cards).get(deck.id);
+  const dueHere = day?.today ?? 0;
+  const reason = day && !empty ? emptyReason(day) : null;
   const navigate = useNavigate();
   const newBtn = useRef<HTMLElement | null>(null);
   const [editor, setEditor] = useState<{
@@ -187,7 +198,6 @@ function DeckDetail({ deck }: { deck: DeckView }) {
   }>({ open: false, card: null, focus: undefined });
   const [deckDialog, setDeckDialog] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const empty = cards.length === 0;
 
   const openNew = (focus: RefObject<HTMLElement | null>) => setEditor({ open: true, card: null, focus });
   const removeCard = (c: CardView) => {
@@ -215,6 +225,7 @@ function DeckDetail({ deck }: { deck: DeckView }) {
                 Nueva tarjeta
               </Button>
             ) : null}
+            {day && canPullMore(day) ? <PullMoreButton deck={deck} day={day} /> : null}
             {dueHere > 0 ? (
               <Link to={reviewHref(deck.id)} className={buttonVariants({ variant: "secondary" })}>
                 Repasar mazo
@@ -237,6 +248,7 @@ function DeckDetail({ deck }: { deck: DeckView }) {
           {deck.seed ? <Chip tone="outline">Del diccionario</Chip> : null}
           <span className="mono text-[14px] text-muted">{tarjetas(cards.length)}</span>
         </div>
+        {reason ? <p className="text-[14px] text-muted">{reason}</p> : null}
         {deck.seed ? (
           <p className="text-[14px] text-muted">
             Este mazo se genera desde el diccionario de simbología y se actualiza con él.

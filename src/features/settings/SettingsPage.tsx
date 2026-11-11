@@ -3,6 +3,10 @@ import { useRef, useState, type ChangeEvent } from "react";
 import { ThemeToggle } from "../../components/layout/AppShell.tsx";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog.tsx";
+import { Input } from "../../components/ui/input.tsx";
+import { config } from "../../config.ts";
+import { DEFAULT_NEW_CARDS_PER_DAY } from "../../../shared/srs/due.ts";
+import { NEW_CAP_MAX, NEW_CAP_MIN, setNewCardsPerDay, useNewCap } from "../../lib/new-cards-pref.ts";
 import { backupFileName, buildBackup, restoreBackup } from "../../lib/backup.ts";
 import { t } from "../../i18n/index.ts";
 import { clearKv } from "../../lib/kv-store.ts";
@@ -25,6 +29,49 @@ function downloadJson(name: string, data: unknown): void {
 }
 
 const entries = t.settings.entries;
+
+/** «Nuevas por día» (pref/newCardsPerDay): new cards per deck and day. Saves each valid value. */
+function NewCardsField() {
+  const cap = useNewCap();
+  const [draft, setDraft] = useState<string | undefined>(undefined);
+  const parse = (v: string) => (/^\d{1,3}$/.test(v.trim()) ? Number(v.trim()) : NaN);
+  const n = draft === undefined ? cap : parse(draft);
+  const valid = Number.isInteger(n) && n >= NEW_CAP_MIN && n <= NEW_CAP_MAX;
+  const error = draft !== undefined && !valid ? t.settings.newPerDayError(NEW_CAP_MIN, NEW_CAP_MAX) : null;
+  return (
+    <div className="flex max-w-xs flex-col gap-1">
+      <label htmlFor="new-per-day" className="text-[14px] font-semibold">
+        {t.settings.newPerDay}
+      </label>
+      <Input
+        id="new-per-day"
+        inputMode="numeric"
+        autoComplete="off"
+        className="mono"
+        value={draft ?? String(cap)}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? "new-per-day-help new-per-day-err" : "new-per-day-help"}
+        onChange={(e) => {
+          const v = e.target.value;
+          setDraft(v);
+          const k = parse(v);
+          if (Number.isInteger(k) && k >= NEW_CAP_MIN && k <= NEW_CAP_MAX) setNewCardsPerDay(k);
+        }}
+        onBlur={() => {
+          if (valid) setDraft(undefined);
+        }}
+      />
+      <p id="new-per-day-help" className="text-[14px] text-muted">
+        {t.settings.newPerDayHelp(DEFAULT_NEW_CARDS_PER_DAY)}
+      </p>
+      {error ? (
+        <p id="new-per-day-err" className="text-[14px] text-crit">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 export function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -72,6 +119,15 @@ export function SettingsPage() {
         </h2>
         <ThemeToggle />
       </section>
+
+      {config.modules.flashcards ? (
+        <section aria-labelledby="ajustes-flashcards" className="flex flex-col gap-2">
+          <h2 id="ajustes-flashcards" className="text-[20px]">
+            {t.settings.cardsTitle}
+          </h2>
+          <NewCardsField />
+        </section>
+      ) : null}
 
       <section aria-labelledby="ajustes-datos" className="flex flex-col gap-3">
         <h2 id="ajustes-datos" className="text-[20px]">

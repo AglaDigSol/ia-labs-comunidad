@@ -63,3 +63,21 @@ describe("seedCards", () => {
     expect(seedCards("abcdefghij12")).toEqual([]);
   });
 });
+
+describe("exclusive or (⊻) cards", () => {
+  it("the back of the ⊻ card says «o p o q, pero no ambas»", () => {
+    const xor = seedCards("sym-02-s1").find((c) => c.id === "sym-disyuncion-exclusiva");
+    expect(xor?.back).toBe("o p o q, pero no ambas");
+  });
+
+  it("no «o … o» reading of an exclusive or is left without «pero no ambas»", () => {
+    const xorLike = ALL_SYMBOLS.filter((s) => s.aliases.some((a) => /xor|exclusiv/i.test(a)));
+    expect(xorLike.length).toBeGreaterThan(0);
+    for (const s of xorLike) {
+      for (const r of [s.reading, s.spoken, ...(s.altReadings ?? [])]) {
+        // «o p o q» alone reads like the inclusive or: an exclusive reading must say so.
+        if (/^o \S+ o \S+/.test(r)) expect(r, s.id).toMatch(/pero no ambas/);
+      }
+    }
+  });
+});

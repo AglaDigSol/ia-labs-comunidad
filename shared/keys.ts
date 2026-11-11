@@ -2,7 +2,7 @@
 // prefijo. La usa src/lib/kv-store.ts al leer localStorage y al importar una copia JSON.
 import { z } from "zod";
 import { COURSES } from "../content/courses/index.ts";
-import { CardSchema, DeckSchema, SEED_CARD_SRC, SrsSchema, USER_ID_SRC } from "./srs/types.ts";
+import { CardSchema, DeckSchema, NewExtraSchema, SEED_CARD_SRC, SEED_DECK_SRC, SrsSchema, USER_ID_SRC } from "./srs/types.ts";
 
 export type ThemePref = "light" | "system" | "dark";
 
@@ -12,6 +12,8 @@ export const keys = {
   card: (deckId: string, cardId: string) => `card/${deckId}/${cardId}`,
   srs: (cardId: string) => `srs/${cardId}`,
   susp: (cardId: string) => `susp/${cardId}`,
+  /** Extra new cards of a deck for one day («Repasar 5 más»). Seed and user decks. */
+  newx: (deckId: string) => `newx/${deckId}`,
   pref: {
     newCardsPerDay: "pref/newCardsPerDay",
     theme: "pref/theme",
@@ -32,12 +34,14 @@ const calGroupSchema = z.enum(["G1", "G2", "G3", "todos"]);
 const calSlotSchema = z.enum(["F1", "F2", "todas"]);
 
 // Las barajas semilla (sym-*) viven en el repositorio: deck/ y card/ solo aceptan ids de usuario;
-// srs/ y susp/ aceptan también ids de tarjetas semilla (su calendario).
+// srs/ y susp/ aceptan también ids de tarjetas semilla (su calendario); newx/ acepta ids de mazos
+// semilla y de usuario.
 const U = USER_ID_SRC;
 const DECK_KEY_RE = new RegExp(`^deck/${U}$`);
 const CARD_KEY_RE = new RegExp(`^card/${U}/${U}$`);
 const SRS_KEY_RE = new RegExp(`^srs/(?:${U}|${SEED_CARD_SRC})$`);
 const SUSP_KEY_RE = new RegExp(`^susp/(?:${U}|${SEED_CARD_SRC})$`);
+const NEWX_KEY_RE = new RegExp(`^newx/(?:${U}|${SEED_DECK_SRC})$`);
 
 function isGradeKey(key: string): boolean {
   const [, courseId, componentId, extra] = key.split("/");
@@ -51,6 +55,7 @@ function schemaFor(key: string): z.ZodType | null {
   if (key.startsWith("card/")) return CARD_KEY_RE.test(key) ? CardSchema : null;
   if (key.startsWith("srs/")) return SRS_KEY_RE.test(key) ? SrsSchema : null;
   if (key.startsWith("susp/")) return SUSP_KEY_RE.test(key) ? boolSchema : null;
+  if (key.startsWith("newx/")) return NEWX_KEY_RE.test(key) ? NewExtraSchema : null;
   if (key.startsWith("grade/")) return isGradeKey(key) ? gradeSchema : null;
   if (key === keys.pref.theme) return themeSchema;
   if (key === keys.pref.mhThreshold) return mhSchema;

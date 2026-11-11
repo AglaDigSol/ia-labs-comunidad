@@ -1,5 +1,7 @@
-// SM-2 clásico (Woźniak, 1987) con casos calculados a mano:
-//   EF' = EF + (0,1 − (5 − q)(0,08 + (5 − q)·0,02)), EF ≥ 1,3; I(1) = 1, I(2) = 6, I(n) = round(I(n−1)·EF).
+// SM-2 (Woźniak, 1987) con casos calculados a mano:
+//   EF' = EF + (0,1 − (5 − q)(0,08 + (5 − q)·0,02)), EF ≥ 1,3; I(2) = 6, I(n) = round(I(n−1)·EF).
+// Único cambio respecto al clásico I(1) = 1: el primer intervalo depende del botón
+// (Difícil 1, Bien 3, Fácil 4), para que una tarjeta nueva no muestre «1 d» en los tres.
 import { describe, expect, it } from "vitest";
 import { addDays, review, type Quality, type Srs } from "./sm2.ts";
 
@@ -16,16 +18,16 @@ function run(qs: Quality[], start = "2026-01-01"): Srs[] {
 }
 
 describe("SM-2 de libro", () => {
-  it("siempre «Fácil» (q = 5): intervalos 1, 6, 16, 45 y EF 2,6 → 2,9", () => {
+  it("siempre «Fácil» (q = 5): intervalos 4, 6, 16, 45 y EF 2,6 → 2,9", () => {
     const r = run([5, 5, 5, 5]);
-    expect(r.map((s) => s.interval)).toEqual([1, 6, 16, 45]);
+    expect(r.map((s) => s.interval)).toEqual([4, 6, 16, 45]);
     expect(r.map((s) => s.ef)).toEqual([2.6, 2.7, 2.8, 2.9]);
   });
 
   it("siempre «Bien» (q = 4): el EF se queda en 2,5 e I(3) = 15", () => {
     const r = run([4, 4, 4, 4]);
     expect(r.map((s) => s.ef)).toEqual([2.5, 2.5, 2.5, 2.5]);
-    expect(r.map((s) => s.interval)).toEqual([1, 6, 15, 38]);
+    expect(r.map((s) => s.interval)).toEqual([3, 6, 15, 38]);
   });
 
   it("siempre «Difícil» (q = 3): el EF baja 0,14 cada vez", () => {
