@@ -4,15 +4,24 @@
 import { useEffect, useMemo } from "react";
 import { keys } from "../../shared/keys.ts";
 import { SEED_DECKS, seedCards, type Course } from "../../shared/srs/decks.ts";
-import { DEFAULT_NEW_CARDS_PER_DAY, dueSummary, type CardView, type DeckView, type DueSummary } from "../../shared/srs/due.ts";
+import {
+  dueSummary,
+  EXTRA_NEW_STEP,
+  type CardView,
+  type DeckView,
+  type DueSummary,
+  type NewExtra,
+} from "../../shared/srs/due.ts";
 import { review, type Quality } from "../../shared/srs/sm2.ts";
-import { CardSchema, DeckSchema, SrsSchema, USER_ID_RE, type Card, type Deck, type Srs } from "../../shared/srs/types.ts";
+import { CardSchema, DeckSchema, NewExtraSchema, SrsSchema, USER_ID_RE, type Card, type Deck, type Srs } from "../../shared/srs/types.ts";
 import { localCivilDate } from "../../shared/date.ts";
 import { COURSES as COURSE_DATA } from "../../content/courses/index.ts";
-import { deleteKv, readKvPrefix, setKv, useKv, useKvPrefix } from "./kv-store.ts";
+import { deleteKv, readKvPrefix, setKv, useKvPrefix } from "./kv-store.ts";
 import { useNow } from "./use-now.ts";
+import { useNewCap } from "./new-cards-pref.ts";
 
 export type { CardView, DeckView, DueSummary } from "../../shared/srs/due.ts";
+export { capOf, NEW_CAP_MAX, NEW_CAP_MIN, setNewCardsPerDay, useNewCap } from "./new-cards-pref.ts";
 
 export type CardSnapshot = { deckId: string; cardId: string; card: Card; srs: Srs | null; suspended: boolean };
 
@@ -159,15 +168,30 @@ export function useAllCards(): CardView[] {
   return useMemo(() => allCards(ix), [ix]);
 }
 
-const capOf = (v: unknown) =>
-  typeof v === "number" && Number.isInteger(v) && v >= 1 && v <= 200 ? v : DEFAULT_NEW_CARDS_PER_DAY;
+const NEWX_PREFIX = "newx/";
+
+function extraFrom(entries: readonly KvEntry[], today: string): NewExtra {
+  const out: Record<string, number> = {};
+  for (const { key, value } of entries) {
+    const p = NewExtraSchema.safeParse(value);
+    if (p.success && p.data.date === today) out[key.slice(NEWX_PREFIX.length)] = p.data.n;
+  }
+  return out;
+}
+
+/** Today's extra new cards per deck («Repasar 5 más»). Entries of other days are ignored. */
+export function useNewExtra(today: string): NewExtra {
+  const entries = useKvPrefix<unknown>(NEWX_PREFIX);
+  return useMemo(() => extraFrom(entries, today), [entries, today]);
+}
 
 /** «N tarjetas para hoy», recomputed when the local civil day changes (checked every minute). */
 export function useDueSummary(): DueSummary {
   const cards = useAllCards();
   const today = localCivilDate(useNow(60_000));
-  const cap = capOf(useKv<unknown>(keys.pref.newCardsPerDay, DEFAULT_NEW_CARDS_PER_DAY));
-  return useMemo(() => dueSummary(cards, today, cap), [cards, today, cap]);
+  const cap = useNewCap();
+  const extra = useNewExtra(today);
+  return useMemo(() => dueSummary(cards, today, cap, extra), [cards, today, cap, extra]);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -194,6 +218,14 @@ const todayLocal = () => localCivilDate(Date.now());
 
 function assertUserId(id: string, what: string) {
   if (!USER_ID_RE.test(id)) throw new Error(`${what} no editable: ${id}`);
+}
+
+/** «Repasar 5 más»: lets the deck introduce `k` more new cards today (newx/<deckId>). */
+export function addExtraNew(deckId: string, k: number = EXTRA_NEW_STEP): void {
+  const today = todayLocal();
+  const p = NewExtraSchema.safeParse(readKvPrefix<unknown>(keys.newx(deckId)).find((e) => e.key === keys.newx(deckId))?.value);
+  const n = p.success && p.data.date === today ? p.data.n + k : k;
+  setKv(keys.newx(deckId), { date: today, n: Math.min(1000, n) });
 }
 
 /** Grades a card (first grade of the local day schedules; later ones keep the stored state). */
@@ -228,6 +260,7 @@ export function deleteDeck(id: string): void {
     if (ix.susp.has(cardId)) write(keys.susp(cardId), null);
   }
   write(keys.deck(id), null);
+  deleteKv(keys.newx(id));
 }
 
 export function saveCard(deckId: string, cardId: string | null, value: Card): string {

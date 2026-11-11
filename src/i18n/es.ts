@@ -35,6 +35,11 @@ export const es = {
   settings: {
     title: "Ajustes",
     themeTitle: "Tema",
+    cardsTitle: "Flashcards",
+    newPerDay: "Nuevas por día",
+    newPerDayHelp: (def: number) =>
+      `Tarjetas nuevas que cada mazo te presenta al día (por defecto, ${def}). Si un mazo se queda sin nuevas por hoy, puedes pedir 5 más desde la lista de mazos.`,
+    newPerDayError: (min: number, max: number) => `Escribe un número entero entre ${min} y ${max}.`,
     dataTitle: "Mis datos",
     dataIntro:
       "Tus flashcards, su calendario de repaso, tus notas y tus preferencias se guardan solo en este navegador. No se envían a ningún servidor. Exporta una copia para pasarlas a otro dispositivo o por si borras los datos del navegador.",

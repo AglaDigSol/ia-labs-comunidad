@@ -1,4 +1,6 @@
-// Classic SM-2 (Woźniak 1987, steps 1–7) over civil dates in the browser's time zone.
+// SM-2 (Woźniak 1987, steps 1–7) over civil dates in the browser's time zone. One change to the
+// classic I(1) = 1: the first interval of a new card depends on the button (FIRST_INTERVAL), so
+// Difícil, Bien and Fácil schedule a new card 1, 3 or 4 days ahead instead of 1 day for all three.
 // Pure: `today` is always passed in (localCivilDate(now)); no clock reads, no millisecond day math.
 import type { Srs } from "./types.ts";
 
@@ -8,6 +10,12 @@ export type { Srs } from "./types.ts";
 export type Quality = 1 | 3 | 4 | 5;
 export const QUALITY = { otra: 1, dificil: 3, bien: 4, facil: 5 } as const satisfies Record<string, Quality>;
 export const QUALITY_LABEL: Record<Quality, string> = { 1: "Otra vez", 3: "Difícil", 4: "Bien", 5: "Fácil" };
+
+/**
+ * First interval (n = 0, a new card or one relearned after «Otra vez») per button. Classic SM-2
+ * uses 1 day for every q ≥ 3; from the second review on the schedule is classic (6, then I·EF).
+ */
+export const FIRST_INTERVAL = { 3: 1, 4: 3, 5: 4 } as const satisfies Record<Exclude<Quality, 1>, number>;
 
 const EF_MIN = 1.3;
 /** SrsSchema bound (100 years). Only reachable after long runs of «Fácil». */
@@ -32,6 +40,7 @@ const round2 = (x: number) => Math.round(x * 100) / 100;
  * One review. Interval uses the EF before this review's update (classic order).
  * A2 (locked): EF += 0.1 − (5 − q)(0.08 + (5 − q)·0.02) on EVERY review, also on a lapse
  * (Otra vez), so failures shorten future intervals. EF is stored with 2 decimals, floor 1.3.
+ * First interval per button (FIRST_INTERVAL): Difícil 1 d, Bien 3 d, Fácil 4 d; then 6, then I·EF.
  * Step 7: Otra vez / Difícil re-queue the card at the end of today's session (see due.ts
  * sessionStep), but only the first grade of the civil day schedules: if `last === today`
  * the stored state is returned unchanged.
@@ -41,8 +50,8 @@ export function review(s: Srs | null, q: Quality, today: string): Srs {
   const cur = s ?? NEW_STATE(today);
   if (cur.last === today) return cur;
   let { n, interval, lapses } = cur;
-  if (q >= 3) {
-    interval = n === 0 ? 1 : n === 1 ? 6 : Math.round(interval * cur.ef);
+  if (q !== 1) {
+    interval = n === 0 ? FIRST_INTERVAL[q] : n === 1 ? 6 : Math.round(interval * cur.ef);
     n += 1;
   } else {
     n = 0;
@@ -70,4 +79,12 @@ export function nextIntervals(s: Srs | null, today: string): Record<Quality, str
   const out = {} as Record<Quality, string>;
   for (const q of [1, 3, 4, 5] as const) out[q] = q === 1 ? "Hoy" : fmtInterval(review(s, q, today).interval);
   return out;
+}
+
+/**
+ * True when Difícil, Bien and Fácil show the same interval (any card from its second review on:
+ * the interval uses the EF before this review). The answer still changes the EF and so the next ones.
+ */
+export function sameIntervals(labels: Record<Quality, string>): boolean {
+  return labels[3] === labels[4] && labels[4] === labels[5];
 }

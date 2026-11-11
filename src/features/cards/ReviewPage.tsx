@@ -4,11 +4,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { dueSummary, sessionStep, type CardView } from "../../../shared/srs/due.ts";
-import { nextIntervals, QUALITY_LABEL, type Quality, type Srs } from "../../../shared/srs/sm2.ts";
+import { nextIntervals, QUALITY_LABEL, sameIntervals, type Quality, type Srs } from "../../../shared/srs/sm2.ts";
 import { Button, buttonVariants } from "../../components/ui/button.tsx";
 import { Chip } from "../../components/ui/chip.tsx";
 import { showToast } from "../../components/ui/toast.tsx";
-import { gradeCard, restoreSrs, useAllCards, useDecks } from "../../lib/cards-store.ts";
+import { gradeCard, restoreSrs, useAllCards, useDecks, useNewExtra } from "../../lib/cards-store.ts";
 import { cn } from "../../lib/cn.ts";
 import { RichText } from "../../lib/tex.tsx";
 import { CARDS_BASE, dayLabel, ddmm, tarjetas, useNewCap, useToday, useTodayQueue } from "./DecksPage.tsx";
@@ -16,6 +16,8 @@ import { CARDS_BASE, dayLabel, ddmm, tarjetas, useNewCap, useToday, useTodayQueu
 const GRADES: Quality[] = [1, 3, 4, 5];
 const REVEAL_MS = 180;
 const SHORTCUT_HINT = "Atajos: Espacio para mostrar, 1–4 para calificar";
+/** Shown when Difícil, Bien and Fácil give the same interval (cards from their second review on). */
+export const SAME_INTERVAL_HINT = "Difícil, Bien y Fácil dan hoy el mismo intervalo; tu respuesta cambia los siguientes.";
 
 type Tally = Record<Quality, number>;
 type HistoryEntry = { token: number; queue: string[]; cardId: string; q: Quality; prev: Srs | null; changed: boolean };
@@ -181,7 +183,8 @@ export function ReviewPage() {
 
   const title = deck ? deck.name : "Todos los mazos";
   const finished = !current;
-  const next = useMemo(() => dueSummary(scope, today, cap).next, [scope, today, cap]);
+  const extra = useNewExtra(today);
+  const next = useMemo(() => dueSummary(scope, today, cap, extra).next, [scope, today, cap, extra]);
   const deckName = (id: string) => decks.find((d) => d.id === id)?.name ?? "";
 
   return (
@@ -295,6 +298,9 @@ export function ReviewPage() {
                   </Button>
                 ))}
               </div>
+              {sameIntervals(intervals) ? (
+                <p className="mt-2 text-center text-[14px] text-muted">{SAME_INTERVAL_HINT}</p>
+              ) : null}
             </div>
           ) : null}
 

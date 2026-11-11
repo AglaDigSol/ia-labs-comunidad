@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { localCivilDate } from "../date.ts";
-import { addDays, fmtInterval, nextIntervals, NEW_STATE, QUALITY, QUALITY_LABEL, review } from "./sm2.ts";
+import { addDays, FIRST_INTERVAL, fmtInterval, nextIntervals, NEW_STATE, QUALITY, QUALITY_LABEL, review, sameIntervals } from "./sm2.ts";
 import { SrsSchema, type Srs } from "./types.ts";
 
 describe("addDays (civil calendar arithmetic)", () => {
@@ -17,26 +17,37 @@ describe("addDays (civil calendar arithmetic)", () => {
     const ms = new Date(2026, 9, 31, 23, 30).getTime();
     const today = localCivilDate(ms);
     expect(today).toBe("2026-10-31");
-    expect(review(null, QUALITY.bien, today).due).toBe("2026-11-01");
+    expect(review(null, QUALITY.dificil, today).due).toBe("2026-11-01");
+    expect(review(null, QUALITY.bien, today).due).toBe("2026-11-03");
   });
 });
 
-describe("review (classic SM-2, A2)", () => {
-  it("schedules 1, 6, then round(interval × EF)", () => {
+describe("review (SM-2, A2)", () => {
+  it("schedules a new card 1, 3 or 4 days ahead by button (Difícil, Bien, Fácil)", () => {
+    expect(FIRST_INTERVAL).toEqual({ 3: 1, 4: 3, 5: 4 });
+    expect(review(null, 3, "2026-10-30")).toMatchObject({ n: 1, interval: 1, due: "2026-10-31" });
+    expect(review(null, 4, "2026-10-30")).toMatchObject({ n: 1, interval: 3, due: "2026-11-02" });
+    expect(review(null, 5, "2026-10-30")).toMatchObject({ n: 1, interval: 4, due: "2026-11-03" });
+    // A card relearned after «Otra vez» (n = 0) starts again from the same first intervals.
+    const lapsed = review({ ...NEW_STATE("2026-10-01"), n: 3, interval: 15, last: "2026-10-15" }, 1, "2026-10-30");
+    expect(review(lapsed, 5, "2026-10-31")).toMatchObject({ n: 1, interval: 4 });
+  });
+
+  it("schedules the first interval, 6, then round(interval × EF)", () => {
     const a = review(null, 4, "2026-10-30");
     expect(a).toEqual({
       ef: 2.5,
       n: 1,
-      interval: 1,
-      due: "2026-10-31",
+      interval: 3,
+      due: "2026-11-02",
       last: "2026-10-30",
       introduced: "2026-10-30",
       lapses: 0,
     });
-    const b = review(a, 4, "2026-10-31");
-    expect(b).toMatchObject({ n: 2, interval: 6, due: "2026-11-06", introduced: "2026-10-30" });
-    const c = review(b, 4, "2026-11-06");
-    expect(c).toMatchObject({ n: 3, interval: 15, due: "2026-11-21" });
+    const b = review(a, 4, "2026-11-02");
+    expect(b).toMatchObject({ n: 2, interval: 6, due: "2026-11-08", introduced: "2026-10-30" });
+    const c = review(b, 4, "2026-11-08");
+    expect(c).toMatchObject({ n: 3, interval: 15, due: "2026-11-23" });
   });
 
   it("updates EF on every review, including Otra vez", () => {
@@ -113,12 +124,17 @@ describe("labels", () => {
     expect(fmtInterval(400)).toBe("1 a");
   });
 
-  it("shows the next interval under each button", () => {
-    expect(nextIntervals(null, "2026-10-30")).toEqual({ 1: "Hoy", 3: "1 d", 4: "1 d", 5: "1 d" });
-    const b = review(review(null, 4, "2026-10-30"), 4, "2026-10-31");
-    expect(nextIntervals(b, "2026-11-06")).toEqual({ 1: "Hoy", 3: "15 d", 4: "15 d", 5: "15 d" });
+  it("shows the next interval under each button, distinct for a new card", () => {
+    const fresh = nextIntervals(null, "2026-10-30");
+    expect(fresh).toEqual({ 1: "Hoy", 3: "1 d", 4: "3 d", 5: "4 d" });
+    expect(sameIntervals(fresh)).toBe(false);
+    const b = review(review(null, 4, "2026-10-30"), 4, "2026-11-02");
+    const later = nextIntervals(b, "2026-11-08");
+    expect(later).toEqual({ 1: "Hoy", 3: "15 d", 4: "15 d", 5: "15 d" });
+    // From the second review on the three buttons share the interval (the EF changes later ones).
+    expect(sameIntervals(later)).toBe(true);
     // Already graded today: the stored schedule stands.
-    expect(nextIntervals(b, "2026-10-31")).toEqual({ 1: "Hoy", 3: "6 d", 4: "6 d", 5: "6 d" });
+    expect(nextIntervals(b, "2026-11-02")).toEqual({ 1: "Hoy", 3: "6 d", 4: "6 d", 5: "6 d" });
   });
 
   it("maps the four buttons to qualities 1, 3, 4, 5", () => {

@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SEED_DECKS, seedCards } from "../../../shared/srs/decks.ts";
 import type { Srs } from "../../../shared/srs/types.ts";
 import { __resetToastForTests, ToastHost } from "../../components/ui/toast.tsx";
 import { __resetKvStoreForTests, readKvPrefix, setKv } from "../../lib/kv-store.ts";
@@ -17,7 +18,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(`${TODAY}T12:00:00`));
   setKv(`deck/${DECK}`, { name: "Lógica", course: "02MIAR", session: 2 });
-  // The dictionary decks come first in the new-card order; a high cap lets this deck's new cards in.
+  // The cap is per deck; a high one keeps the tests independent of it.
   setKv("pref/newCardsPerDay", 200);
 });
 afterEach(() => {
@@ -72,8 +73,10 @@ describe("ReviewPage", () => {
     setKv("pref/newCardsPerDay", 20);
     mount("/flashcards/repaso");
     expect(screen.getByRole("heading", { level: 1, name: "Repaso · Todos los mazos" })).toBeTruthy();
-    // Seed decks give 20 new cards on day one.
-    expect(screen.getByText("1 de 20")).toBeTruthy();
+    // Each seed deck gives up to 20 new cards on day one (the cap is per deck).
+    const n = SEED_DECKS.reduce((acc, d) => acc + Math.min(20, seedCards(d.id).length), 0);
+    expect(n).toBeGreaterThan(20);
+    expect(screen.getByText(`1 de ${n}`)).toBeTruthy();
   });
 
   it("Space reveals the back once in a polite live region and focuses the grade group", () => {
@@ -98,7 +101,9 @@ describe("ReviewPage", () => {
     mount();
     fireEvent.click(screen.getByRole("button", { name: "Mostrar respuesta" }));
     const buttons = within(screen.getByRole("group", { name: "¿Cómo te ha ido?" })).getAllByRole("button");
-    expect(buttons.map((b) => b.textContent)).toEqual(["Otra vezHoy", "Difícil1 d", "Bien1 d", "Fácil1 d"]);
+    expect(buttons.map((b) => b.textContent)).toEqual(["Otra vezHoy", "Difícil1 d", "Bien3 d", "Fácil4 d"]);
+    // Distinct intervals: no «same interval» hint for a new card.
+    expect(screen.queryByText(/dan hoy el mismo intervalo/)).toBeNull();
     expect(buttons.every((b) => b.className.includes("min-h-16") && !b.className.includes("bg-accent"))).toBe(true);
     expect(buttons[2]!.getAttribute("title")).toBe("Atajo: 3");
 
@@ -106,8 +111,8 @@ describe("ReviewPage", () => {
     const firstId = first.endsWith("A") ? "cardaaa00001" : "cardbbb00001";
     key("3");
     const s = srsOf(firstId)!;
-    expect(s).toMatchObject({ n: 1, interval: 1, due: "2026-10-31", last: TODAY });
-    expect(screen.getByRole("status").textContent).toContain("Calificada: Bien · próximo repaso 31/10");
+    expect(s).toMatchObject({ n: 1, interval: 3, due: "2026-11-02", last: TODAY });
+    expect(screen.getByRole("status").textContent).toContain("Calificada: Bien · próximo repaso 02/11");
     expect(front().queryByText(first)).toBeNull();
     expect(screen.getByText("2 de 2")).toBeTruthy();
     expect(document.activeElement?.textContent).toBe("Mostrar respuesta");
@@ -116,6 +121,16 @@ describe("ReviewPage", () => {
     expect(srsOf(firstId)).toBeNull();
     expect(front().getByText(first)).toBeTruthy();
     expect(screen.getByText("1 de 2")).toBeTruthy();
+  });
+
+  it("a review card with the same interval on Difícil, Bien and Fácil explains it once", () => {
+    setKv(`card/${DECK}/cardaaa00001`, { front: "Anverso A", back: "Reverso A" });
+    setKv("srs/cardaaa00001", reviewSrs(TODAY));
+    mount();
+    key(" ");
+    const buttons = within(screen.getByRole("group", { name: "¿Cómo te ha ido?" })).getAllByRole("button");
+    expect(buttons.map((b) => b.textContent)).toEqual(["Otra vezHoy", "Difícil15 d", "Bien15 d", "Fácil15 d"]);
+    expect(screen.getAllByText("Difícil, Bien y Fácil dan hoy el mismo intervalo; tu respuesta cambia los siguientes.")).toHaveLength(1);
   });
 
   it("undo restores the previous schedule of a review card", () => {

@@ -1,19 +1,18 @@
 // Lista de mazos: today's count with the one primary «Repasar {n} tarjetas»,
-// decks grouped by course and ordered by session, flat rows with 1px separators.
+// decks grouped by course and ordered by session, flat rows with 1px separators. The new-card cap
+// is per deck; a deck with nothing today says why and, if the cap held new cards back, offers
+// «Repasar 5 más».
 import { COURSES as COURSE_DATA } from "../../../content/courses/index.ts";
 import { ChevronRight, Layers } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { keys } from "../../../shared/keys.ts";
 import type { Course } from "../../../shared/srs/decks.ts";
-import { buildQueue, DEFAULT_NEW_CARDS_PER_DAY, dueSummary, type CardView, type DeckView } from "../../../shared/srs/due.ts";
+import { buildQueue, deckDays, dueSummary, EXTRA_NEW_STEP, type CardView, type DeckDay, type DeckView } from "../../../shared/srs/due.ts";
 import { addDays } from "../../../shared/srs/sm2.ts";
 import { localCivilDate } from "../../../shared/date.ts";
 import { Button, buttonVariants } from "../../components/ui/button.tsx";
 import { Chip } from "../../components/ui/chip.tsx";
-import { useAllCards, useDecks } from "../../lib/cards-store.ts";
-import { cn } from "../../lib/cn.ts";
-import { useKv } from "../../lib/kv-store.ts";
+import { addExtraNew, useAllCards, useDecks, useNewCap, useNewExtra } from "../../lib/cards-store.ts";
 import { useNow } from "../../lib/use-now.ts";
 import { NewDeckDialog } from "./NewDeckDialog.tsx";
 
@@ -34,40 +33,63 @@ export function useToday(): string {
   return localCivilDate(useNow(60_000));
 }
 
-/** pref/newCardsPerDay with the same bounds as cards-store (1–200, default 20). */
-export function useNewCap(): number {
-  const v = useKv<unknown>(keys.pref.newCardsPerDay, DEFAULT_NEW_CARDS_PER_DAY);
-  return typeof v === "number" && Number.isInteger(v) && v >= 1 && v <= 200 ? v : DEFAULT_NEW_CARDS_PER_DAY;
-}
+export { useNewCap } from "../../lib/cards-store.ts";
 
-/** Today's queue over every deck (due reviews, then new cards up to the daily cap). */
+/** Today's queue over every deck (due reviews, then new cards up to each deck's daily cap). */
 export function useTodayQueue(cards: readonly CardView[]): CardView[] {
   const today = useToday();
   const cap = useNewCap();
-  return useMemo(() => buildQueue(cards, today, cap), [cards, today, cap]);
+  const extra = useNewExtra(today);
+  return useMemo(() => buildQueue(cards, today, cap, extra), [cards, today, cap, extra]);
 }
 
-type DeckStats = { today: number; fresh: number; total: number };
+/** Today's numbers per deck (per-deck cap plus today's «Repasar 5 más»). */
+export function useDeckDays(cards: readonly CardView[]): Map<string, DeckDay> {
+  const today = useToday();
+  const cap = useNewCap();
+  const extra = useNewExtra(today);
+  return useMemo(() => deckDays(cards, today, cap, extra), [cards, today, cap, extra]);
+}
 
-function statsByDeck(cards: readonly CardView[], queue: readonly CardView[]): Map<string, DeckStats> {
-  const out = new Map<string, DeckStats>();
-  const get = (id: string) => {
-    let s = out.get(id);
-    if (!s) out.set(id, (s = { today: 0, fresh: 0, total: 0 }));
-    return s;
-  };
-  for (const c of cards) {
-    const s = get(c.deckId);
-    s.total++;
-    if (!c.srs && !c.suspended) s.fresh++;
+/** Why a deck has nothing for today, or null when it has cards today. */
+export function emptyReason(d: DeckDay): string | null {
+  if (d.today > 0) return null;
+  if (d.total === 0) return "Este mazo no tiene tarjetas";
+  if (d.heldBack > 0) {
+    const n = d.introducedToday;
+    return n === 1 ? "Ya viste la nueva de hoy de este mazo" : `Ya viste las ${n} nuevas de hoy de este mazo`;
   }
-  for (const c of queue) get(c.deckId).today++;
-  return out;
+  return "No quedan tarjetas pendientes";
 }
+
+/** «Repasar 5 más» only when the cap is what keeps new cards out today. */
+export const canPullMore = (d: DeckDay) => d.newToday === 0 && d.heldBack > 0;
+
+/** «Repasar 5 más» (or fewer if fewer are left): raises today's cap of the deck and opens its review. */
+export function PullMoreButton({ deck, day, className }: { deck: DeckView; day: DeckDay; className?: string }) {
+  const navigate = useNavigate();
+  const k = Math.min(EXTRA_NEW_STEP, day.heldBack);
+  return (
+    <Button
+      variant="secondary"
+      aria-label={`Repasar ${k} más del mazo ${deck.name}`}
+      className={className}
+      onClick={() => {
+        addExtraNew(deck.id, k);
+        navigate(reviewHref(deck.id));
+      }}
+    >
+      Repasar {k} más
+    </Button>
+  );
+}
+
+const EMPTY_DAY: DeckDay = { today: 0, dueReviews: 0, newToday: 0, fresh: 0, total: 0, introducedToday: 0, cap: 0, heldBack: 0 };
 
 const COURSES: Course[] = COURSE_DATA.map((c) => c.id);
 
-function DeckRow({ deck, stats }: { deck: DeckView; stats: DeckStats }) {
+function DeckRow({ deck, stats }: { deck: DeckView; stats: DeckDay }) {
+  const reason = emptyReason(stats);
   return (
     <li className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="flex min-w-0 flex-col gap-1">
@@ -88,25 +110,24 @@ function DeckRow({ deck, stats }: { deck: DeckView; stats: DeckStats }) {
             Para hoy {stats.today} · Nuevas {stats.fresh} · Total {stats.total}
           </span>
         </p>
+        {reason ? <p className="text-[14px] text-muted">{reason}</p> : null}
       </div>
-      {stats.today > 0 ? (
-        <Link
-          to={reviewHref(deck.id)}
-          aria-label={`Repasar mazo ${deck.name}`}
-          className={cn(buttonVariants({ variant: "secondary" }), "shrink-0 self-start sm:self-auto")}
-        >
-          Repasar mazo
-        </Link>
-      ) : (
-        <Button
-          variant="secondary"
-          disabled
-          aria-label={`Repasar mazo ${deck.name}`}
-          className="shrink-0 self-start sm:self-auto"
-        >
-          Repasar mazo
-        </Button>
-      )}
+      <div className="flex shrink-0 flex-wrap gap-2 self-start sm:self-auto">
+        {canPullMore(stats) ? <PullMoreButton deck={deck} day={stats} /> : null}
+        {stats.today > 0 ? (
+          <Link
+            to={reviewHref(deck.id)}
+            aria-label={`Repasar mazo ${deck.name}`}
+            className={buttonVariants({ variant: "secondary" })}
+          >
+            Repasar mazo
+          </Link>
+        ) : (
+          <Button variant="secondary" disabled aria-label={`Repasar mazo ${deck.name}`}>
+            Repasar mazo
+          </Button>
+        )}
+      </div>
     </li>
   );
 }
@@ -116,12 +137,11 @@ export function DecksPage() {
   const cards = useAllCards();
   const today = useToday();
   const cap = useNewCap();
-  const queue = useTodayQueue(cards);
-  const summary = useMemo(() => dueSummary(cards, today, cap), [cards, today, cap]);
-  const stats = useMemo(() => statsByDeck(cards, queue), [cards, queue]);
+  const extra = useNewExtra(today);
+  const summary = useMemo(() => dueSummary(cards, today, cap, extra), [cards, today, cap, extra]);
+  const stats = useDeckDays(cards);
   const [dialogOpen, setDialogOpen] = useState(false);
   const navigate = useNavigate();
-  const empty: DeckStats = { today: 0, fresh: 0, total: 0 };
   const n = summary.total;
 
   return (
@@ -169,7 +189,7 @@ export function DecksPage() {
             </h2>
             <ul className="flex flex-col divide-y divide-border border-y border-border">
               {list.map((d) => (
-                <DeckRow key={d.id} deck={d} stats={stats.get(d.id) ?? empty} />
+                <DeckRow key={d.id} deck={d} stats={stats.get(d.id) ?? EMPTY_DAY} />
               ))}
             </ul>
           </section>

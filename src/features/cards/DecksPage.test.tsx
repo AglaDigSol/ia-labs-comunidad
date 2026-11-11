@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CardView, DeckView } from "../../../shared/srs/due.ts";
 import type { Srs } from "../../../shared/srs/types.ts";
-import { __resetKvStoreForTests, readKvPrefix } from "../../lib/kv-store.ts";
+import { __resetKvStoreForTests, readKvPrefix, setKv } from "../../lib/kv-store.ts";
 import { DecksPage } from "./DecksPage.tsx";
 
 const h = vi.hoisted(() => ({ decks: [] as DeckView[], cards: [] as CardView[] }));
@@ -143,6 +143,59 @@ describe("DecksPage", () => {
     h.cards = [card("cardnov00001", "deckuser0001", srs("2026-11-05"))];
     routes();
     expect(screen.getByText(/Próximo repaso: 05\/11, 1 tarjeta\./)).toBeTruthy();
+  });
+
+  it("caps new cards per deck: two decks with 30 new cards each show 20 for today", () => {
+    h.cards = [
+      ...Array.from({ length: 30 }, (_, i) => card(`sym-s1n${i}`, "sym-02-s1")),
+      ...Array.from({ length: 30 }, (_, i) => card(`cardpy${String(i).padStart(6, "0")}`, "deckpy000001")),
+    ];
+    routes();
+    expect(screen.getByRole("region", { name: "Repaso de hoy" }).textContent).toContain("40 tarjetas para hoy");
+    const py = within(screen.getByRole("region", { name: "01MIAR" })).getByRole("listitem");
+    const s1 = within(screen.getByRole("region", { name: "02MIAR" })).getAllByRole("listitem")[0]!;
+    expect(within(py).getByText("Para hoy 20 · Nuevas 30 · Total 30")).toBeTruthy();
+    expect(within(s1).getByText("Para hoy 20 · Nuevas 30 · Total 30")).toBeTruthy();
+    expect(within(py).queryByRole("button", { name: /más/ })).toBeNull();
+  });
+
+  it("explains a deck with 0 for today and «Repasar 5 más» pulls 5 extra new cards", () => {
+    const seenToday = srs("2026-11-05");
+    seenToday.introduced = TODAY;
+    seenToday.last = TODAY;
+    h.cards = [
+      ...Array.from({ length: 20 }, (_, i) => card(`cardseen${String(i).padStart(4, "0")}`, "deckpy000001", seenToday)),
+      ...Array.from({ length: 106 }, (_, i) => card(`cardpy${String(i).padStart(6, "0")}`, "deckpy000001")),
+      card("cardlater001", "deckuser0001", srs("2026-11-04")),
+    ];
+    routes();
+    const py = within(screen.getByRole("region", { name: "01MIAR" })).getByRole("listitem");
+    expect(within(py).getByText("Para hoy 0 · Nuevas 106 · Total 126")).toBeTruthy();
+    expect(within(py).getByText("Ya viste las 20 nuevas de hoy de este mazo")).toBeTruthy();
+    const logic = within(screen.getByRole("region", { name: "02MIAR" })).getAllByRole("listitem")[2]!;
+    expect(within(logic).getByText("No quedan tarjetas pendientes")).toBeTruthy();
+    expect(within(logic).queryByRole("button", { name: /más/ })).toBeNull();
+
+    const more = within(py).getByRole("button", { name: "Repasar 5 más del mazo NumPy básico" });
+    expect(more.textContent).toBe("Repasar 5 más");
+    expect(more.className).toContain("min-h-11");
+    fireEvent.click(more);
+    expect(readKvPrefix("newx/")).toEqual([{ key: "newx/deckpy000001", value: { date: TODAY, n: 5 } }]);
+    expect(screen.getByTestId("where").textContent).toBe("/flashcards/repaso");
+  });
+
+  it("after «Repasar 5 más» the deck shows 5 for today", () => {
+    const seenToday = { ...srs("2026-11-05"), introduced: TODAY, last: TODAY };
+    h.cards = [
+      ...Array.from({ length: 20 }, (_, i) => card(`cardseen${String(i).padStart(4, "0")}`, "deckpy000001", seenToday)),
+      ...Array.from({ length: 106 }, (_, i) => card(`cardpy${String(i).padStart(6, "0")}`, "deckpy000001")),
+    ];
+    setKv("newx/deckpy000001", { date: TODAY, n: 5 });
+    routes();
+    const py = within(screen.getByRole("region", { name: "01MIAR" })).getByRole("listitem");
+    expect(within(py).getByText("Para hoy 5 · Nuevas 106 · Total 126")).toBeTruthy();
+    expect(within(py).queryByText(/Ya viste/)).toBeNull();
+    expect(within(py).getByRole("link", { name: "Repasar mazo NumPy básico" })).toBeTruthy();
   });
 
   it("«Nuevo mazo» validates the name, keeps focus and creates the deck", () => {

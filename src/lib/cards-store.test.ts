@@ -5,6 +5,7 @@ import { review } from "../../shared/srs/sm2.ts";
 import { SEED_DECKS, seedCards } from "../../shared/srs/decks.ts";
 import { USER_ID_RE } from "../../shared/srs/types.ts";
 import {
+  addExtraNew,
   deleteCard,
   deleteDeck,
   gradeCard,
@@ -18,8 +19,9 @@ import {
   useDeckCards,
   useDecks,
   useDueSummary,
+  useNewExtra,
 } from "./cards-store.ts";
-import { __resetKvStoreForTests, setKv, useKv, useKvPrefix } from "./kv-store.ts";
+import { __resetKvStoreForTests, readKvPrefix, setKv, useKv, useKvPrefix } from "./kv-store.ts";
 
 beforeEach(() => {
   __resetKvStoreForTests();
@@ -198,12 +200,41 @@ describe("decks and cards", () => {
 });
 
 describe("useDueSummary", () => {
-  it("counts the seed decks with the new-card cap", () => {
+  it("counts the seed decks with the new-card cap per deck", () => {
+    const perDeck = (cap: number) => SEED_DECKS.reduce((n, d) => n + Math.min(cap, seedCards(d.id).length), 0);
+    const py = Math.min(20, seedCards("sym-01-py").length);
     const { result } = renderHook(() => useDueSummary());
-    expect(result.current).toMatchObject({ total: 20, newAvailable: 20, hasCards: true });
-    expect(result.current.byCourse).toEqual({ "02MIAR": 20 });
+    expect(result.current).toMatchObject({ total: perDeck(20), newAvailable: perDeck(20), hasCards: true });
+    // The 01MIAR deck gets its own 20: the 02MIAR decks no longer use up a global cap.
+    expect(py).toBe(20);
+    expect(result.current.byCourse).toEqual({ "01MIAR": py, "02MIAR": perDeck(20) - py });
     act(() => setKv("pref/newCardsPerDay", 5));
-    expect(result.current.total).toBe(5);
+    expect(result.current.total).toBe(perDeck(5));
+  });
+
+  it("«Repasar 5 más» adds today's extra new cards to one deck only", () => {
+    act(() => setKv("pref/newCardsPerDay", 1));
+    const { result } = renderHook(() => ({ summary: useDueSummary(), extra: useNewExtra(TODAY) }));
+    const base = result.current.summary.total;
+    act(() => addExtraNew("sym-01-py"));
+    expect(result.current.extra).toEqual({ "sym-01-py": 5 });
+    expect(result.current.summary.total).toBe(base + 5);
+    act(() => addExtraNew("sym-01-py"));
+    expect(result.current.extra).toEqual({ "sym-01-py": 10 });
+    expect(readKvPrefix("newx/")).toEqual([{ key: "newx/sym-01-py", value: { date: TODAY, n: 10 } }]);
+    // An entry from another day does not count and is replaced by the next pull.
+    act(() => setKv("newx/sym-02-s1", { date: "2026-10-29", n: 5 }));
+    expect(result.current.extra).toEqual({ "sym-01-py": 10 });
+    act(() => addExtraNew("sym-02-s1", 3));
+    expect(result.current.extra).toEqual({ "sym-01-py": 10, "sym-02-s1": 3 });
+  });
+
+  it("deleting a deck removes its extra new cards", () => {
+    const id = saveDeck(null, DECK);
+    addExtraNew(id);
+    expect(readKvPrefix("newx/")).toHaveLength(1);
+    deleteDeck(id);
+    expect(readKvPrefix("newx/")).toHaveLength(0);
   });
 
   it("re-computes when the local civil day changes", () => {
@@ -214,16 +245,17 @@ describe("useDueSummary", () => {
       setKv("srs/sym-x", review(null, 4, "2026-10-29"));
     });
     const first = seedCards("sym-02-s1")[0]!;
-    act(() => setKv(`srs/${first.id}`, review(null, 4, "2026-10-30")));
+    act(() => setKv(`srs/${first.id}`, review(null, 3, "2026-10-30")));
     const { result } = renderHook(() => useDueSummary());
-    // Introduced today (30/10) uses the cap of 1: nothing left today.
-    expect(result.current.total).toBe(0);
+    // Introduced today (30/10) uses Sesión 1's cap of 1; each of the other 3 seed decks gives 1.
+    const others = SEED_DECKS.length - 1;
+    expect(result.current.total).toBe(others);
     expect(result.current.next?.date).toBe("2026-10-31");
     act(() => {
       vi.advanceTimersByTime(61_000);
     });
-    // 00:00 local time on 31/10: the reviewed card is due and one new card is available.
-    expect(result.current.total).toBe(2);
+    // 00:00 local time on 31/10: the Difícil card is due and each seed deck gives one new card.
+    expect(result.current.total).toBe(1 + SEED_DECKS.length);
     expect(result.current.dueReviews).toBe(1);
   });
 });
