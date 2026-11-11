@@ -137,7 +137,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="font-display text-[20px] font-semibold">{t.app.name}</span>
         </header>
 
-        <main id={MAIN_ID} tabIndex={-1} className="mx-auto outline-none w-full max-w-[1200px] px-4 py-6 pb-24 sm:max-w-[720px] lg:max-w-[1200px] lg:px-8 lg:pb-8">
+        {/* Abajo, en el móvil: la barra inferior (56 px y la zona segura) y 32 px de aire, para que nunca tape el final. */}
+        <main
+          id={MAIN_ID}
+          tabIndex={-1}
+          className="mx-auto w-full max-w-[1200px] px-4 py-6 pb-[calc(56px+env(safe-area-inset-bottom)+32px)] outline-none sm:max-w-[720px] lg:max-w-[1200px] lg:px-8 lg:pb-8"
+        >
           {children}
           <Footer />
         </main>
@@ -147,12 +152,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-label={t.nav.main}
           className="fixed inset-x-0 bottom-0 z-30 box-content flex h-14 items-stretch border-t border-border bg-raised pb-[env(safe-area-inset-bottom)] lg:hidden"
         >
-          {nav.map(({ to, label, short, icon: I, end }) => (
+          {nav.map(({ to, short, icon: I, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
-              aria-label={label}
               className={({ isActive }) =>
                 cn(
                   "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-semibold leading-none sm:gap-1 sm:text-[14px]",
@@ -161,10 +165,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               }
             >
               <I size={20} strokeWidth={1.75} aria-hidden="true" />
-              {/* Etiqueta corta visible también en el móvil; el nombre accesible es el largo (aria-label). */}
-              <span className="max-w-full truncate px-0.5" aria-hidden="true">
-                {short}
-              </span>
+              {/* Nombre corto fijo, pensado para caber a 390 px aun con 7 entradas (≤ 48 px a 12 px): es también
+                  el nombre accesible, para que lo que se ve y lo que se oye coincidan. */}
+              <span className="max-w-full truncate px-0.5">{short}</span>
             </NavLink>
           ))}
         </nav>

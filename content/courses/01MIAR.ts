@@ -1,5 +1,6 @@
 import type { Course } from "../../shared/courses/types.ts";
 import type { SourceRef } from "../../shared/content/meta.ts";
+import { subject, subjectLabel } from "../../shared/courses/subjects.ts";
 
 // Pesos de la evaluación. Se citan de la guía docente (sin copiar su texto). Si en tu edición cambian,
 // corrígelos con un PR y actualiza `source`.
@@ -7,7 +8,7 @@ const GUIA: SourceRef = { citation: "Guía docente de 01MIAR", academicYear: "20
 
 export const MIAR01: Course = {
   meta: {
-    subject: "01MIAR · Python para la Inteligencia Artificial",
+    subject: subjectLabel("01MIAR", "long"),
     topic: "Evaluación",
     level: "máster",
     language: "es",
@@ -17,7 +18,7 @@ export const MIAR01: Course = {
     updated: "2026-10-23",
   },
   id: "01MIAR",
-  name: "Python para la Inteligencia Artificial",
+  name: subject("01MIAR").name,
   examWeightPct: 40,
   components: [
     { id: "ev1", label: "Evidencia 1", weightPct: 10, isExam: false, source: GUIA },

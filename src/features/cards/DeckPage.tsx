@@ -3,6 +3,7 @@
 import { ArrowLeft, EllipsisVertical, Pencil, Trash2 } from "lucide-react";
 import { useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { subjectLabel } from "../../../shared/courses/subjects.ts";
 import type { CardView, DeckView } from "../../../shared/srs/due.ts";
 import { Button, buttonVariants } from "../../components/ui/button.tsx";
 import { Chip } from "../../components/ui/chip.tsx";
@@ -241,9 +242,7 @@ function DeckDetail({ deck }: { deck: DeckView }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Chip tone="outline" className="mono">
-            {deck.course}
-          </Chip>
+          <Chip tone="outline">{subjectLabel(deck.course, "tag")}</Chip>
           <Chip tone="outline">{sessionLabel(deck.session)}</Chip>
           {deck.seed ? <Chip tone="outline">Del diccionario</Chip> : null}
           <span className="mono text-[14px] text-muted">{tarjetas(cards.length)}</span>

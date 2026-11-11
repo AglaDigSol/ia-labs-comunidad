@@ -1,6 +1,6 @@
 // Persistencia de los laboratorios (borrador de Markov, formato de las tablas de verdad, «Avanzar al
 // escribir» de las rejillas, borrador del laboratorio de álgebra de Boole, progreso del banco de
-// ejercicios, editor de la pestaña Python e intentos de los simulacros de examen de 02MIAR y de 01MIAR),
+// ejercicios, editor de la pestaña Python e intentos de los simulacros de examen de 02MIAR y de 01MIAR, y lo último que se hizo),
 // detrás de la misma interfaz StorageAdapter que usa el almacén KV.
 // La app independiente guarda cada valor en su propia clave de localStorage, como siempre; una app que
 // integra los laboratorios puede inyectar su almacén con configureLabs({ storage }) (por ejemplo,
@@ -9,7 +9,7 @@ import type { StorageAdapter } from "../../lib/storage-adapter.ts";
 import { setPythonConfig, type PythonLabConfig } from "./python/python-config.ts";
 
 /** Valores que guardan los laboratorios. Todos son cadenas (JSON en el caso de Markov, Boole, los ejercicios, Python y el simulacro). */
-export type LabsStorageKey = "markov" | "logicFormat" | "boole" | "exercises" | "python" | "exam" | "pyexam" | "gridAdvance" | "labsIntro" | "sets";
+export type LabsStorageKey = "markov" | "logicFormat" | "boole" | "exercises" | "python" | "exam" | "pyexam" | "gridAdvance" | "labsIntro" | "sets" | "recent";
 
 /** Claves de localStorage de la app independiente. */
 export const DEFAULT_LABS_KEYS = {
@@ -23,6 +23,7 @@ export const DEFAULT_LABS_KEYS = {
   gridAdvance: "ia-labs.grid-advance",
   labsIntro: "ia-labs.labs-intro",
   sets: "ia-labs.sets.v1",
+  recent: "ia-labs.recent.v1",
 } as const satisfies Record<LabsStorageKey, string>;
 
 const LAB_KEYS = Object.keys(DEFAULT_LABS_KEYS) as LabsStorageKey[];
@@ -42,7 +43,8 @@ function getStorage(): Storage | null {
  * `python`, en 0.8.0, `exam`, la del simulacro de examen, `pyexam`, la del simulacro de 01MIAR,
  * `gridAdvance`, en 0.13.0, la opción «Avanzar al escribir» de las tablas: "0" apagada, "1" o nada encendida,
  * `labsIntro`, la orientación de la primera visita: "0" cerrada, o `sets`, la expresión y los supuestos del
- * diagrama de Venn de Conjuntos, en JSON).
+ * diagrama de Venn de Conjuntos, en JSON, o `recent`, en 0.18.0, la última pestaña y el último ejercicio del banco
+ * (tipo, nivel y semilla) para «Continuar», en JSON).
  */
 export function createLocalStorageLabsAdapter(keys: Partial<Record<LabsStorageKey, string>> = {}): StorageAdapter {
   const map: Record<LabsStorageKey, string> = { ...DEFAULT_LABS_KEYS, ...keys };

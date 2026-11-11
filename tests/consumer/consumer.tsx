@@ -4,6 +4,14 @@ import { lazy } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import {
   ALL_SYMBOLS,
+  SUBJECTS,
+  latestActivity,
+  loadRecent,
+  NotFoundPage,
+  type LabsRecent,
+  subjectLabel,
+  type Subject,
+  type SubjectCode,
   BOOLE_PACK,
   BooleLabPage,
   CalculusLabPage,
@@ -311,3 +319,13 @@ export const noStore: ExamStore = { active: null, history: [] };
 // El plugin de Vite para la CSP estricta, como lo importaría el vite.config de la app anfitriona.
 import { cspSafeRadix } from "ia-labs-comunidad/vite";
 export const cspPlugin: import("vite").Plugin = cspSafeRadix();
+
+// Tabla de asignaturas.
+const firstSubject: Subject = SUBJECTS[0];
+export const firstSubjectCode: SubjectCode = SUBJECTS[0].code;
+export const mathLabel: string = subjectLabel("02MIAR") + firstSubject.short;
+
+// «Continuar» y «Página no encontrada» en el anfitrión.
+const recent: LabsRecent = loadRecent();
+export const continueHref: string | null = latestActivity(recent)?.href ?? null;
+export const notFound = <NotFoundPage homeHref="/" labsHref="/laboratorios" />;

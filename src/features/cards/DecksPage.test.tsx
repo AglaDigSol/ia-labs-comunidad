@@ -102,9 +102,9 @@ describe("DecksPage", () => {
       card("cardsusp0001", "deckuser0001", null, true),
     ];
     routes();
-    const g01 = screen.getByRole("region", { name: "01MIAR" });
-    const g02 = screen.getByRole("region", { name: "02MIAR" });
-    expect(within(g01).getByRole("heading", { level: 2 }).className).toContain("mono");
+    const g01 = screen.getByRole("region", { name: "01MIAR · Python para la IA" });
+    const g02 = screen.getByRole("region", { name: "02MIAR · Matemáticas para la IA" });
+    expect(within(g01).getByRole("heading", { level: 2 }).textContent).toBe("01MIAR · Python para la IA");
     expect(within(g01).getAllByRole("listitem")).toHaveLength(1);
     const rows = within(g02).getAllByRole("listitem");
     expect(rows.map((r) => within(r).getAllByRole("link")[0]!.textContent)).toEqual([
@@ -152,8 +152,8 @@ describe("DecksPage", () => {
     ];
     routes();
     expect(screen.getByRole("region", { name: "Repaso de hoy" }).textContent).toContain("40 tarjetas para hoy");
-    const py = within(screen.getByRole("region", { name: "01MIAR" })).getByRole("listitem");
-    const s1 = within(screen.getByRole("region", { name: "02MIAR" })).getAllByRole("listitem")[0]!;
+    const py = within(screen.getByRole("region", { name: "01MIAR · Python para la IA" })).getByRole("listitem");
+    const s1 = within(screen.getByRole("region", { name: "02MIAR · Matemáticas para la IA" })).getAllByRole("listitem")[0]!;
     expect(within(py).getByText("Para hoy 20 · Nuevas 30 · Total 30")).toBeTruthy();
     expect(within(s1).getByText("Para hoy 20 · Nuevas 30 · Total 30")).toBeTruthy();
     expect(within(py).queryByRole("button", { name: /más/ })).toBeNull();
@@ -169,10 +169,10 @@ describe("DecksPage", () => {
       card("cardlater001", "deckuser0001", srs("2026-11-04")),
     ];
     routes();
-    const py = within(screen.getByRole("region", { name: "01MIAR" })).getByRole("listitem");
+    const py = within(screen.getByRole("region", { name: "01MIAR · Python para la IA" })).getByRole("listitem");
     expect(within(py).getByText("Para hoy 0 · Nuevas 106 · Total 126")).toBeTruthy();
     expect(within(py).getByText("Ya viste las 20 nuevas de hoy de este mazo")).toBeTruthy();
-    const logic = within(screen.getByRole("region", { name: "02MIAR" })).getAllByRole("listitem")[2]!;
+    const logic = within(screen.getByRole("region", { name: "02MIAR · Matemáticas para la IA" })).getAllByRole("listitem")[2]!;
     expect(within(logic).getByText("No quedan tarjetas pendientes")).toBeTruthy();
     expect(within(logic).queryByRole("button", { name: /más/ })).toBeNull();
 
@@ -192,7 +192,7 @@ describe("DecksPage", () => {
     ];
     setKv("newx/deckpy000001", { date: TODAY, n: 5 });
     routes();
-    const py = within(screen.getByRole("region", { name: "01MIAR" })).getByRole("listitem");
+    const py = within(screen.getByRole("region", { name: "01MIAR · Python para la IA" })).getByRole("listitem");
     expect(within(py).getByText("Para hoy 5 · Nuevas 106 · Total 126")).toBeTruthy();
     expect(within(py).queryByText(/Ya viste/)).toBeNull();
     expect(within(py).getByRole("link", { name: "Repasar mazo NumPy básico" })).toBeTruthy();
@@ -216,7 +216,7 @@ describe("DecksPage", () => {
     expect(readKvPrefix("deck/")).toHaveLength(0);
 
     fireEvent.keyDown(course, { key: "Enter" });
-    fireEvent.keyDown(screen.getByRole("option", { name: "02MIAR" }), { key: "Enter" });
+    fireEvent.keyDown(screen.getByRole("option", { name: "02MIAR · Matemáticas para la IA" }), { key: "Enter" });
     fireEvent.keyDown(session, { key: "Enter" });
     expect(screen.getByRole("option", { name: "Sesión 40" })).toBeTruthy();
     fireEvent.keyDown(screen.getByRole("option", { name: "Sesión 2" }), { key: "Enter" });

@@ -5,7 +5,7 @@
 //    excepción: viene apagado y es una pestaña de Laboratorios, no un módulo de la navegación.
 // 2) Registro: cada módulo declara su id, su ruta, su entrada de navegación, su componente perezoso y
 //    el contenido de content/ que usa. Para añadir un módulo nuevo, añade una entrada a MODULES.
-import { CalendarDays, Calculator, FlaskConical, Layers, Settings } from "lucide-react";
+import { CalendarDays, Calculator, FlaskConical, House, Layers, Settings } from "lucide-react";
 import { createElement, lazy, type ComponentType, type LazyExoticComponent } from "react";
 import type { LabsRoutesProps } from "./features/labs/labs.tsx";
 import { t } from "./i18n/index.ts";
@@ -34,16 +34,22 @@ export type OptionalModuleId = Exclude<keyof typeof config.modules, "python">;
 // vite.config.ts lo define al construir: config.modules.python, salvo que LABS_PYTHON diga otra cosa.
 declare const __LABS_PYTHON__: boolean | undefined;
 
-/** ¿Lleva el sitio la pestaña Python? En las pruebas (sin build), lo que diga config.modules.python. */
 /** Dirección de las guías de estudio (VITE_GUIDES_URL, en el build). Vacía: sin enlace. */
 export const GUIDES_URL: string | undefined = import.meta.env.VITE_GUIDES_URL;
 
+/**
+ * Tarjeta «Comunidad» del inicio (VITE_COMMUNITY_URL, en el build): un enlace https a un espacio de la
+ * comunidad que vive fuera de la app. Vacía o sin https: el inicio no la pinta (así es en el sitio público).
+ */
+export const COMMUNITY_URL: string | undefined = import.meta.env.VITE_COMMUNITY_URL;
+
+/** ¿Lleva el sitio la pestaña Python? En las pruebas (sin build), lo que diga config.modules.python. */
 export const PYTHON_TAB: boolean = typeof __LABS_PYTHON__ === "boolean" ? __LABS_PYTHON__ : config.modules.python;
 
 type Icon = ComponentType<{ size?: number; strokeWidth?: number; "aria-hidden"?: boolean | "true"; className?: string }>;
 
 export interface AppModule {
-  id: "laboratorios" | OptionalModuleId | "ajustes";
+  id: "inicio" | "laboratorios" | OptionalModuleId | "ajustes";
   /** Ruta base (sin la base del sitio). Con «/*» si el módulo tiene subrutas. */
   path: string;
   nav: { label: string; short: string; icon: Icon; /** Activo solo en la ruta exacta. */ end: boolean };
@@ -58,6 +64,23 @@ const lazyNamed = <K extends string>(load: () => Promise<Record<K, ComponentType
   lazy(() => load().then((m) => ({ default: m[name] })));
 
 export const MODULES: AppModule[] = [
+  {
+    id: "inicio",
+    path: "/",
+    nav: { label: t.nav.home, short: t.nav.homeShort, icon: House, end: true },
+    component: lazy(() =>
+      import("./features/home/HomePage.tsx").then((m) => ({
+        default: () =>
+          createElement(m.HomePage, {
+            calendar: config.modules.calendario,
+            flashcards: config.modules.flashcards,
+            community: createElement(m.CommunityCard, { href: COMMUNITY_URL }),
+          }),
+      })),
+    ),
+    content: [],
+    optional: false,
+  },
   {
     id: "laboratorios",
     path: "/laboratorios/*",

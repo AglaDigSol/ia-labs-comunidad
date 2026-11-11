@@ -3,11 +3,12 @@
 // y su exportación a .ipynb (nbformat 4.5, kernel python3, Python 3.12) para abrirlo en Jupyter o
 // Colab, en blanco o con el código de la persona. Los CSV no van dentro: se descargan aparte y el
 // cuaderno dice dónde ponerlos. TypeScript puro.
+import { subjectLabel } from "../courses/subjects.ts";
 import { seedToText } from "../exercises/random.ts";
 import { pyExamFiles } from "./build.ts";
 import { PYEXAM_MINUTES, PYEXAM_PROJECT_POINTS, PYEXAM_SHORT_POINTS, type PyExam } from "./types.ts";
 
-export const PYEXAM_TITLE = "Simulacro de 01MIAR · Python para la IA";
+export const PYEXAM_TITLE = `Simulacro de ${subjectLabel("01MIAR")}`;
 export const PYEXAM_INTEGRITY_NOTE = "Es un simulacro para practicar; no es el examen oficial ni lo sustituye.";
 
 /**

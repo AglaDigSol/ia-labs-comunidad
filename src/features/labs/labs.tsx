@@ -1,8 +1,11 @@
 import { ExternalLink } from "lucide-react";
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation, useParams } from "react-router";
+import { NotFoundPage } from "../../components/layout/NotFoundPage.tsx";
+import { safeHttpsUrl } from "../../lib/safe-url.ts";
 import { LabsIntro } from "./LabsIntro.tsx";
 import { LabTabs } from "./LabTabs.tsx";
+import { recordLabTab } from "./recent.ts";
 
 /** Pestañas del área, en orden. «Ejercicios» (el banco de ejercicios de todos los temas) va la última. */
 export const LABS: Array<{
@@ -67,6 +70,11 @@ export interface LabsRoutesProps {
    * de la ruta padre con comodín (<Route path="/laboratorios/*" />).
    */
   basePath?: string;
+  /**
+   * Ruta del inicio de la app, para el enlace «Ir al inicio» de «Página no encontrada» (una subruta que no
+   * existe dentro del área). Por defecto "/"; con null no hay enlace.
+   */
+  homePath?: string | null;
 }
 
 const SymbolsPage = lazy(() => import("./symbols/SymbolsPage.tsx").then((m) => ({ default: m.SymbolsPage })));
@@ -124,23 +132,14 @@ function useLabsBase(basePath: string | undefined): string {
 }
 
 /** La dirección de las guías, solo si es https y válida; null en otro caso. */
-export function safeGuidesUrl(raw: string | undefined): string | null {
-  const v = raw?.trim();
-  if (!v) return null;
-  try {
-    const u = new URL(v);
-    return u.protocol === "https:" ? u.href : null;
-  } catch {
-    return null;
-  }
-}
+export const safeGuidesUrl = (raw: string | undefined): string | null => safeHttpsUrl(raw);
 
 const isActive = (pathname: string, to: string) => pathname === to || pathname.startsWith(`${to}/`);
 
 const RESERVED = new Set<string>(LABS.flatMap((l) => [l.id, l.path]));
 const RESERVED_WITH_PYTHON = new Set<string>([...RESERVED, PYTHON_LAB.id, PYTHON_LAB.path]);
 
-export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, python = false, guidesUrl }: LabsRoutesProps = {}) {
+export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, python = false, guidesUrl, homePath = "/" }: LabsRoutesProps = {}) {
   const guides = safeGuidesUrl(guidesUrl);
   const { pathname } = useLocation();
   const base = useLabsBase(basePath);
@@ -156,6 +155,13 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
   ];
   const hrefOf = (tab: Tab) => `${base}/${tab.path}`;
   const activeTab = tabs.find((tab) => isActive(pathname, hrefOf(tab))) ?? null;
+  // Lo último que se hizo, para «Continuar» del inicio (labs-storage.ts, clave «recent»).
+  const recent = activeTab ? { id: activeTab.id, label: activeTab.label, path: activeTab.path } : null;
+  useEffect(() => {
+    if (recent) recordLabTab(recent);
+    // Solo al cambiar de pestaña.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recent?.id]);
   return (
     <div className="flex flex-col gap-4">
       {/* «contents»: la barra de pestañas es sticky y necesita como contenedor toda el área, no solo esta cabecera. */}
@@ -204,8 +210,8 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
           {extras.map((t) => (
             <Route key={t.id} path={`${t.path}/*`} element={t.element} />
           ))}
-          {/* Absoluta: una ruta relativa desde «*» se añadiría a la URL desconocida una y otra vez. */}
-          <Route path="*" element={<Navigate to={`${base}/simbolos`} replace />} />
+          {/* Una subruta que no existe: «Página no encontrada», con enlaces absolutos al inicio y al área. */}
+          <Route path="*" element={<NotFoundPage homeHref={homePath} labsHref={base || "/"} />} />
         </Routes>
       </Suspense>
     </div>

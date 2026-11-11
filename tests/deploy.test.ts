@@ -111,7 +111,8 @@ describe("Dockerfile", () => {
     expect(df).toContain("ARG LABS_PYTHON=");
     expect(df).toContain('LABS_PYTHON="$LABS_PYTHON"');
     expect(df).toContain("ARG VITE_GUIDES_URL=");
-    expect(df).toContain('VITE_GUIDES_URL="$VITE_GUIDES_URL" npm run build');
+    expect(df).toContain('VITE_GUIDES_URL="$VITE_GUIDES_URL" VITE_COMMUNITY_URL="$VITE_COMMUNITY_URL" npm run build');
+    expect(df).toContain("ARG VITE_COMMUNITY_URL=");
     expect(df).toContain("COPY deploy/security-headers-wasm.conf /etc/nginx/snippets/security-headers-wasm.conf");
   });
 });

@@ -52,7 +52,7 @@ describe("LabTabs", () => {
     expect(document.querySelector('[data-tab-edge="right"]')).toBeNull();
   });
 
-  it("lleva la pestaña activa a la vista si queda fuera", () => {
+  it("lleva la pestaña activa al centro de la vista si queda fuera", () => {
     const scrollTo = vi.fn();
     const proto = HTMLElement.prototype as HTMLElement & { scrollTo: unknown };
     const original = proto.scrollTo;
@@ -68,7 +68,8 @@ describe("LabTabs", () => {
         <LabTabs tabs={tabs} activeId="t5" />
       </MemoryRouter>,
     );
-    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ left: 700 + 100 - 300 + 40 }));
+    // Centrada: su centro (700 + 50) en el centro de la barra (300 / 2).
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ left: 700 + 50 - 150 }));
     proto.scrollTo = original;
   });
 });
@@ -94,6 +95,25 @@ describe("orientación de la primera visita", () => {
     expect(localStorage.getItem(DEFAULT_LABS_KEYS.labsIntro)).toBe("0");
     cleanup();
     renderAt("/laboratorios/logica");
+    expect(screen.queryByRole("region", { name: "Cómo están organizados los laboratorios" })).toBeNull();
+  });
+
+  it("en el móvil es una sola línea plegada que se despliega; cerrada, no vuelve (clave labsIntro)", () => {
+    renderAt("/laboratorios/simbolos");
+    const intro = screen.getByRole("region", { name: "Cómo están organizados los laboratorios" });
+    const toggle = within(intro).getByRole("button", { name: "Cómo están organizados los laboratorios" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.className).toContain("lg:hidden");
+    const body = document.getElementById(toggle.getAttribute("aria-controls")!)!;
+    // Plegada en el móvil, siempre abierta desde 1024 px.
+    expect(body.className.split(" ")).toEqual(expect.arrayContaining(["hidden", "lg:flex"]));
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(body.className.split(" ")).not.toContain("hidden");
+    fireEvent.click(within(intro).getByRole("button", { name: "Cerrar la orientación" }));
+    expect(localStorage.getItem(DEFAULT_LABS_KEYS.labsIntro)).toBe("0");
+    cleanup();
+    renderAt("/laboratorios/markov");
     expect(screen.queryByRole("region", { name: "Cómo están organizados los laboratorios" })).toBeNull();
   });
 

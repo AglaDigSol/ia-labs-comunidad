@@ -17,6 +17,7 @@ export const EXTRA_KEYS = [
   DEFAULT_LABS_KEYS.exercises,
   DEFAULT_LABS_KEYS.exam,
   DEFAULT_LABS_KEYS.pyexam,
+  DEFAULT_LABS_KEYS.recent,
 ] as const;
 
 const BackupSchema = z.strictObject({

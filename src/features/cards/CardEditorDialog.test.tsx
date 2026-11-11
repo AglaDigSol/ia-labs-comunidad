@@ -181,7 +181,7 @@ describe("DeckPage", () => {
     setKv("susp/cardone00001", true);
     deckPage(`/flashcards/${DECK}`);
     expect(screen.getByRole("heading", { level: 1, name: "Lógica proposicional" })).toBeTruthy();
-    expect(screen.getByText("02MIAR")).toBeTruthy();
+    expect(screen.getByText("02MIAR · Matemáticas")).toBeTruthy();
     expect(screen.getByText("Sesión 2")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Nueva tarjeta" })).toBeTruthy();
     expect(document.querySelector(".bg-accent")).toBeNull();

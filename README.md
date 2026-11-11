@@ -14,6 +14,7 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 
 | Módulo | Qué hace | Interruptor |
 | --- | --- | --- |
+| Inicio | Qué viene ahora: «Continuar» (la última pestaña de Laboratorios o el último ejercicio del banco, con su tipo, nivel y semilla), el repaso de hoy de las flashcards y la próxima clase y la próxima entrega del calendario (si sus módulos están encendidos), con la hora de España y la tuya. Una tarjeta «Comunidad» opcional (`VITE_COMMUNITY_URL`; sin ella, no aparece). Una dirección que no existe muestra «Página no encontrada», con enlaces al inicio y a los laboratorios. | siempre activo |
 | Simbología | Diccionario de símbolos (lógica, conjuntos, Boole, álgebra lineal, cálculo, combinatoria y probabilidad, y notación general) con búsqueda por nombre, símbolo o nombre de Python (`np.sum`, `math.factorial`…), fichas KaTeX, «lectura en clase» con voz (Web Speech) y el equivalente en Python/NumPy como texto. | siempre activo |
 | Lógica | Tablas de verdad (también paso a paso, una subfórmula cada vez) que se rellenan con el ratón o con el teclado (V/F o 1/0, flechas, Supr), comparar dos fórmulas, FND/FNC y el espacio F₁. | siempre activo |
 | Predicados | Evaluar fórmulas con ∀ y ∃ en un dominio finito (extensiones con casillas, paso a paso por instancias, testigos y contraejemplos), negar paso a paso con las leyes de la negación, comprobado en cada línea, y traducir frases a fórmulas. | siempre activo |
@@ -24,10 +25,10 @@ La app funciona entera en el navegador: no hay servidor, ni cuentas, ni cookies,
 | Cálculo | Derivadas paso a paso (escribes cada línea y eliges la regla: suma, factor constante, producto, cociente, potencia, cadena o derivadas elementales; cada línea se comprueba en muchos puntos y se avisa si la regla no encaja), o solo el resultado; recta tangente con f y f′ dibujadas y tu recta encima; primitivas (comprobadas derivándolas, con + C) e integrales definidas con sumas de Riemann; derivadas parciales, gradiente y curvas de nivel con flechas, y puntos críticos clasificados con la hessiana; descenso de gradiente en una y dos variables (α, punto de partida, iteraciones, momento y Adam; Rosenbrock, valle alargado, varios mínimos y punto de silla) y los primeros pasos a mano, y adónde converge desde cada punto; «Límites y continuidad»: funciones a trozos, L'Hôpital, dominio y bisección; regla de la cadena en varias variables (también con la jacobiana), puntos críticos tipo test e integración por partes. | siempre activo |
 | Probabilidad | Árbol de probabilidad total y Bayes que rellenas casilla a casilla (ramas que faltan, productos, P(C) y P(Aᵢ \| C)), tabla de contingencia 2×2 con P(A \| B), P(B \| A) e independencia, condicionada con un dado (opciones a–d), independencia con P(A), P(B) y un dato más (selecciona la o las correctas), distribuciones discretas (Bernoulli, binomial, geométrica, Poisson y uniforme: diagrama de barras con la función de distribución, tabla, media y varianza, y práctica con historias: qué distribución es, P(X = k), P(X ≥ k), E[X] y Var(X)), tabla de un juego con dados o monedas (equilibrados o trucados) y su esperanza, penalización justa por fallo en un test, E[XY] con independientes y simulación con semilla de la frecuencia relativa. Fracciones exactas; las respuestas se aceptan como fracción o redondeadas a dos decimales con coma, como en el examen. | siempre activo |
 | Markov | Racionales exactos, validador de matrices estocásticas, evolución vₙ, distribución estacionaria π y problema inverso. | siempre activo |
-| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias, FND/FNC y formalizar frases («es suficiente», «solo si», «a menos que», «ni… ni…»); evaluar y negar con cuantificadores, negar frases en lenguaje natural y predicados sobre ℕ, ℤ, ℚ y ℝ; Venn, igualdades, relaciones entre conjuntos con supuestos (cuál es siempre cierta o siempre falsa), inclusión–exclusión, partes y producto; problemas de combinatoria, ¿qué modelo es?, funciones por cardinal, complejidad de un algoritmo y P y NP; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente; probabilidad total y Bayes (también contada con porcentajes), condicionada con un dado, condicionada e independencia, binomial, geométrica, esperanza de un juego con un dado trucado, penalización en un test y E[XY] con independientes; distribución tras n pasos, distribución estacionaria, clasificación de estados (absorbente, recurrente, transitorio) y probabilidad de absorción con N = (I − Q)⁻¹ en cadenas de Markov generadas al azar; y teoría con el formato del examen: funciones a trozos, L'Hôpital, dominio, bisección, regla de la cadena (también con la jacobiana), cuencas del descenso, críticos tipo test, integración por partes, propiedades del determinante, verdadero o falso sobre matrices, normas, rango y dimensión de tensores y sistemas tipo test. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. Arriba, el **Simulacro de examen (02MIAR)**: ver [Simulacro de examen](#simulacro-de-examen-02miar). Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 13: de los tipos de datos a NumPy, pandas, gráficos y generadores) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)), y el [Simulacro de examen (01MIAR)](#simulacro-de-examen-01miar). | siempre activo |
+| Ejercicios | Banco de ejercicios generados al momento, por tema y nivel (básico, medio, avanzado): tablas de verdad, clasificar, equivalencias, FND/FNC y formalizar frases («es suficiente», «solo si», «a menos que», «ni… ni…»); evaluar y negar con cuantificadores, negar frases en lenguaje natural y predicados sobre ℕ, ℤ, ℚ y ℝ; Venn, igualdades, relaciones entre conjuntos con supuestos (cuál es siempre cierta o siempre falsa), inclusión–exclusión, partes y producto; problemas de combinatoria, ¿qué modelo es?, funciones por cardinal, complejidad de un algoritmo y P y NP; Σm y ΠM, Karnaugh y simplificar con leyes; Gauss-Jordan, determinante, producto, inversa, sistemas, independencia, autovalores y formas de tensores; derivadas por reglas, recta tangente, primitivas, integrales definidas, gradiente, puntos críticos con la hessiana y pasos de descenso de gradiente; probabilidad total y Bayes (también contada con porcentajes), condicionada con un dado, condicionada e independencia, binomial, geométrica, esperanza de un juego con un dado trucado, penalización en un test y E[XY] con independientes; distribución tras n pasos, distribución estacionaria, clasificación de estados (absorbente, recurrente, transitorio) y probabilidad de absorción con N = (I − Q)⁻¹ en cadenas de Markov generadas al azar; y teoría con el formato del examen: funciones a trozos, L'Hôpital, dominio, bisección, regla de la cadena (también con la jacobiana), cuencas del descenso, críticos tipo test, integración por partes, propiedades del determinante, verdadero o falso sobre matrices, normas, rango y dimensión de tensores y sistemas tipo test. Cada ejercicio usa la práctica de su laboratorio, va en la URL (se puede compartir o repetir) y cuenta en el progreso. La lista se filtra por tema y por nivel, con el recuento de tipos por nivel, y empieza por «Continúa donde lo dejaste» (el último tipo, nivel y semilla). Arriba, el **Simulacro de examen (02MIAR)**: ver [Simulacro de examen](#simulacro-de-examen-02miar). Con Python encendido, también ejercicios de Python de 01MIAR (temas 1 a 13: de los tipos de datos a NumPy, pandas, gráficos y generadores) corregidos en el navegador y «¿Qué imprime?» (ver [Ejercicios de Python](#ejercicios-de-python)), y el [Simulacro de examen (01MIAR)](#simulacro-de-examen-01miar). | siempre activo |
 | Calendario | Clases y entregas en hora de España y en la tuya, aviso de cambio de hora y calendario `.ics` suscribible. | `calendario` |
 | Flashcards | Repaso espaciado SM-2 con mazos generados desde el diccionario y mazos propios con KaTeX. | `flashcards` |
-| Calculadora de notas | Nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
+| Notas | Calculadora de notas: nota ponderada, mínimo de 5,0 por bloque, nota necesaria en el examen y menciones. Orientativa, no oficial. | `calculadora` |
 | Python (opcional) | Pestaña de Laboratorios, tras «Ejercicios»: Python 3.12 en el navegador con Pyodide (numpy, pandas, matplotlib, seaborn, scikit-learn…), plantillas de 01MIAR, archivos propios, `%timeit`, borradores y «Ejecutar paso a paso». Ver [Python (opcional)](#python-opcional). | `python` (apagado) |
 
 Los módulos opcionales se activan o desactivan en [`src/config.ts`](src/config.ts):
@@ -38,8 +39,12 @@ export const config = {
 } as const;
 ```
 
-Si pones uno a `false`, desaparece de la navegación y de las rutas, y su código no llega a descargarse. `python` viene
-apagado y también se enciende sin tocar el código, al construir: `LABS_PYTHON=1 npm run build`.
+Si pones uno a `false`, desaparece de la navegación y de las rutas (y del inicio), y su código no llega a descargarse.
+`python` viene apagado y también se enciende sin tocar el código, al construir: `LABS_PYTHON=1 npm run build`.
+
+**Rutas.** `/` es el inicio; `/laboratorios/<pestaña>` (`/laboratorios` abre Simbología), `/calendario`, `/flashcards`,
+`/notas` y `/ajustes`. Cualquier otra, también dentro de `/laboratorios/`, muestra «Página no encontrada». En el móvil, la
+barra inferior usa nombres cortos fijos que caben a 390 px: Inicio, Labs, Agenda, Tarjetas, Notas y Ajustes.
 
 ### Modo «Comprueba tu respuesta»
 
@@ -137,13 +142,36 @@ npm ci --ignore-scripts
 npm run build                      # VITE_BASE=/ por defecto
 VITE_BASE=/labs/ npm run build     # si el sitio va en una subcarpeta
 VITE_GUIDES_URL=https://… npm run build   # enlace «Guías de estudio» (opcional)
+VITE_COMMUNITY_URL=https://… npm run build   # tarjeta «Comunidad» del inicio (opcional)
 ```
 
 `npm run build` hace `vite build` y después `node scripts/build-ics.ts dist`, que añade `calendario.ics`,
 `calendario-<materia>.ics` y `calendario.json`; `scripts/vendor-pyodide.ts`, que solo hace algo con Python encendido; y
 `scripts/check-python.ts`, que comprueba que Pyodide no está en el chunk de entrada (y que no hay nada de Python si está
-apagado). El resultado es una carpeta estática (unos 2,7 MB, con las fuentes de KaTeX; unos 113 MB con Python) que se
-sirve con cualquier servidor web.
+apagado). El resultado es una carpeta estática (unos 3,6 MB, con las fuentes de KaTeX y los iconos; unos 113 MB con
+Python) que se sirve con cualquier servidor web.
+
+### Instalable y sin conexión
+
+La app se puede instalar (Añadir a pantalla de inicio en iPhone y iPad, Instalar en Chrome y Edge) y funciona sin
+conexión:
+
+- `public/manifest.json` (con extensión `.json`, no `.webmanifest`) e iconos oscuros con el color de acento en
+  `public/icons/` (192 y 512 px, uno maskable y el de iOS de 180 px). Todo relativo a la base del sitio
+  (`VITE_BASE`).
+- `dist/sw.js`: un service worker escrito a mano, sin dependencias. Lo genera al construir
+  `scripts/service-worker.ts` a partir de `scripts/sw-template.js`, con la versión y la lista de archivos del build.
+  Precarga la app (index.html, chunks, estilos, fuentes woff2, manifiesto e iconos: unos 2,5 MB sin comprimir) y
+  borra las versiones anteriores al activarse. Las rutas de la app sin conexión abren el index.html precargado;
+  `calendario.json` va primero a la red y, sin ella, a la última copia.
+- Con la pestaña Python, los archivos de Pyodide (`pyodide/`) y el worker no se precargan: se guardan la primera vez
+  que se usan, así que tras cargar Python una vez con conexión también funciona sin ella.
+- Su alcance es la carpeta donde está `sw.js`, es decir, la base del sitio. Se registra solo en el build (no en
+  `npm run dev`) y nunca en una app anfitriona. La primera vez que la app queda disponible sin conexión aparece el
+  aviso «Disponible sin conexión», que el inicio muestra después siempre.
+- No cambia la CSP: el service worker cae en `script-src 'self'` y el manifiesto en `manifest-src 'self'`. El
+  servidor solo tiene que servir `sw.js` sin caché (`Cache-Control: no-cache`) para que el navegador vea cada
+  versión nueva; `deploy/nginx.conf` y `deploy/htaccess.example` ya lo hacen.
 
 ## Python (opcional)
 
@@ -345,7 +373,7 @@ Ejemplo: `labs.tu-dominio.com`.
 Copia [`deploy/nginx.conf`](deploy/nginx.conf), [`deploy/security-headers.conf`](deploy/security-headers.conf) y
 [`deploy/security-headers-wasm.conf`](deploy/security-headers-wasm.conf) (la del worker de Python) a tu servidor,
 cambia `root` y `listen` (y añade tu bloque TLS). Incluye el fallback SPA, caché inmutable en `/assets/` y
-`/pyodide/`, los `.ics` como `text/calendar` con caché de 1 h y todas las cabeceras.
+`/pyodide/`, los `.ics` como `text/calendar` con caché de 1 h, `sw.js` sin caché y todas las cabeceras.
 
 ### Opción B: `dist/` estático en Apache
 
@@ -377,6 +405,7 @@ la pestaña Python, `--build-arg LABS_PYTHON=1`.
 | `Referrer-Policy` | `no-referrer` |
 | `Permissions-Policy` | cámara, micrófono, geolocalización, pagos y sensores desactivados |
 | `X-Robots-Tag` | `noindex, nofollow` |
+| `Cache-Control` de `sw.js` | `no-cache` (el service worker; ver [Instalable y sin conexión](#instalable-y-sin-conexión)) |
 
 Sobre la CSP:
 
@@ -488,7 +517,12 @@ export default defineConfig({ plugins: [cspSafeRadix(), react(), tailwindcss()] 
 pestañas se resuelven respecto a esa ruta, así que no hace falta pasar `basePath` (existe por si se monta fuera de una
 ruta con comodín). Desde 1024 px las pestañas pasan a otra fila; más estrechas, la barra se desplaza con un degradado y
 flechas, y la pestaña activa se lleva a la vista. En la primera visita, una orientación breve explica las pestañas y
-enlaza los simulacros; se cierra con «Entendido» y se recuerda con la clave `labsIntro` de los laboratorios.
+enlaza los simulacros; en el móvil es una sola línea plegada que se despliega al tocarla. Se cierra con «Entendido» o la
+X y se recuerda con la clave `labsIntro` de los laboratorios. Una subruta que no existe muestra «Página no encontrada»
+(antes redirigía a Simbología), con «Ir a los laboratorios» y, si `homePath` no es `null`, «Ir al inicio» (por defecto,
+`/`). Al cambiar de pestaña y al abrir un ejercicio del banco se anota lo último que se hizo en la clave `recent`
+(pestaña, y tipo, nivel y semilla del ejercicio; nunca las respuestas): `loadRecent()` y `latestActivity()` dan lo
+necesario para un «Continuar» en el inicio del anfitrión.
 
 ```tsx
 import { lazy } from "react";
@@ -526,7 +560,7 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
 - `renderHeaderAction(tab)`: acción opcional junto al título «Laboratorios»; recibe la pestaña activa
   (`{ id, label }`) o `null`.
 - `configureLabs({ storage })`: recibe un `StorageAdapter` (`load`, `save`, `subscribe`), la misma interfaz que usa el
-  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises, python, exam, pyexam, gridAdvance, labsIntro, sets })` guarda en localStorage con las
+  almacén de la app. `createLocalStorageLabsAdapter({ markov, logicFormat, boole, exercises, python, exam, pyexam, gridAdvance, labsIntro, sets, recent })` guarda en localStorage con las
   claves que elijas, por ejemplo las que ya usaba tu app; las que no pases usan `DEFAULT_LABS_KEYS`.
 - También se exportan `SymbolsPage`, `LogicLabPage`, `PredicatesLabPage`, `SetsLabPage`, `CombinatoricsLabPage`, `MarkovLabPage`, `BooleLabPage`, `LinearAlgebraLabPage`, `CalculusLabPage`, `ProbabilityLabPage`,
   `ExercisesPage` (con `examPath={null}` no enseña la tarjeta del simulacro, ni con `pyExamPath={null}` la del de 01MIAR), `ExamSimulatorPage` (con `exercisesPath`, la ruta del banco para «Practicar este tipo»; por defecto `..`), `PythonLabPage` (con `examPath={null}` no enseña el botón del simulacro de 01MIAR) y `PyExamPage` (el simulacro de 01MIAR; `exercisesPath`, por defecto `../../ejercicios`) por separado, las piezas del simulacro de 01MIAR (`buildPyExam`, `pyExamCells`, `pyExamNotebookJson`, `scoreShort`, `scoreStep`, `parsePyExamStore`…), las piezas del simulacro (`buildExam`, `FULL_BLUEPRINT`, `QUICK_BLUEPRINT`, `topicsBlueprint`, `examItem`, `EXAM_TYPE_IDS`, `scoreExam`, `numericMatches`, `parseExamStore`…), la pregunta de opción múltiple (`ChoiceOptions`, `ChoicePractice`, `ChoiceSolution`, `arrangeChoices`, `gradeChoice`, `toggleChoice`) y el campo numérico `NumericField`, y los motores: banco de ejercicios (`EXERCISE_TYPES`, `exerciseType`, cada tipo con
@@ -550,6 +584,12 @@ const Apuntes = lazy(() => import("./apuntes/ApuntesPage.tsx"));
   Markov (matrices, evolución, sistemas, validación, clasificación de estados, absorción), racionales exactos y
   repaso espaciado SM-2 (`review`, barajas, `dueSummary`, esquemas). Con `"sideEffects"` declarado, lo que no se usa
   no entra en el bundle.
+- Asignaturas: `SUBJECTS` es la tabla única de asignaturas (`code`, `name`, `short`, `tag`), la que usan el calendario,
+  las flashcards, las notas, los simulacros y los laboratorios. `subjectLabel("02MIAR")` da «02MIAR · Matemáticas para
+  la IA» (`"long"`: el nombre de la guía docente; `"tag"`: «02MIAR · Matemáticas») y `subjectByCode` devuelve la fila o
+  `null`. Según las guías docentes 2026-2027, 01MIAR es «Python para la Inteligencia Artificial» y 02MIAR,
+  «Matemáticas para la Inteligencia Artificial»: una app anfitriona debería leer los nombres de aquí y no escribirlos a
+  mano.
 - Subrutas: `ia-labs-comunidad/shared/*` y `ia-labs-comunidad/content/*` para importar un módulo concreto, y
   `ia-labs-comunidad/tokens.css` para una app sin tokens de diseño propios.
 
@@ -651,6 +691,8 @@ el uso completo.
 - Sin cookies, sin analítica, sin rastreadores y sin CDN: fuentes del sistema, KaTeX, librerías y Pyodide se sirven
   desde el propio sitio. La pestaña Python no tiene acceso a internet y lo que subes a ella no sale del navegador.
 - Sin claves de API en el frontend.
+- El service worker solo guarda archivos de la app (y de Pyodide, si se usa) en la caché del navegador; nunca lo que
+  escribes ni tus datos.
 - Los datos se guardan en `localStorage` de tu navegador, con try/catch: si el navegador lo bloquea, la app sigue
   funcionando en memoria.
 - «Importar mis datos» acepta como máximo 2 MB (se comprueba antes de leer), valida la copia con zod (incluida su

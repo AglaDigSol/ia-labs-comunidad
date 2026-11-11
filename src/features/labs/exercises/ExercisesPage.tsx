@@ -3,11 +3,13 @@
 // corresponde. Tipo, nivel y semilla van en la URL (?t=&n=&s=, y &m=<tema> al mezclar), así que un
 // ejercicio se puede compartir o repetir. La app solo corrige y da pistas; las soluciones están detrás
 // de «Ver la solución completa». El progreso (resueltos y último día, por tipo y nivel) se guarda con
-// labs-storage.ts; las respuestas no.
-import { ArrowLeft, Check, ClipboardCheck, Shuffle, SkipForward } from "lucide-react";
+// labs-storage.ts; las respuestas no. La lista se puede filtrar por tema y nivel (con el recuento de
+// tipos) y, si hay un ejercicio anterior, empieza por «Continúa donde lo dejaste» (recent.ts).
+import { ArrowLeft, Check, ClipboardCheck, History, Shuffle, SkipForward } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { exerciseTopics, exercisesOfTopic, exerciseType, mixedType, type AnyExerciseType } from "../../../../shared/exercises/registry.ts";
+import { subject } from "../../../../shared/courses/subjects.ts";
 import { randomSeed, seedFromText, seedToText } from "../../../../shared/exercises/random.ts";
 import {
   EXERCISE_LEVELS,
@@ -24,6 +26,7 @@ import { ToggleGroup, ToggleGroupItem } from "../../../components/ui/toggle-grou
 import { cn } from "../../../lib/cn.ts";
 import { scrollBehavior } from "../../../lib/reveal.ts";
 import { selectClass } from "../boole/AxiomPractice.tsx";
+import { loadRecent, recordExercise, type RecentExercise } from "../recent.ts";
 import { loadProgress, recordSolved, solvedOfType, type ExercisesProgress } from "./progress.ts";
 import { PYTHON_EXERCISE_VIEWS } from "./python-views.tsx";
 import { EXERCISE_VIEWS } from "./views.tsx";
@@ -77,6 +80,8 @@ export function ExercisesPage({ python = false, examPath = "simulacro", pyExamPa
   const [returnTopic, setReturnTopic] = useState<ExerciseTopic | null>(null);
   const modules = useMemo<ExerciseModules>(() => ({ python }), [python]);
   const read = readParams(params, modules);
+  // Filtros de la lista: se conservan al volver de una práctica.
+  const [filters, setFilters] = useState<Filters>({ topic: "todos", level: "todos" });
 
   // Tipo válido sin nivel o sin semilla: se completan (sustituyendo la entrada del historial).
   useEffect(() => {
@@ -122,8 +127,11 @@ export function ExercisesPage({ python = false, examPath = "simulacro", pyExamPa
         />
       ) : read ? null : (
         <>
+          <ResumeCard modules={modules} onOpen={open} />
           {examPath !== null ? <ExamCard to={examPath} /> : null}
           <ExerciseList
+            filters={filters}
+            onFilters={setFilters}
             progress={progress}
             session={session}
             modules={modules}
@@ -140,6 +148,119 @@ export function ExercisesPage({ python = false, examPath = "simulacro", pyExamPa
 
 // ---------------------------------------------------------------- Lista
 
+type Filters = { topic: ExerciseTopic | "todos"; level: ExerciseLevel | "todos" };
+
+/** «1 tipo» / «5 tipos». */
+const tiposText = (n: number) => (n === 1 ? "1 tipo de ejercicio" : `${n} tipos de ejercicio`);
+
+/** «27 en básico, 25 en medio y 20 en avanzado». */
+function perLevelText(types: readonly AnyExerciseType[]): string {
+  const parts = EXERCISE_LEVELS.map((l) => `${types.filter((t) => t.levels.includes(l)).length} en ${l}`);
+  return `${parts.slice(0, -1).join(", ")} y ${parts.at(-1)!}`;
+}
+
+/** Filtros por tema y por nivel, con el recuento de lo que se ve. */
+function ExerciseFilters({
+  topics,
+  filters,
+  onChange,
+  shown,
+}: {
+  topics: readonly ExerciseTopic[];
+  filters: Filters;
+  onChange: (f: Filters) => void;
+  shown: readonly AnyExerciseType[];
+}) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`${id}-topic`} className="text-[14px] font-semibold">
+            Filtrar por tema
+          </label>
+          <select
+            id={`${id}-topic`}
+            className={cn(selectClass, "font-body")}
+            value={filters.topic}
+            onChange={(e) => {
+              const v = e.target.value;
+              onChange({ ...filters, topic: topics.find((t) => t === v) ?? "todos" });
+            }}
+          >
+            <option value="todos">Todos los temas</option>
+            {topics.map((t) => (
+              <option key={t} value={t}>
+                {topicLabel(t)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`${id}-level`} className="text-[14px] font-semibold">
+            Filtrar por nivel
+          </label>
+          <select
+            id={`${id}-level`}
+            className={cn(selectClass, "font-body")}
+            value={filters.level}
+            onChange={(e) => {
+              const v = e.target.value;
+              onChange({ ...filters, level: EXERCISE_LEVELS.find((l) => l === v) ?? "todos" });
+            }}
+          >
+            <option value="todos">Todos los niveles</option>
+            {EXERCISE_LEVELS.map((l) => (
+              <option key={l} value={l}>
+                {levelLabel(l)}
+              </option>
+            ))}
+          </select>
+        </div>
+        {filters.topic !== "todos" || filters.level !== "todos" ? (
+          <Button variant="ghost" onClick={() => onChange({ topic: "todos", level: "todos" })}>
+            Quitar los filtros
+          </Button>
+        ) : null}
+      </div>
+      <p role="status" className="text-[14px]" data-testid="recuento-ejercicios">
+        {filters.level === "todos"
+          ? `${tiposText(shown.length)}: ${perLevelText(shown)}.`
+          : `${tiposText(shown.length)} con nivel ${filters.level}.`}
+      </p>
+    </div>
+  );
+}
+
+/** «Continúa donde lo dejaste»: el último ejercicio abierto (tipo, nivel y semilla), si sigue existiendo. */
+function ResumeCard({ modules, onOpen }: { modules: ExerciseModules; onOpen: (c: Current) => void }) {
+  const id = useId();
+  const [last] = useState<RecentExercise | null>(() => loadRecent().exercise);
+  const type = last ? exerciseType(last.type, modules) : null;
+  if (!last || !type || !type.levels.includes(last.level)) return null;
+  const mix = isTopic(last.mix) && last.mix === type.topic ? last.mix : null;
+  return (
+    <section aria-labelledby={`${id}-title`} className="flex flex-col gap-3 rounded-lg border border-border bg-raised p-4">
+      <h2 id={`${id}-title`} className="flex items-center gap-2 font-display text-[20px] font-semibold">
+        <History size={20} aria-hidden="true" />
+        Continúa donde lo dejaste
+      </h2>
+      <p>
+        <span className="font-semibold">{type.title}</span>
+        <span className="text-muted">{` · ${topicLabel(type.topic)} · nivel ${last.level} · código ${seedToText(last.seed)}`}</span>
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="primary" onClick={() => onOpen({ type, level: last.level, seed: last.seed, mix })}>
+          Retomar el ejercicio
+        </Button>
+        <Button onClick={() => onOpen({ type, level: last.level, seed: randomSeed(), mix: null })} aria-label={`Otro del mismo tipo: ${type.title}`}>
+          Otro del mismo tipo
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 /** Tarjeta destacada del simulacro de examen. */
 function ExamCard({ to }: { to: string }) {
   const id = useId();
@@ -150,7 +271,7 @@ function ExamCard({ to }: { to: string }) {
         Simulacro de examen (02MIAR)
       </h2>
       <p className="text-muted">
-        Un examen como el final, con preguntas nuevas del banco: 20 preguntas en 2 horas (o 10 en 1 hora, o por temas), opción múltiple a)–d) y respuestas numéricas, con reloj, nota sobre 10 y la solución de cada pregunta al entregar.
+        {`Un examen como el final de «${subject("02MIAR").short}», con preguntas nuevas del banco: 20 preguntas en 2 horas (o 10 en 1 hora, o por temas), opción múltiple a)–d) y respuestas numéricas, con reloj, nota sobre 10 y la solución de cada pregunta al entregar.`}
       </p>
       <div>
         <Link to={to} relative="path" className={buttonVariants({ variant: "primary" })}>
@@ -171,7 +292,7 @@ function PyExamCard({ to }: { to: string }) {
         Simulacro de examen (01MIAR)
       </h3>
       <p className="text-muted">
-        El final de «Python para la IA» como un cuaderno: cuatro ejercicios cortos y un proyecto de datos por pasos en 2 horas, con «Test Use Case» a la vista, pruebas ocultas al entregar, nota sobre 10 y la solución de cada ejercicio. También se descarga como .ipynb.
+        {`El final de «${subject("01MIAR").short}» como un cuaderno: cuatro ejercicios cortos y un proyecto de datos por pasos en 2 horas, con «Test Use Case» a la vista, pruebas ocultas al entregar, nota sobre 10 y la solución de cada ejercicio. También se descarga como .ipynb.`}
       </p>
       <div>
         <Link to={to} relative="path" className={buttonVariants({ variant: "primary" })}>
@@ -241,6 +362,8 @@ function TopicIndex({ topics }: { topics: readonly ExerciseTopic[] }) {
 }
 
 function ExerciseList({
+  filters,
+  onFilters,
   progress,
   session,
   modules,
@@ -249,6 +372,8 @@ function ExerciseList({
   onStart,
   onMix,
 }: {
+  filters: Filters;
+  onFilters: (f: Filters) => void;
   progress: ExercisesProgress;
   session: number;
   modules: ExerciseModules;
@@ -259,6 +384,11 @@ function ExerciseList({
   onMix: (topic: ExerciseTopic, l: ExerciseLevel) => void;
 }) {
   const topics = exerciseTopics(modules);
+  const levels = filters.level === "todos" ? EXERCISE_LEVELS : [filters.level];
+  const shown = topics
+    .filter((t) => filters.topic === "todos" || t.id === filters.topic)
+    .map((t) => ({ topic: t.id, types: exercisesOfTopic(t.id, modules).filter((x) => levels.some((l) => x.levels.includes(l))) }))
+    .filter((t) => t.types.length > 0);
   useEffect(() => {
     if (focusTopic) goToTopic(focusTopic, false);
     // Solo al montar: la lista se monta de nuevo al volver de una práctica.
@@ -266,10 +396,20 @@ function ExerciseList({
   }, []);
   return (
     <div className="flex flex-col gap-8">
-      <TopicIndex topics={topics.map((t) => t.id)} />
+      <ExerciseFilters topics={topics.map((t) => t.id)} filters={filters} onChange={onFilters} shown={shown.flatMap((t) => t.types)} />
+      {filters.topic === "todos" ? <TopicIndex topics={shown.map((t) => t.topic)} /> : null}
       {session > 0 ? <SessionCounter session={session} /> : null}
-      {topics.map((topic) => (
-        <TopicBlock key={topic.id} topic={topic.id} progress={progress} modules={modules} pyExamPath={topic.id === "python" ? pyExamPath : null} onStart={onStart} onMix={onMix} />
+      {shown.map(({ topic, types }) => (
+        <TopicBlock
+          key={`${topic}|${filters.level}`}
+          topic={topic}
+          types={types}
+          level={filters.level === "todos" ? null : filters.level}
+          progress={progress}
+          pyExamPath={topic === "python" ? pyExamPath : null}
+          onStart={onStart}
+          onMix={onMix}
+        />
       ))}
     </div>
   );
@@ -277,28 +417,34 @@ function ExerciseList({
 
 function TopicBlock({
   topic,
+  types,
+  level,
   progress,
-  modules,
   pyExamPath,
   onStart,
   onMix,
 }: {
   topic: ExerciseTopic;
+  /** Los tipos del tema que dejan ver los filtros. */
+  types: readonly AnyExerciseType[];
+  /** Nivel del filtro (null: todos): es el nivel con el que empiezan las tarjetas. */
+  level: ExerciseLevel | null;
   progress: ExercisesProgress;
-  modules: ExerciseModules;
   pyExamPath: string | null;
   onStart: (t: AnyExerciseType, l: ExerciseLevel) => void;
   onMix: (topic: ExerciseTopic, l: ExerciseLevel) => void;
 }) {
   const id = useId();
-  const [mixLevel, setMixLevel] = useState<ExerciseLevel>("básico");
-  const types = exercisesOfTopic(topic, modules);
+  const [mixLevel, setMixLevel] = useState<ExerciseLevel>(level ?? "básico");
   return (
     <section id={topicAnchor(topic)} aria-labelledby={`${id}-title`} className="flex scroll-mt-28 flex-col gap-3 lg:scroll-mt-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id={`${id}-title`} tabIndex={-1} className="font-display text-[22px] font-semibold">
-          {topicLabel(topic)}
-        </h2>
+        <div className="flex flex-col gap-0.5">
+          <h2 id={`${id}-title`} tabIndex={-1} className="font-display text-[22px] font-semibold">
+            {topicLabel(topic)}
+          </h2>
+          <p className="text-[14px] text-muted">{tiposText(types.length)}</p>
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor={`${id}-mix`} className="text-[14px] font-semibold">
             Nivel para mezclar
@@ -313,7 +459,7 @@ function TopicBlock({
       {pyExamPath !== null ? <PyExamCard to={pyExamPath} /> : null}
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {types.map((t) => (
-          <ExerciseCard key={t.id} type={t} progress={progress} onStart={onStart} />
+          <ExerciseCard key={t.id} type={t} level={level} progress={progress} onStart={onStart} />
         ))}
       </ul>
     </section>
@@ -322,15 +468,17 @@ function TopicBlock({
 
 function ExerciseCard({
   type,
+  level: initial,
   progress,
   onStart,
 }: {
   type: AnyExerciseType;
+  level: ExerciseLevel | null;
   progress: ExercisesProgress;
   onStart: (t: AnyExerciseType, l: ExerciseLevel) => void;
 }) {
   const id = useId();
-  const [level, setLevel] = useState<ExerciseLevel>(type.levels[0]!);
+  const [level, setLevel] = useState<ExerciseLevel>(initial && type.levels.includes(initial) ? initial : type.levels[0]!);
   const total = solvedOfType(progress, type.id);
   const byLevel = progress[type.id] ?? {};
   const last = Object.values(byLevel)
@@ -401,6 +549,13 @@ function PracticeView({
   const [number, setNumber] = useState(1);
   const heading = useRef<HTMLHeadingElement>(null);
   const moved = useRef(false);
+
+  // Lo último que se practicó, para «Continúa donde lo dejaste» y «Continuar» del inicio.
+  useEffect(() => {
+    recordExercise({ type: type.id, title: type.title, level, seed, mix });
+    // Una vez por ejercicio (tipo, nivel y semilla).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
   // Al pasar al siguiente ejercicio, el foco va a su título (no al abrir la práctica).
   useEffect(() => {

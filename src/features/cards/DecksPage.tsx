@@ -6,6 +6,7 @@ import { COURSES as COURSE_DATA } from "../../../content/courses/index.ts";
 import { ChevronRight, Layers } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { subjectLabel } from "../../../shared/courses/subjects.ts";
 import type { Course } from "../../../shared/srs/decks.ts";
 import { buildQueue, deckDays, dueSummary, EXTRA_NEW_STEP, type CardView, type DeckDay, type DeckView } from "../../../shared/srs/due.ts";
 import { addDays } from "../../../shared/srs/sm2.ts";
@@ -184,8 +185,8 @@ export function DecksPage() {
         if (list.length === 0) return null;
         return (
           <section key={course} aria-labelledby={`mazos-${course}`} className="flex flex-col gap-1">
-            <h2 id={`mazos-${course}`} className="mono text-[20px] font-semibold leading-[1.2]">
-              {course}
+            <h2 id={`mazos-${course}`} className="text-[20px] font-semibold leading-[1.2]">
+              {subjectLabel(course)}
             </h2>
             <ul className="flex flex-col divide-y divide-border border-y border-border">
               {list.map((d) => (

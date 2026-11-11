@@ -35,6 +35,11 @@ export default tseslint.config(
     languageOptions: { sourceType: "script", globals: { window: "readonly", document: "readonly", localStorage: "readonly", matchMedia: "readonly" } },
   },
   {
+    // Plantilla del service worker (scripts/service-worker.ts la copia a dist/sw.js).
+    files: ["scripts/sw-template.js"],
+    languageOptions: { sourceType: "script", globals: { self: "readonly", caches: "readonly", fetch: "readonly", URL: "readonly", Request: "readonly", Promise: "readonly" } },
+  },
+  {
     files: ["vite/**/*.mjs"],
     languageOptions: { sourceType: "module", globals: { URL: "readonly" } },
   },

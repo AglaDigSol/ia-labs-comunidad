@@ -13,10 +13,12 @@ afterEach(() => {
 describe("module switches", () => {
   it("the three labs and settings are always on; optional modules follow the switches", () => {
     expect(activeModules({ calendario: false, flashcards: false, calculadora: false }).map((m) => m.id)).toEqual([
+      "inicio",
       "laboratorios",
       "ajustes",
     ]);
     expect(activeModules({ calendario: true, flashcards: false, calculadora: true }).map((m) => m.id)).toEqual([
+      "inicio",
       "laboratorios",
       "calendario",
       "calculadora",
@@ -38,10 +40,11 @@ describe("AppShell", () => {
     );
     const rail = screen.getAllByRole("navigation", { name: "Principal" })[0]!;
     expect(within(rail).getAllByRole("link").map((l) => l.textContent)).toEqual([
+      "Inicio",
       "Laboratorios",
       "Calendario",
       "Flashcards",
-      "Calculadora de notas",
+      "Notas",
       "Ajustes",
     ]);
     expect(
@@ -75,14 +78,21 @@ describe("AppShell en el móvil y con teclado", () => {
     expect(document.activeElement?.tagName).toBe("MAIN");
   });
 
-  it("la barra inferior muestra la etiqueta corta (no solo el icono) y el nombre largo como nombre accesible", () => {
+  it("la barra inferior muestra nombres cortos fijos, que son también su nombre accesible", () => {
     renderShell();
     const bottom = screen.getAllByRole("navigation", { name: "Principal" })[1]!;
     const links = within(bottom).getAllByRole("link");
-    expect(links.map((l) => l.getAttribute("aria-label"))).toContain("Calculadora de notas");
-    const notas = within(bottom).getByRole("link", { name: "Calculadora de notas" });
+    expect(links.map((l) => l.textContent)).toEqual(["Inicio", "Labs", "Agenda", "Tarjetas", "Notas", "Ajustes"]);
+    // Lo que se ve es lo que se oye (sin un aria-label distinto).
+    expect(links.every((l) => !l.hasAttribute("aria-label"))).toBe(true);
+    const notas = within(bottom).getByRole("link", { name: "Notas" });
     expect(notas.getAttribute("aria-current")).toBe("page");
-    const label = within(notas).getByText("Notas");
-    expect(label.className).not.toMatch(/sr-only/);
+    // Cortos: caben a 390 px aun con una séptima entrada (unos 55 px por entrada).
+    for (const l of links) expect(l.textContent!.length).toBeLessThanOrEqual(8);
+  });
+
+  it("el contenido deja sitio abajo para la barra inferior y la zona segura", () => {
+    renderShell();
+    expect(document.getElementById("contenido")!.className).toContain("pb-[calc(56px+env(safe-area-inset-bottom)+32px)]");
   });
 });
