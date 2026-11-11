@@ -122,6 +122,14 @@ function usesSet(stmts: AlgoStmt[], set: "A" | "B"): boolean {
   return stmts.some((s) => (s.k === "forEach" && s.set === set) || ("body" in s && usesSet(s.body, set)));
 }
 
+/** ¿Tiene el coste algún término de esa clase (exponencial, potencia de una variable, logaritmo)? */
+export function costHas(c: Cost, k: "exp" | "var" | "log"): boolean {
+  if (c.k === k) return true;
+  if (c.k === "add" || c.k === "mul") return c.a.some((x) => costHas(x, k));
+  if (c.k === "pow") return costHas(c.a, k);
+  return false;
+}
+
 /** Pistas de un fragmento: la regla de cada estructura que aparece, nunca el orden final. */
 export function algorithmHints(a: Algorithm): string[] {
   const kinds = new Set<string>();
@@ -147,14 +155,21 @@ export function algorithmHints(a: Algorithm): string[] {
   if (seqLoops) out.push("Bloques uno detrás de otro: se suman sus costes y se queda el término que más crece.");
   if (kinds.has("triangular")) out.push("Un bucle hasta la variable del de fuera (j ← 1 hasta i) da 1 + 2 + ··· + n = n(n + 1)/2 vueltas en total: del mismo orden que si llegara siempre hasta n.");
   if (kinds.has("halve")) out.push("Un bucle que divide su variable por dos da unas log₂ n vueltas (la base del logaritmo no cambia el orden).");
-  if (kinds.has("call")) out.push("Cada llamada a Alg(x) cuesta c(x): sustituye k por el argumento y multiplica por las veces que se llama. Del coste c solo importa su término dominante (2ᵏ crece más que cualquier potencia de k).");
+  if (kinds.has("call")) {
+    // La comparación con 2ᵏ solo si el coste del algoritmo llamado tiene una exponencial.
+    const exp = a.sub !== undefined && costHas(costOf(a.sub, ["k"]), "exp");
+    out.push(`Cada llamada a Alg(x) cuesta c(x): sustituye k por el argumento y multiplica por las veces que se llama. Del coste c solo importa su término dominante${exp ? " (2ᵏ crece más que cualquier potencia de k)" : ""}.`);
+  }
   out.push("Quédate con el término que más crece y quita las constantes: O(·) no lleva coeficientes.");
   return out;
 }
 
 /** Pistas para un coste escrito como expresión. */
 export function costHints(c: Cost): string[] {
-  const out = ["Busca el término que más crece: exponenciales por encima de potencias, potencias por encima de logaritmos y estos por encima de las constantes."];
+  // La escala de crecimiento, solo con las clases de términos que tiene el coste.
+  const classes = [costHas(c, "exp") ? "exponenciales" : null, costHas(c, "var") ? "potencias" : null, costHas(c, "log") ? "logaritmos" : null].filter((x): x is string => x !== null);
+  const scale = classes.length > 1 ? `: ${classes.slice(0, -1).join(", ")} por encima de ${classes.at(-1)}, y todo por encima de las constantes.` : classes[0] === "potencias" ? ": entre potencias, la de mayor exponente; las constantes son lo que menos crece." : ".";
+  const out = [`Busca el término que más crece${scale}`];
   const sub = (x: Cost): Cost[] => (x.k === "add" || x.k === "mul" ? x.a : x.k === "pow" ? [x.a] : []);
   const hasPow = (x: Cost): boolean => x.k === "pow" || sub(x).some(hasPow);
   const hasMul = (x: Cost): boolean => (x.k === "mul" && x.a.filter((f) => f.k !== "num").length > 1) || sub(x).some(hasMul);

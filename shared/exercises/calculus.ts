@@ -25,13 +25,14 @@ import {
   withEndpoints,
   type IntervalSet,
 } from "../calculus/domain.ts";
-import { compile, evaluate, exprSize, toTex, type Expr, type VarName } from "../calculus/expr.ts";
+import { compile, evaluate, exprSize, toPlain, toTex, type Expr, type VarName } from "../calculus/expr.ts";
 import { definiteIntegral, parseNumberAnswer } from "../calculus/integrals.ts";
-import { analyzePiecewise, lhopitalSteps, snapNice, type LimitValue, type Piecewise, type PiecewiseAnalysis } from "../calculus/limits.ts";
+import { analyzePiecewise, lhopitalSteps, limitText, snapNice, type LimitValue, type Piecewise, type PiecewiseAnalysis } from "../calculus/limits.ts";
 import { parseExpr } from "../calculus/parser.ts";
 import { classifyPoint, hasNoCriticalPoints } from "../calculus/points.ts";
 import { frac, toNumber, type Frac } from "../rational.ts";
 import { seedFromKey, type ChoiceOption, type ChoiceQuestion } from "./choice.ts";
+import { pickHints, type TaggedHint } from "./hints.ts";
 import { createRng, generateUntil, rngFor, type Rng } from "./random.ts";
 import type { ExerciseLevel, ExerciseType } from "./types.ts";
 
@@ -656,6 +657,52 @@ export function piecewiseQuestion(inst: CalcPiecewiseInstance): ChoiceQuestion {
   };
 }
 
+/** Lo que tiene el enunciado de una función a trozos: «cociente» si algún trozo divide. */
+export const piecewiseTokens = (inst: Pick<CalcPiecewiseInstance, "left" | "right">): string[] => (inst.left.includes("/") || inst.right.includes("/") ? ["cociente"] : []);
+
+const PIECEWISE_HINTS: readonly TaggedHint[] = [
+  { text: "Límite por la izquierda: usa la fórmula de los x < a; por la derecha, la de los x > a." },
+  { needs: ["cociente"], text: "Si al sustituir en un cociente sale 0/0, simplifica o usa L'Hôpital." },
+  { text: "El límite en a existe si los dos laterales existen y valen lo mismo. Continua: además, ese límite es f(a)." },
+  { text: "Derivable en a: tiene que ser continua y las dos derivadas laterales (la derivada de cada trozo, en a) tienen que coincidir." },
+];
+
+export const piecewiseHints = (inst: CalcPiecewiseInstance): string[] => pickHints(PIECEWISE_HINTS, piecewiseTokens(inst));
+
+const SUPS = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+/** x^2 → x²: exponentes enteros como superíndices, para leer la fórmula en una frase. */
+const supPlain = (t: string) => t.replace(/\^(\d+)/g, (_, d: string) => [...d].map((c) => SUPS[Number(c)]).join(""));
+
+/**
+ * La solución con los números: los dos límites laterales, f(a), el límite, la continuidad y, si es
+ * continua, las dos derivadas laterales.
+ */
+export function piecewiseSolution(inst: CalcPiecewiseInstance): string[] {
+  const an = analyzePiecewise(calcPiecewise(inst));
+  const A = niceText(inst.a);
+  const lim = (l: LimitValue) => limitText(l, niceText);
+  const L = supPlain(toPlain(calcExpr(inst.left)));
+  const R = supPlain(toPlain(calcExpr(inst.right)));
+  const source = inst.at === "izquierda" ? `con la fórmula de la izquierda, que incluye x = ${A}` : inst.at === "derecha" ? `con la fórmula de la derecha, que incluye x = ${A}` : "es el valor que se da aparte";
+  const out = [
+    `Por la izquierda (f(x) = ${L}): lím x→${A}⁻ f(x) = ${lim(an.left)}.`,
+    `Por la derecha (f(x) = ${R}): lím x→${A}⁺ f(x) = ${lim(an.right)}.`,
+    `f(${A}) = ${Number.isFinite(an.value) ? niceText(an.value) : "no está definida"} (${source}).`,
+    an.limit.kind === "finito" ? `Los dos laterales valen ${lim(an.limit)}: el límite en x = ${A} existe y vale ${lim(an.limit)}.` : `Los laterales no coinciden: el límite en x = ${A} no existe.`,
+    an.continuous
+      ? `El límite coincide con f(${A}): f es continua en x = ${A}.`
+      : an.limit.kind === "finito"
+        ? `El límite no coincide con f(${A}): f no es continua en x = ${A}.`
+        : `Sin límite, f no es continua en x = ${A}.`,
+  ];
+  out.push(
+    an.continuous
+      ? `Derivadas laterales: f′(${A}⁻) = ${lim(an.dLeft)} y f′(${A}⁺) = ${lim(an.dRight)}; ${an.differentiable ? `coinciden, así que f es derivable en x = ${A}.` : `no coinciden (o no son finitas), así que f no es derivable en x = ${A}.`}`
+      : `Como no es continua en x = ${A}, tampoco es derivable.`,
+  );
+  return out;
+}
+
 /** Plantillas: [izquierda, derecha, a, qué vale en a]. */
 function piecewiseTemplate(rng: Rng, level: ExerciseLevel): Pick<CalcPiecewiseInstance, "a" | "left" | "right" | "at"> {
   const side = rng.pick(["izquierda", "derecha"] as const);
@@ -801,6 +848,17 @@ function lhopitalTemplate(rng: Rng, level: ExerciseLevel): CalcLhopitalInstance 
 
 export const lhopitalOf = (inst: CalcLhopitalInstance) => lhopitalSteps(calcExpr(inst.num), calcExpr(inst.den), inst.at);
 
+/** Pistas de L'Hôpital: la primera, según el punto sea finito o +∞. */
+export function lhopitalHints(inst: CalcLhopitalInstance): string[] {
+  return [
+    inst.at === "+inf"
+      ? "Mira hacia dónde van el numerador y el denominador cuando x → +∞. Si los dos van a ∞, es una indeterminación."
+      : "Sustituye x por el punto en el numerador y en el denominador. Si los dos dan 0, es una indeterminación.",
+    "L'Hôpital: lím f/g = lím f′/g′. Deriva numerador y denominador por separado (no es la derivada del cociente).",
+    "Si al derivar sigue siendo indeterminado, vuelve a aplicarla.",
+  ];
+}
+
 export const CALC_LHOPITAL: ExerciseType<CalcLhopitalInstance> = {
   id: "calculo-lhopital",
   topic: "calculo",
@@ -860,6 +918,66 @@ export function domainQuestion(inst: CalcDomainInstance): ChoiceQuestion {
   // Con «Ninguna de las otras», a veces el dominio no está entre las opciones.
   const options = inst.none && rng.chance(0.3) ? wrong : [opt("dom", fmt(D).text, fmt(D).tex, true), ...wrong.slice(0, 3)];
   return { mode: "single", options, ...(inst.none ? { noneOfOthers: true } : {}) };
+}
+
+/** Argumentos de cada sqrt(…) o ln(…) del texto de la función. */
+function fnArgs(text: string, name: "sqrt" | "ln"): string[] {
+  const out: string[] = [];
+  let i = text.indexOf(`${name}(`);
+  while (i >= 0) {
+    let depth = 0;
+    let j = i + name.length;
+    for (; j < text.length; j++) {
+      if (text[j] === "(") depth++;
+      else if (text[j] === ")" && --depth === 0) break;
+    }
+    out.push(text.slice(i + name.length + 1, j));
+    i = text.indexOf(`${name}(`, j);
+  }
+  return out;
+}
+
+/**
+ * Lo que tiene la función: «raíz», «ln», «cociente», «parábola» (un polinomio de grado 2 dentro de √ o
+ * de ln) y «denominador-cuadrático».
+ */
+export function domainTokens(inst: Pick<CalcDomainInstance, "f">): string[] {
+  const f = inst.f;
+  const quadratic = (u: string) => /x\^2|\)\s*\(/.test(u);
+  const out: string[] = [];
+  if (f.includes("sqrt(")) out.push("raíz");
+  if (f.includes("ln(")) out.push("ln");
+  if (f.includes("/")) out.push("cociente");
+  if ([...fnArgs(f, "sqrt"), ...fnArgs(f, "ln")].some(quadratic)) out.push("parábola");
+  if (/\/\(x\^2/.test(f)) out.push("denominador-cuadrático");
+  return out;
+}
+
+/** Las condiciones de las funciones que tiene f: «√u pide u ≥ 0; un cociente pide denominador ≠ 0». */
+export function domainConditions(inst: Pick<CalcDomainInstance, "f">): string[] {
+  const t = new Set(domainTokens(inst));
+  return [t.has("raíz") ? "√u pide u ≥ 0" : null, t.has("ln") ? "ln u pide u > 0" : null, t.has("cociente") ? "un cociente pide denominador ≠ 0" : null].filter((x): x is string => x !== null);
+}
+
+/** Las condiciones en una frase («ln u» se queda en minúscula: es el nombre de la función). */
+const sentence = (parts: readonly string[]) => {
+  const t = parts.join("; ");
+  return `${t.startsWith("ln") ? t : `${t.charAt(0).toUpperCase()}${t.slice(1)}`}.`;
+};
+
+/** Pistas del dominio: las condiciones de las funciones que tiene f, nunca las de las que no tiene. */
+export function domainHints(inst: Pick<CalcDomainInstance, "f">): string[] {
+  const t = new Set(domainTokens(inst));
+  const conds = domainConditions(inst);
+  const hints: TaggedHint[] = [
+    { text: `${sentence(conds)} ${conds.length > 1 ? "Escribe todas las condiciones y júntalas (todas a la vez)." : "Escribe esa condición y resuélvela."}` },
+    { needs: ["parábola"], text: `Si dentro ${t.has("raíz") ? "de la raíz" : "del logaritmo"} hay un polinomio de grado 2, mira el signo de la parábola: entre sus raíces tiene un signo y fuera de ellas, el contrario.` },
+    { needs: ["denominador-cuadrático"], text: "Factoriza el denominador: f no está definida en ninguna de sus raíces." },
+  ];
+  const excluded = [t.has("ln") ? "ln 0" : null, t.has("cociente") ? "dividir entre 0" : null].filter((x): x is string => x !== null);
+  const included = t.has("raíz") ? ` (√0 = 0 vale${t.has("cociente") ? ", salvo en un denominador" : ""})` : "";
+  hints.push({ text: `Corchete [ si el extremo está incluido${included}; paréntesis ( si no${excluded.length > 0 ? ` (${excluded.join(" o ")} no ${excluded.length > 1 ? "valen" : "vale"})` : ""}.` });
+  return pickHints(hints, t);
 }
 
 export const CALC_DOMAIN: ExerciseType<CalcDomainInstance> = {
@@ -969,6 +1087,47 @@ export function chainAnswer(inst: CalcChainInstance): number {
     return [evaluate(derivative(h, "x"), at), evaluate(derivative(h, "y"), at)] as [number, number];
   })();
   return chainRule(grad, inst.velocity);
+}
+
+const vecPlain = (v: readonly number[]) => `(${v.map(niceText).join(", ")})`;
+/** Factor de un producto: entre paréntesis si es negativo. */
+const factor = (x: number) => (x < 0 ? `(${niceText(x)})` : niceText(x));
+
+/** El gradiente de h en el punto c(t₀): el del enunciado o, si h viene con fórmula, calculado. */
+export function chainGradient(inst: Extract<CalcChainInstance, { kind: "curva" }>): [number, number] {
+  if (inst.grad) return inst.grad;
+  const h = calcExpr(inst.h!, ["x", "y"]);
+  const at = { x: inst.point[0], y: inst.point[1] };
+  return [snapNice(evaluate(derivative(h, "x"), at)), snapNice(evaluate(derivative(h, "y"), at))];
+}
+
+/** La solución con los valores intermedios: el punto, ∇h evaluado en él (o la jacobiana) y el producto. */
+export function chainSolution(inst: CalcChainInstance): string[] {
+  const h = inst.outer;
+  const c = h === "f" ? "g" : "f";
+  if (inst.kind === "jacobiana") {
+    const map = [calcExpr(inst.map[0], ["x", "y"]), calcExpr(inst.map[1], ["x", "y"])] as const;
+    const J = jacobianAt(map, inst.p).map((r) => r.map((x) => snapNice(x)));
+    const [g0, g1] = inst.grad;
+    const dx = g0 * J[0]![0]! + g1 * J[1]![0]!;
+    const dy = g0 * J[0]![1]! + g1 * J[1]![1]!;
+    return [
+      `∇${h}(${c}(p)) = ${vecPlain(inst.grad)}, con p = ${vecPlain(inst.p)} (dato del enunciado).`,
+      `J${c}(p) = (${J[0]!.map(niceText).join("  ")}; ${J[1]!.map(niceText).join("  ")}): en cada fila, las parciales de una componente de ${c} en p.`,
+      `∇(${h}∘${c})(p) = ∇${h}(${c}(p))·J${c}(p) = (${factor(g0)}·${factor(J[0]![0]!)} + ${factor(g1)}·${factor(J[1]![0]!)}, ${factor(g0)}·${factor(J[0]![1]!)} + ${factor(g1)}·${factor(J[1]![1]!)}) = ${vecPlain([dx, dy])}.`,
+      `∂(${h}∘${c})/∂x + ∂(${h}∘${c})/∂y = ${niceText(dx)} + ${factor(dy)} = ${niceText(dx + dy)}.`,
+    ];
+  }
+  const t0 = niceText(inst.t0);
+  const g = chainGradient(inst);
+  const [v0, v1] = inst.velocity;
+  return [
+    `${c}(${t0}) = ${vecPlain(inst.point)} y ${c}′(${t0}) = ${vecPlain(inst.velocity)}.`,
+    inst.h
+      ? `∇${h} = (∂${h}/∂x, ∂${h}/∂y), evaluado en ${c}(${t0}) = ${vecPlain(inst.point)}: ∇${h}${vecPlain(inst.point)} = ${vecPlain(g)}.`
+      : `El gradiente va en el punto ${c}(${t0}) = ${vecPlain(inst.point)}${inst.decoy ? " (no en el otro punto del enunciado)" : ""}: ∇${h}${vecPlain(inst.point)} = ${vecPlain(g)}.`,
+    `[${h}∘${c}]′(${t0}) = ∇${h}(${c}(${t0}))·${c}′(${t0}) = ${factor(g[0])}·${factor(v0)} + ${factor(g[1])}·${factor(v1)} = ${niceText(g[0] * v0 + g[1] * v1)}.`,
+  ];
 }
 
 const CURVE_PARTS: Record<0 | 1, Array<(r: Rng) => string>> = {
@@ -1155,6 +1314,14 @@ export function criticalChoiceQuestion(inst: CalcCriticalChoiceInstance): Choice
   });
   if (inst.none) options.push(opt("sin", "f no tiene puntos críticos", "f \\text{ no tiene puntos críticos}", hasNoCriticalPoints(f), "Mira si alguna parcial puede anularse."));
   return { mode: "single", options };
+}
+
+export function criticalChoiceHints(inst: CalcCriticalChoiceInstance): string[] {
+  return [
+    "Punto crítico: ∂f/∂x = 0 y ∂f/∂y = 0 a la vez. Sustituye cada punto en las dos parciales.",
+    "Hessiana: |H| = f_xx·f_yy − f_xy². |H| > 0 y f_xx > 0: mínimo; |H| > 0 y f_xx < 0: máximo; |H| < 0: silla.",
+    `Si una parcial no puede valer 0 nunca${inst.f.includes("e^") ? " (por ejemplo, k·eˣ)" : ""}, no hay puntos críticos.`,
+  ];
 }
 
 export const CALC_CRITICAL_CHOICE: ExerciseType<CalcCriticalChoiceInstance> = {
