@@ -2,6 +2,7 @@
 // prefijo. La usa src/lib/kv-store.ts al leer localStorage y al importar una copia JSON.
 import { z } from "zod";
 import { COURSES } from "../content/courses/index.ts";
+import { GroupPrefsStoredSchema } from "./calendar/groups.ts";
 import { CardSchema, DeckSchema, NewExtraSchema, SEED_CARD_SRC, SEED_DECK_SRC, SrsSchema, USER_ID_SRC } from "./srs/types.ts";
 
 export type ThemePref = "light" | "system" | "dark";
@@ -19,8 +20,12 @@ export const keys = {
     theme: "pref/theme",
     mhThreshold: "pref/mhThreshold",
     timeZone: "pref/timeZone",
+    /** Antigua: un solo grupo de prácticas para todas las materias. Solo se lee para migrar a calGroups. */
     calGroup: "pref/calGroup",
+    /** Antigua: una sola franja de examen para todas las materias. Solo se lee para migrar a calGroups. */
     calSlot: "pref/calSlot",
+    /** «Mis grupos»: { [materia]: { grupo, franja } }. Sustituye a calGroup y calSlot. */
+    calGroups: "pref/calGroups",
   },
 } as const;
 
@@ -63,6 +68,7 @@ function schemaFor(key: string): z.ZodType | null {
   if (key === keys.pref.timeZone) return timeZoneSchema;
   if (key === keys.pref.calGroup) return calGroupSchema;
   if (key === keys.pref.calSlot) return calSlotSchema;
+  if (key === keys.pref.calGroups) return GroupPrefsStoredSchema;
   return null;
 }
 

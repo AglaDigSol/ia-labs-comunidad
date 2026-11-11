@@ -183,7 +183,8 @@ describe("feed externo (CALENDAR_ICS_URL)", () => {
     expect(all).not.toContain("feeds.example.invalid");
     expect(all).not.toContain("SUPERSECRETO");
     expect(all).not.toContain("campus.example.invalid");
-    expect(Object.keys(r.files).sort()).toEqual(["calendario-01MIAR.ics", "calendario-02MIAR.ics", "calendario.ics", "calendario.json"]);
+    const plain = Object.keys(r.files).filter((n) => !/-(?:G[123]|todos)-(?:F[12]|todas)\.ics$/.test(n));
+    expect(plain.sort()).toEqual(["calendario-01MIAR.ics", "calendario-02MIAR.ics", "calendario.ics", "calendario.json"]);
   });
 
   it("si el feed falla, continúa solo con content/ sin mostrar la URL", async () => {

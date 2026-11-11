@@ -8,10 +8,18 @@
 // (calendario-<clave>.ics). Así el servidor puede dejar pasar solo esos ficheros para que Google
 // Calendar se suscriba, sin abrir el resto del sitio. Con clave no se genera calendario.ics sin clave.
 // Los nombres reales solo aparecen en calendario.json (que queda tras el control de acceso).
+//
+// .ics filtrados por «Mis grupos» (shared/calendar/groups.ts): uno por materia y elección de grupo de
+// prácticas y franja de examen (calendario[-<clave>]-01MIAR-G2-F1.ics) y, si hay como mucho
+// MAX_COMBINED_FEEDS combinaciones, uno por cada combinación de todas las materias
+// (calendario[-<clave>]-todas-01MIAR-G2-F1-02MIAR-todos-todas.ics). «todos/todas» no genera fichero:
+// es el .ics de siempre, que se mantiene. Los nombres van en calendario.json («filtrados»). Los UID y
+// SEQUENCE son los mismos en todos los .ics: el mismo evento es el mismo UID en cualquier fichero.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { CALENDARIO } from "../content/calendario/index.ts";
 import { buildIcs, mergeFeed, parseFeed } from "../shared/calendar/ics.ts";
+import { feedCalName, feedEvents as eventsOfFeed, filteredFeeds, subjectGroups } from "../shared/calendar/groups.ts";
 import { CalendarPackSchema, type CalendarEvent } from "../shared/calendar/types.ts";
 
 export type BuildResult = { files: Record<string, string>; feedUsed: boolean; feedEvents: number };
@@ -20,15 +28,20 @@ export type Subscription = { label: string; file: string };
 /** 32–128 caracteres [A-Za-z0-9-]: entra en la regla `calendario[A-Za-z0-9-]*\\.ics` de nginx. */
 export const ICS_KEY_RE = /^[A-Za-z0-9-]{32,128}$/;
 
-export function icsFileNames(materias: readonly string[], key?: string): Subscription[] {
+/** «calendario» o «calendario-<clave>»: el principio de todos los nombres de .ics. */
+export function icsPrefix(key?: string): string {
   const k = key?.trim();
   if (k && !ICS_KEY_RE.test(k)) {
     throw new Error("CALENDAR_ICS_KEY debe tener entre 32 y 128 caracteres [A-Za-z0-9-] (por ejemplo: openssl rand -hex 24)");
   }
-  const suffix = k ? `-${k}` : "";
+  return k ? `calendario-${k}` : "calendario";
+}
+
+export function icsFileNames(materias: readonly string[], key?: string): Subscription[] {
+  const prefix = icsPrefix(key);
   return [
-    { label: "Todas las materias", file: `calendario${suffix}.ics` },
-    ...materias.map((m) => ({ label: m, file: `calendario${suffix}-${m}.ics` })),
+    { label: "Todas las materias", file: `${prefix}.ics` },
+    ...materias.map((m) => ({ label: m, file: `${prefix}-${m}.ics` })),
   ];
 }
 
@@ -73,7 +86,9 @@ export async function buildCalendarFiles(opts: {
       `IA Labs · ${m}`,
     );
   });
-  files["calendario.json"] = JSON.stringify({ version: 1, generado: today, eventos: events, suscripciones: subs });
+  const filtrados = filteredFeeds(subjectGroups(events), icsPrefix(opts.icsKey));
+  for (const f of filtrados) files[f.file] = buildIcs(eventsOfFeed(events, f), feedCalName(f));
+  files["calendario.json"] = JSON.stringify({ version: 1, generado: today, eventos: events, suscripciones: subs, filtrados });
   return { files, feedUsed, feedEvents };
 }
 
