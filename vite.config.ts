@@ -7,6 +7,7 @@ import { PYODIDE_VERSION } from "./src/features/labs/python/packages.ts";
 import { PYODIDE_PACKAGES } from "./src/features/labs/python/pyodide-manifest.ts";
 import { trimLock, type Lock } from "./scripts/pyodide-lib.ts";
 import { pythonEnabled } from "./scripts/python-flag.ts";
+import { serviceWorker } from "./scripts/service-worker.ts";
 import { cspSafeRadix } from "./vite/csp-safe-radix.mjs";
 
 /** Normaliza VITE_BASE ("/", "/labs", "labs/") a la forma que espera Vite: "/labs/". */
@@ -57,7 +58,8 @@ export default defineConfig(({ mode }) => {
   const python = pythonEnabled();
   return {
     base,
-    plugins: [cspSafeRadix(), react(), tailwindcss(), ...(python ? [devPyodide(base)] : [])],
+    // serviceWorker(): dist/sw.js (solo al construir; ver scripts/service-worker.ts).
+    plugins: [cspSafeRadix(), react(), tailwindcss(), serviceWorker(), ...(python ? [devPyodide(base)] : [])],
     define: process.env.VITEST ? {} : { __LABS_PYTHON__: JSON.stringify(python) },
     // Pyodide se sirve tal cual: el optimizador de dependencias de Vite no debe reempaquetarlo.
     optimizeDeps: { exclude: ["pyodide"] },

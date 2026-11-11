@@ -148,8 +148,30 @@ VITE_COMMUNITY_URL=https://… npm run build   # tarjeta «Comunidad» del inici
 `npm run build` hace `vite build` y después `node scripts/build-ics.ts dist`, que añade `calendario.ics`,
 `calendario-<materia>.ics` y `calendario.json`; `scripts/vendor-pyodide.ts`, que solo hace algo con Python encendido; y
 `scripts/check-python.ts`, que comprueba que Pyodide no está en el chunk de entrada (y que no hay nada de Python si está
-apagado). El resultado es una carpeta estática (unos 2,7 MB, con las fuentes de KaTeX; unos 113 MB con Python) que se
-sirve con cualquier servidor web.
+apagado). El resultado es una carpeta estática (unos 3,6 MB, con las fuentes de KaTeX y los iconos; unos 113 MB con
+Python) que se sirve con cualquier servidor web.
+
+### Instalable y sin conexión
+
+La app se puede instalar (Añadir a pantalla de inicio en iPhone y iPad, Instalar en Chrome y Edge) y funciona sin
+conexión:
+
+- `public/manifest.json` (con extensión `.json`, no `.webmanifest`) e iconos oscuros con el color de acento en
+  `public/icons/` (192 y 512 px, uno maskable y el de iOS de 180 px). Todo relativo a la base del sitio
+  (`VITE_BASE`).
+- `dist/sw.js`: un service worker escrito a mano, sin dependencias. Lo genera al construir
+  `scripts/service-worker.ts` a partir de `scripts/sw-template.js`, con la versión y la lista de archivos del build.
+  Precarga la app (index.html, chunks, estilos, fuentes woff2, manifiesto e iconos: unos 2,5 MB sin comprimir) y
+  borra las versiones anteriores al activarse. Las rutas de la app sin conexión abren el index.html precargado;
+  `calendario.json` va primero a la red y, sin ella, a la última copia.
+- Con la pestaña Python, los archivos de Pyodide (`pyodide/`) y el worker no se precargan: se guardan la primera vez
+  que se usan, así que tras cargar Python una vez con conexión también funciona sin ella.
+- Su alcance es la carpeta donde está `sw.js`, es decir, la base del sitio. Se registra solo en el build (no en
+  `npm run dev`) y nunca en una app anfitriona. La primera vez que la app queda disponible sin conexión aparece el
+  aviso «Disponible sin conexión», que el inicio muestra después siempre.
+- No cambia la CSP: el service worker cae en `script-src 'self'` y el manifiesto en `manifest-src 'self'`. El
+  servidor solo tiene que servir `sw.js` sin caché (`Cache-Control: no-cache`) para que el navegador vea cada
+  versión nueva; `deploy/nginx.conf` y `deploy/htaccess.example` ya lo hacen.
 
 ## Python (opcional)
 
@@ -351,7 +373,7 @@ Ejemplo: `labs.tu-dominio.com`.
 Copia [`deploy/nginx.conf`](deploy/nginx.conf), [`deploy/security-headers.conf`](deploy/security-headers.conf) y
 [`deploy/security-headers-wasm.conf`](deploy/security-headers-wasm.conf) (la del worker de Python) a tu servidor,
 cambia `root` y `listen` (y añade tu bloque TLS). Incluye el fallback SPA, caché inmutable en `/assets/` y
-`/pyodide/`, los `.ics` como `text/calendar` con caché de 1 h y todas las cabeceras.
+`/pyodide/`, los `.ics` como `text/calendar` con caché de 1 h, `sw.js` sin caché y todas las cabeceras.
 
 ### Opción B: `dist/` estático en Apache
 
@@ -383,6 +405,7 @@ la pestaña Python, `--build-arg LABS_PYTHON=1`.
 | `Referrer-Policy` | `no-referrer` |
 | `Permissions-Policy` | cámara, micrófono, geolocalización, pagos y sensores desactivados |
 | `X-Robots-Tag` | `noindex, nofollow` |
+| `Cache-Control` de `sw.js` | `no-cache` (el service worker; ver [Instalable y sin conexión](#instalable-y-sin-conexión)) |
 
 Sobre la CSP:
 
@@ -668,6 +691,8 @@ el uso completo.
 - Sin cookies, sin analítica, sin rastreadores y sin CDN: fuentes del sistema, KaTeX, librerías y Pyodide se sirven
   desde el propio sitio. La pestaña Python no tiene acceso a internet y lo que subes a ella no sale del navegador.
 - Sin claves de API en el frontend.
+- El service worker solo guarda archivos de la app (y de Pyodide, si se usa) en la caché del navegador; nunca lo que
+  escribes ni tus datos.
 - Los datos se guardan en `localStorage` de tu navegador, con try/catch: si el navegador lo bloquea, la app sigue
   funcionando en memoria.
 - «Importar mis datos» acepta como máximo 2 MB (se comprueba antes de leer), valida la copia con zod (incluida su

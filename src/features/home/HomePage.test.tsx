@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "../../App.tsx";
 import { activeModules } from "../../config.ts";
 import { __resetKvStoreForTests, setKv } from "../../lib/kv-store.ts";
+import { __resetOfflineForTests, registerServiceWorker } from "../../lib/offline.ts";
 import { DEFAULT_LABS_KEYS } from "../labs/labs-storage.ts";
 import { recordExercise, recordLabTab } from "../labs/recent.ts";
 import { CommunityCard, HomePage } from "./HomePage.tsx";
@@ -101,6 +102,15 @@ describe("inicio", () => {
     const link = within(card).getByRole("link", { name: /Abrir la comunidad/ });
     expect(link.getAttribute("href")).toBe("https://foro.example.org/");
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+  });
+
+  it("dice «Disponible sin conexión» solo cuando el service worker ya tiene la app", async () => {
+    at("/", <HomePage />);
+    expect(screen.queryByText("Disponible sin conexión")).toBeNull();
+    const sw = { controller: {}, register: vi.fn(async () => ({})), ready: Promise.resolve({}) } as unknown as ServiceWorkerContainer;
+    await registerServiceWorker({ base: "/", container: sw });
+    expect(await screen.findByText("Disponible sin conexión")).toBeTruthy();
+    __resetOfflineForTests();
   });
 
   it("en la app pública (sin VITE_COMMUNITY_URL) el inicio no tiene tarjeta «Comunidad»", async () => {

@@ -10,6 +10,7 @@ import { t } from "../../i18n/index.ts";
 import { safeHttpsUrl } from "../../lib/safe-url.ts";
 import { latestActivity, loadRecent } from "../labs/recent.ts";
 import { HomeCard } from "./HomeCard.tsx";
+import { OfflineStatus } from "./OfflineStatus.tsx";
 
 const HomeReview = lazy(() => import("./HomeReview.tsx").then((m) => ({ default: m.HomeReview })));
 const HomeNext = lazy(() => import("./HomeNext.tsx").then((m) => ({ default: m.HomeNext })));
@@ -37,6 +38,7 @@ export function HomePage({ flashcards = false, calendar = false, community = nul
           {t.home.title}
         </h1>
         <p className="text-muted">{t.home.intro}</p>
+        <OfflineStatus />
       </header>
       <div className="grid gap-4 sm:grid-cols-2">
         <ContinueCard labsPath={labsPath} />
