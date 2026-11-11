@@ -134,6 +134,7 @@ export * from "../../shared/exercises/boole.ts";
 export * from "../../shared/exercises/linalg.ts";
 export * from "../../shared/exercises/calculus.ts";
 export * from "../../shared/exercises/probability.ts";
+export * from "../../shared/exercises/markov.ts";
 export * from "../../shared/exercises/registry.ts";
 export * from "../../shared/exercises/choice.ts";
 
@@ -170,6 +171,8 @@ export * from "../../shared/markov/matrix.ts";
 export * from "../../shared/markov/evolution.ts";
 export * from "../../shared/markov/systems.ts";
 export * from "../../shared/markov/validate.ts";
+export * from "../../shared/markov/classify.ts";
+export * from "../../shared/markov/absorption.ts";
 
 export * from "../../shared/boole/expr.ts";
 export * from "../../shared/boole/algebra.ts";

@@ -30,6 +30,9 @@ export const EXAM_SECTIONS = [
     label: "Probabilidad",
     types: { "probabilidad-total": 2, "probabilidad-dado": 3, "probabilidad-independencia": 3, "probabilidad-juego": 2, "probabilidad-binomial": 2, "probabilidad-geometrica": 1, "probabilidad-penalizacion": 1, "probabilidad-producto": 1 },
   },
+  // Cadenas de Markov: no entra en «Completo» ni en «Rápido», que siguen el reparto de FULL_BLUEPRINT
+  // (2025-26); se elige en «Por temas».
+  { id: "markov", label: "Cadenas de Markov", types: { "markov-evolucion": 2, "markov-estacionaria": 2, "markov-clasificacion": 2, "markov-absorcion": 2 } },
 ] as const satisfies ReadonlyArray<{ id: string; label: string; types: Readonly<Record<string, number>> }>;
 
 export type ExamSectionId = (typeof EXAM_SECTIONS)[number]["id"];

@@ -170,3 +170,26 @@ describe("combinatoria con repetición: CR, VR y PR", () => {
     for (const id of used) expect(searchSymbols(ALL_SYMBOLS, id)[0]?.tex.startsWith(id)).toBe(true);
   });
 });
+
+describe("cadenas de Markov", () => {
+  it("vₙ = v₀·Pⁿ, π·P = π y N = (I − Q)⁻¹ se escriben como en el diccionario", () => {
+    const texts = all("markov");
+    expect(symbolById("evolucion")!.variants.some((v) => v.tex === "v_n = v_0 P^n")).toBe(true);
+    expect(texts.some((t) => /v_\{\d\} = /.test(t))).toBe(true);
+    expect(symbolById("distribucion-estacionaria")!.tex).toBe("\\pi P = \\pi");
+    expect(texts.some((t) => t.includes("\\pi = "))).toBe(true);
+    const fundamental = symbolById("matriz-fundamental")!.tex;
+    expect(fundamental).toBe("N = (I - Q)^{-1}");
+    expect(texts.some((t) => t.includes(fundamental))).toBe(true);
+    expect(texts.some((t) => t.includes("B = N R"))).toBe(true);
+    expect(symbolById("matriz-fundamental")!.variants.some((v) => v.tex === "B = N R")).toBe(true);
+  });
+
+  it("los tipos de estado de los ejercicios tienen ficha", () => {
+    const e = symbolById("estado-absorbente")!;
+    for (const k of ["absorbente", "recurrente", "transitorio"]) {
+      expect(e.aliases).toContain(k);
+      expect(searchSymbols(ALL_SYMBOLS, k)[0]?.id).toBe("estado-absorbente");
+    }
+  });
+});
