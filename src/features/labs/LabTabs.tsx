@@ -1,6 +1,6 @@
 // Barra de pestañas de los laboratorios. En pantallas anchas (≥ 1024 px) las pestañas pasan a otra
 // fila en lugar de esconderse; más estrechas, la barra se desplaza en horizontal con un degradado y
-// flechas a cada lado cuando quedan pestañas ocultas, y la pestaña activa se lleva a la vista.
+// flechas a cada lado cuando quedan pestañas ocultas, y la pestaña activa se lleva al centro de la vista.
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router";
@@ -33,7 +33,8 @@ export function LabTabs({ tabs, activeId }: { tabs: readonly LabTabItem[]; activ
     return () => ro.disconnect();
   }, [measure, tabs.length]);
 
-  // La pestaña activa, siempre a la vista (al entrar por un enlace a «Markov», por ejemplo).
+  // La pestaña activa, siempre a la vista y centrada (al entrar por un enlace a «Markov», por ejemplo):
+  // así se ven también las de al lado. Sin animación si se pide menos movimiento (scrollBehavior).
   useEffect(() => {
     const el = nav.current;
     const tab = el?.querySelector<HTMLElement>('[aria-selected="true"]');
@@ -41,8 +42,8 @@ export function LabTabs({ tabs, activeId }: { tabs: readonly LabTabItem[]; activ
     const start = tab.offsetLeft;
     const end = start + tab.offsetWidth;
     if (start >= el.scrollLeft + EDGE && end <= el.scrollLeft + el.clientWidth - EDGE) return;
-    const left = start < el.scrollLeft + EDGE ? start - EDGE : end - el.clientWidth + EDGE;
-    el.scrollTo?.({ left: Math.max(0, left), behavior: scrollBehavior() });
+    const left = Math.round(start + tab.offsetWidth / 2 - el.clientWidth / 2);
+    el.scrollTo?.({ left: Math.min(Math.max(0, left), el.scrollWidth - el.clientWidth), behavior: scrollBehavior() });
   }, [activeId]);
 
   const page = (dir: -1 | 1) => {

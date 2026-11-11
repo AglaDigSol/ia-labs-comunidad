@@ -193,7 +193,8 @@ describe("simulacro de 01MIAR: entrada y pantalla de inicio", () => {
     expect(screen.queryByRole("link", { name: "Abrir el simulacro de 01MIAR" })).toBeNull();
     r3.unmount();
     renderAt("/laboratorios/python/simulacro", false);
-    await waitFor(() => expect(screen.getByTestId("url").textContent).toBe("/laboratorios/simbolos"));
+    expect(await screen.findByRole("heading", { level: 1, name: "Página no encontrada" })).toBeTruthy();
+    expect(screen.getByTestId("url").textContent).toBe("/laboratorios/python/simulacro");
   });
 
   it("inicio: aviso de integridad, la semilla en la URL, qué entra y el .ipynb en blanco; no se ejecuta nada", async () => {

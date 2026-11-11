@@ -13,6 +13,7 @@ import { cartesianProduct, powerSetOf, subsetText } from "../../../../shared/set
 import { MemoryAdapter } from "../../../lib/storage-adapter.ts";
 import { configureLabs } from "../labs-storage.ts";
 import { LabsRoutes } from "../labs.tsx";
+import { latestActivity, loadRecent, parseRecent, recordExercise, recordLabTab } from "../recent.ts";
 import { loadProgress, parseProgress, recordSolved, saveProgress } from "./progress.ts";
 
 let storage: MemoryAdapter;
@@ -134,6 +135,80 @@ describe("lista de ejercicios", () => {
     await screen.findByRole("heading", { level: 2, name: /^Ejercicio 2: / });
     expect(search().get("m")).toBe("conjuntos");
     expect(search().get("t")).toMatch(/^conjuntos-/);
+  });
+});
+
+describe("filtros, recuento y «Continúa donde lo dejaste»", () => {
+  const visible = EXERCISE_TYPES.filter((t) => !t.module);
+
+  it("el recuento dice cuántos tipos hay y cuántos por nivel", async () => {
+    renderAt("/laboratorios/ejercicios");
+    await page();
+    const n = (l: string) => visible.filter((t) => (t.levels as readonly string[]).includes(l)).length;
+    expect(screen.getByTestId("recuento-ejercicios").textContent).toBe(
+      `${visible.length} tipos de ejercicio: ${n("básico")} en básico, ${n("medio")} en medio y ${n("avanzado")} en avanzado.`,
+    );
+  });
+
+  it("el filtro de tema deja solo ese tema (sin índice) y «Quitar los filtros» vuelve a todos", async () => {
+    renderAt("/laboratorios/ejercicios");
+    await page();
+    fireEvent.change(screen.getByLabelText("Filtrar por tema"), { target: { value: "markov" } });
+    const markov = visible.filter((t) => t.topic === "markov");
+    expect(screen.getAllByRole("button", { name: /^Practicar/ })).toHaveLength(markov.length);
+    expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual(["Simulacro de examen (02MIAR)", "Cadenas de Markov"]);
+    expect(screen.queryByRole("navigation", { name: "Temas del banco de ejercicios" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Quitar los filtros" }));
+    expect(screen.getAllByRole("button", { name: /^Practicar/ })).toHaveLength(visible.length);
+  });
+
+  it("el filtro de nivel deja los tipos que lo tienen y las tarjetas empiezan en ese nivel", async () => {
+    renderAt("/laboratorios/ejercicios");
+    await page();
+    fireEvent.change(screen.getByLabelText("Filtrar por nivel"), { target: { value: "avanzado" } });
+    const adv = visible.filter((t) => t.levels.includes("avanzado"));
+    expect(screen.getAllByRole("button", { name: /^Practicar/ })).toHaveLength(adv.length);
+    expect(screen.getByTestId("recuento-ejercicios").textContent).toBe(`${adv.length} tipos de ejercicio con nivel avanzado.`);
+    const card = screen.getByRole("heading", { level: 3, name: "¿Son equivalentes?" }).closest("li")!;
+    expect((within(card).getByLabelText("Nivel") as HTMLSelectElement).value).toBe("avanzado");
+  });
+
+  it("«Continúa donde lo dejaste» retoma el último ejercicio con su tipo, nivel y semilla", async () => {
+    renderAt("/laboratorios/ejercicios?t=logica-equivalentes&n=medio&s=abc");
+    expect(await screen.findByRole("heading", { level: 2, name: "Ejercicio 1: ¿Son equivalentes?" }, { timeout: 5000 })).toBeTruthy();
+    expect(loadRecent().exercise).toMatchObject({ type: "logica-equivalentes", level: "medio", seed: seedFromText("abc"), mix: null });
+    cleanup();
+    renderAt("/laboratorios/ejercicios");
+    await page();
+    const resume = screen.getByRole("region", { name: "Continúa donde lo dejaste" });
+    expect(resume.textContent).toContain("¿Son equivalentes?");
+    expect(resume.textContent).toContain("nivel medio · código abc");
+    fireEvent.click(within(resume).getByRole("button", { name: "Retomar el ejercicio" }));
+    await screen.findByRole("heading", { level: 2, name: "Ejercicio 1: ¿Son equivalentes?" });
+    expect(search().toString()).toBe("t=logica-equivalentes&n=medio&s=abc");
+  });
+
+  it("sin ejercicio anterior (o con uno que ya no existe) no hay tarjeta para continuar", async () => {
+    recordExercise({ type: "tipo-retirado", title: "Retirado", level: "básico", seed: 1, mix: null });
+    renderAt("/laboratorios/ejercicios");
+    await page();
+    expect(screen.queryByRole("region", { name: "Continúa donde lo dejaste" })).toBeNull();
+  });
+
+  it("recent.ts: valida al leer y «Continuar» elige lo más reciente", () => {
+    expect(loadRecent()).toEqual({ tab: null, exercise: null });
+    recordLabTab({ id: "markov", label: "Markov", path: "markov" }, 10);
+    expect(latestActivity(loadRecent())).toEqual({ kind: "tab", label: "Markov", href: "markov" });
+    recordExercise({ type: "logica-tabla", title: "Tabla", level: "básico", seed: 36, mix: "logica" }, 20);
+    expect(latestActivity(loadRecent())).toEqual({ kind: "exercise", label: "Tabla", level: "básico", href: "ejercicios?t=logica-tabla&n=basico&s=10&m=logica" });
+    recordLabTab({ id: "boole", label: "Álgebra de Boole", path: "boole" }, 30);
+    expect(latestActivity(loadRecent())?.kind).toBe("tab");
+    // La pestaña del banco cuenta como seguir con el ejercicio.
+    recordLabTab({ id: "ejercicios", label: "Ejercicios", path: "ejercicios" }, 40);
+    expect(latestActivity(loadRecent())?.kind).toBe("exercise");
+    for (const bad of ["{", "[]", '{"v":2}', "x".repeat(3000)]) expect(parseRecent(bad)).toEqual({ tab: null, exercise: null });
+    expect(parseRecent('{"v":1,"tab":{"id":"a","label":"A","path":"../x","at":1},"exercise":null}').tab).toBeNull();
+    expect(parseRecent('{"v":1,"tab":null,"exercise":{"type":"logica-tabla","title":"T","level":"experto","seed":1,"mix":null,"at":1}}').exercise).toBeNull();
   });
 });
 

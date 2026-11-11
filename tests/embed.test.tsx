@@ -384,6 +384,7 @@ describe("LabsRoutes como dependencia", () => {
 
   it("createLocalStorageLabsAdapter: el progreso de los ejercicios tiene su clave por defecto", () => {
     expect(DEFAULT_LABS_KEYS.exercises).toBe("ia-labs.exercises.v1");
+    expect(DEFAULT_LABS_KEYS.recent).toBe("ia-labs.recent.v1");
     createLocalStorageLabsAdapter().save({ exercises: '{"v":1,"progress":{}}' });
     expect(localStorage.getItem("ia-labs.exercises.v1")).toBe('{"v":1,"progress":{}}');
   });

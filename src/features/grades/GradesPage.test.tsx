@@ -60,7 +60,7 @@ describe("GradesPage", () => {
     renderAt("/notas");
     await settle(10);
     expect(
-      screen.getByRole("heading", { level: 1, name: "Calculadora de notas" }),
+      screen.getByRole("heading", { level: 1, name: "Notas" }),
     ).toBeTruthy();
     // Sin autofoco: en el móvil abriría el teclado y desplazaría la página al cargar.
     expect(screen.getByLabelText(/Evidencia 1/)).not.toBe(document.activeElement);

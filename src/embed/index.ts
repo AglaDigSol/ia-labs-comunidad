@@ -93,6 +93,18 @@ export {
   type LabsStorageKey,
 } from "../features/labs/labs-storage.ts";
 export { LocalStorageAdapter, MemoryAdapter, type StorageAdapter } from "../lib/storage-adapter.ts";
+// Lo último que se hizo en los laboratorios (clave «recent»): para un «Continuar» en el inicio del anfitrión.
+export {
+  exerciseSearch,
+  latestActivity,
+  loadRecent,
+  parseRecent,
+  type LabsRecent,
+  type RecentExercise,
+  type RecentTab,
+} from "../features/labs/recent.ts";
+// «Página no encontrada» (la que usa LabsRoutes en una subruta que no existe), para el resto de la app.
+export { NotFoundPage, type NotFoundPageProps } from "../components/layout/NotFoundPage.tsx";
 
 // ---------------------------------------------------------------- Motores (TypeScript puro)
 export * from "../../shared/symbols/index.ts";

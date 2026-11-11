@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // La pestaña Python en Laboratorios: apagada por defecto (sin pestaña, sin ruta y sin chunk), tras
 // «Ejercicios» cuando se enciende, y con su id reservado solo entonces.
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { config, MODULES, PYTHON_TAB } from "../../../config.ts";
@@ -39,19 +39,36 @@ describe("pestaña Python: interruptor", () => {
     expect(MODULES.map((m) => m.id)).not.toContain("python");
   });
 
-  it("apagada: ni pestaña ni ruta (redirige a Simbología) ni descarga de su código", async () => {
+  it("apagada: ni pestaña ni ruta («Página no encontrada») ni descarga de su código", async () => {
     const worker = vi.fn();
     vi.stubGlobal("Worker", worker);
     renderLabs("/laboratorios/python");
     expect(tabNames()).toEqual(BASE_TABS);
-    await waitFor(() => expect(screen.getByTestId("loc").textContent).toBe("/laboratorios/simbolos"));
+    expect(screen.getByRole("heading", { level: 1, name: "Página no encontrada" })).toBeTruthy();
+    expect(screen.getByTestId("loc").textContent).toBe("/laboratorios/python");
     expect(LABS.map((l) => l.id)).not.toContain("python");
     expect(worker).not.toHaveBeenCalled();
   });
 
-  it("una pestaña desconocida redirige a Simbología una sola vez (sin alargar la URL)", async () => {
+  it("una pestaña desconocida muestra «Página no encontrada» con enlaces al inicio y a los laboratorios, sin cambiar la URL", async () => {
     renderLabs("/laboratorios/zzz");
-    await waitFor(() => expect(screen.getByTestId("loc").textContent).toBe("/laboratorios/simbolos"));
+    expect(screen.getByRole("heading", { level: 1, name: "Página no encontrada" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Ir al inicio" }).getAttribute("href")).toBe("/");
+    expect(screen.getByRole("link", { name: "Ir a los laboratorios" }).getAttribute("href")).toBe("/laboratorios");
+    expect(screen.queryByRole("tab", { selected: true })).toBeNull();
+    expect(screen.getByTestId("loc").textContent).toBe("/laboratorios/zzz");
+  });
+
+  it("con homePath={null} (una app anfitriona sin inicio), solo enlaza los laboratorios", () => {
+    render(
+      <MemoryRouter initialEntries={["/apps/labs/zzz/otra"]}>
+        <Routes>
+          <Route path="/apps/labs/*" element={<LabsRoutes homePath={null} />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole("link", { name: "Ir al inicio" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Ir a los laboratorios" }).getAttribute("href")).toBe("/apps/labs");
   });
 
   it("encendida: «Python» va tras «Ejercicios» y su ruta abre la pestaña (sin cargar Pyodide)", async () => {

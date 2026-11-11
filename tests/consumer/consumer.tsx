@@ -5,6 +5,10 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import {
   ALL_SYMBOLS,
   SUBJECTS,
+  latestActivity,
+  loadRecent,
+  NotFoundPage,
+  type LabsRecent,
   subjectLabel,
   type Subject,
   type SubjectCode,
@@ -320,3 +324,8 @@ export const cspPlugin: import("vite").Plugin = cspSafeRadix();
 const firstSubject: Subject = SUBJECTS[0];
 export const firstSubjectCode: SubjectCode = SUBJECTS[0].code;
 export const mathLabel: string = subjectLabel("02MIAR") + firstSubject.short;
+
+// «Continuar» y «Página no encontrada» en el anfitrión.
+const recent: LabsRecent = loadRecent();
+export const continueHref: string | null = latestActivity(recent)?.href ?? null;
+export const notFound = <NotFoundPage homeHref="/" labsHref="/laboratorios" />;
