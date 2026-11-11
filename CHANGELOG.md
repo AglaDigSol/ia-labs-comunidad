@@ -12,6 +12,50 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 
+## [0.18.0] - 2026-11-11
+
+Cierre del informe de mejoras de la revisión con usuarios (A9 a A14) y un ejercicio nuevo de cuantificadores.
+
+### Añadido
+
+- **Ejercicio «Cuantificadores en un conjunto concreto»** (Lógica de predicados): decide si un enunciado con ∀ o ∃ es
+  verdadero en un conjunto pequeño de enteros (primo, par, impar, múltiplo, divisor, cuadrado perfecto, positivo, mayor
+  o menor que k), con testigo o contraejemplo (vale cualquiera que sirva); en avanzado, enunciados anidados
+  (∀x ∃y : y > x…). Modo «Negar»: elige la negación de ¬[∀x ∈ A, …] entre cuatro opciones, con la explicación de cada
+  error típico, y después di si es verdadera en A. Entra también en el bloque «Lógica de predicados» del simulacro.
+- Tabla única de asignaturas (`SUBJECTS`, `subjectLabel`): 01MIAR Python para la IA y 02MIAR Matemáticas para la IA,
+  usada en calendario, flashcards, notas, simulacros y laboratorios.
+- Inicio en «/»: «Continuar», repaso de hoy, lo próximo del calendario y una tarjeta «Comunidad» opcional
+  (`VITE_COMMUNITY_URL`).
+- «Página no encontrada» en las rutas que no existen, también dentro de Laboratorios (`homePath` en `LabsRoutes`).
+- Banco de ejercicios: filtros por tema y nivel, recuento de tipos y «Continúa donde lo dejaste» (clave nueva
+  `recent`).
+- Instalable y sin conexión: `manifest.json`, iconos oscuros y un service worker propio (`sw.js`) que precarga la app y
+  guarda Pyodide al usarlo; aviso «Disponible sin conexión».
+- Historial del simulacro: progreso por temas en todos los intentos, con «Practicar este tema».
+- Simbología: el sumatorio se encuentra buscando «bucle», «for» o «range».
+
+### Cambiado
+
+- Barra inferior con nombres cortos (Inicio, Labs, Agenda, Tarjetas, Notas, Ajustes); «Notas» en toda la navegación.
+- La orientación de los laboratorios es una línea plegable en el móvil; la pestaña activa se centra.
+- Una subruta desconocida de Laboratorios ya no redirige a Simbología.
+
+### Corregido
+
+- Simulacros (02MIAR y 01MIAR) en el móvil: al pulsar «Empezar», «Continuar» o «Siguiente», la pregunta queda a la
+  vista justo debajo de la cabecera fija, que ya no tapan las pestañas y ocupa una sola línea.
+- Predicados: cada casilla del dominio se marca desde toda su celda (44 px); «Restablecer las tablas» (Boole) con 44 px.
+- Validación propia en español en los campos de número del simulacro.
+- «La probabilidad de que el resultado sea…» (subjuntivo).
+- Autovectores enteros, como (−1, 1, 2); (Bᵀ)⁻¹ en lugar de B^{T−1}; «f no tiene puntos críticos» en texto normal.
+- La respuesta correcta redondeada indica su valor aproximado: «0,10 (≈ 0,0952)».
+
+### Despliegue
+
+- Servir `sw.js` en la ruta base de la app como JavaScript con `Cache-Control: no-cache`, y `manifest.json` como
+  `application/json`. La CSP no cambia.
+
 ## [0.17.0] - 2026-11-11
 
 Más correcciones de la revisión con usuarios: pistas, soluciones y rechazos (A3 a A5), notación (A6) y ejercicios de
@@ -656,6 +700,7 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
 [Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.17.0...HEAD
+[0.18.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.18.0
 [0.17.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.17.0
 [0.16.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.16.0
 [0.15.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.15.1
