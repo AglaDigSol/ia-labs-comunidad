@@ -482,7 +482,7 @@ export function setTrivialPart(e: SetExpr, vars: readonly SetName[]): boolean {
 function relationOk(r: SetRelation, vars: readonly SetName[]): boolean {
   if (setKey(r.left) === setKey(r.right)) return false;
   if ([r.left, r.right].some((x) => setRedundant(x) || setTrivialPart(x, vars))) return false;
-  // ∅ a la izquierda solo en ∅ ≠ X; a la derecha, nada de X ⊊ ∅.
+  // ∅ a la izquierda solo en ∅ ≠ X; a la derecha, nada de X ⊂ ∅.
   if (r.left.k === "empty" && r.op !== "neq") return false;
   if (r.right.k === "empty" && (r.op === "subset" || r.op === "supset")) return false;
   return true;

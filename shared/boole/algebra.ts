@@ -5,7 +5,7 @@ export const MAX_ELEMENTS = 16;
 export const MAX_CUSTOM_ELEMENTS = 4;
 
 export interface FiniteStructure {
-  /** Nombre corto para mostrar, por ejemplo «D₃₀» o «P({a,b})». */
+  /** Nombre corto para mostrar, por ejemplo «D₃₀» o «𝒫({a,b})». */
   name: string;
   /** Etiquetas de los elementos (distintas). */
   elements: string[];
@@ -253,7 +253,7 @@ export function twoElement(): FiniteStructure {
   };
 }
 
-/** P(A): partes de A con ∪, ∩ y el complemento A ∖ X. Los subconjuntos se codifican como máscaras. */
+/** 𝒫(A): partes de A con ∪, ∩ y el complemento A ∖ X. Los subconjuntos se codifican como máscaras. */
 export function powerSet(base: string[]): FiniteStructure {
   const k = base.length;
   if (k > 4) throw new Error("powerSet: como mucho 4 elementos en A");
@@ -268,7 +268,7 @@ export function powerSet(base: string[]): FiniteStructure {
   const idx = new Map(order.map((m, i) => [m, i]));
   const at = (m: number) => idx.get(m)!;
   return {
-    name: `P({${base.join(",")}})`,
+    name: `𝒫({${base.join(",")}})`,
     elements: order.map(label),
     plus: order.map((x) => order.map((y) => at(x | y))),
     times: order.map((x) => order.map((y) => at(x & y))),

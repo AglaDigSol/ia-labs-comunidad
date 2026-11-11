@@ -119,7 +119,8 @@ export function setVars(...es: SetExpr[]): SetName[] {
 // ---------------------------------------------------------------- Relaciones (solo para reconocerlas)
 
 /**
- * Relaciones entre dos conjuntos. «subset» y «supset» son las estrictas (⊊, ⊋: contenido y distinto);
+ * Relaciones entre dos conjuntos. «subset» y «supset» son las estrictas (⊂, ⊃: contenido y distinto, como en el diccionario; también se
+ * leen ⊊ y ⊋);
  * «nsubseteq» es «no está contenido» (⊈).
  */
 export type SetRelationOp = "subseteq" | "subset" | "supseteq" | "supset" | "eq" | "neq" | "nsubseteq";
@@ -127,9 +128,9 @@ export type SetRelationOp = "subseteq" | "subset" | "supseteq" | "supset" | "eq"
 /** Cómo se escribe cada relación al mostrarla (texto plano). */
 export const RELATION_GLYPH: Record<SetRelationOp, string> = {
   subseteq: "⊆",
-  subset: "⊊",
+  subset: "⊂",
   supseteq: "⊇",
-  supset: "⊋",
+  supset: "⊃",
   eq: "=",
   neq: "≠",
   nsubseteq: "⊈",

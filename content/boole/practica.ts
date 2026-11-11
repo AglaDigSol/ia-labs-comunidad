@@ -37,16 +37,16 @@ export const BOOLE_PACK: BoolePack = {
         "El álgebra de Boole más pequeña: dos elementos, la suma se comporta como «o» y el producto como «y». Toda álgebra de Boole finita es, salvo nombres, un producto de copias de esta.",
     },
     "partes-1": {
-      name: "P(A) con |A| = 1",
+      name: "𝒫(A) con |A| = 1",
       description: "Los subconjuntos de A = {a}: solo ∅ y {a}. Suma = unión, producto = intersección, complemento = lo que falta hasta A.",
     },
     "partes-2": {
-      name: "P(A) con |A| = 2",
+      name: "𝒫(A) con |A| = 2",
       description:
         "Los cuatro subconjuntos de A = {a, b} con ∪, ∩ y el complemento A ∖ X. El 0 es ∅, el 1 es A y el orden es la inclusión.",
     },
     "partes-3": {
-      name: "P(A) con |A| = 3",
+      name: "𝒫(A) con |A| = 3",
       description:
         "Los ocho subconjuntos de A = {a, b, c}. Su diagrama de Hasse es un cubo: cada subconjunto se une con los que tienen un elemento más.",
     },
@@ -56,7 +56,7 @@ export const BOOLE_PACK: BoolePack = {
     },
     "cubo-3": {
       name: "{0, 1}³",
-      description: "Ternas de bits operadas posición a posición. El complemento invierte cada bit. Tiene la misma forma que P(A) con |A| = 3.",
+      description: "Ternas de bits operadas posición a posición. El complemento invierte cada bit. Tiene la misma forma que 𝒫(A) con |A| = 3.",
     },
     "div-6": {
       name: "Divisores de 6",

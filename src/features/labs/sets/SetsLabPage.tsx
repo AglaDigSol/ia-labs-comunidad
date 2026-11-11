@@ -1,6 +1,6 @@
 // Laboratorio de conjuntos: «Diagrama de Venn» (sombrear regiones y calcular con elementos),
 // «Comprobar una igualdad» (demostración con leyes paso a paso, «¿Son iguales?» con contraejemplo y
-// «Relaciones»: ⊆, ⊊, =, ≠… con supuestos),
+// «Relaciones»: ⊆, ⊂, =, ≠… con supuestos),
 // «Cardinales e inclusión–exclusión» (problemas de enunciado, región a región) y «Partes y producto
 // cartesiano». Notación de clase: ∪, ∩, ∖, Δ, Aᶜ, ∅ y U. La app corrige y da pistas; las soluciones
 // quedan detrás de «Ver la solución completa». La sección elegida va en la URL (?s=).

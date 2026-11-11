@@ -39,14 +39,15 @@ describe("parseSetRelation", () => {
       ["A <= B", "A ⊆ B"],
       ["A subseteq B", "A ⊆ B"],
       ["A \\subseteq B", "A ⊆ B"],
-      ["A ⊂ B", "A ⊊ B"],
-      ["A ⊊ B", "A ⊊ B"],
-      ["A < B", "A ⊊ B"],
-      ["A subset B", "A ⊊ B"],
+      ["A ⊂ B", "A ⊂ B"],
+      ["A ⊊ B", "A ⊂ B"],
+      ["A < B", "A ⊂ B"],
+      ["A subset B", "A ⊂ B"],
       ["A ⊇ B", "A ⊇ B"],
       ["A >= B", "A ⊇ B"],
-      ["A ⊃ B", "A ⊋ B"],
-      ["A > B", "A ⊋ B"],
+      ["A ⊃ B", "A ⊃ B"],
+      ["A ⊋ B", "A ⊃ B"],
+      ["A > B", "A ⊃ B"],
       ["A = B", "A = B"],
       ["A == B", "A = B"],
       ["A ≠ B", "A ≠ B"],
@@ -73,14 +74,15 @@ describe("parseSetRelation", () => {
   });
 
   it("TeX con órdenes fijas", () => {
-    expect(relationToTex(rel("A ⊂ B")[0]!)).toBe("A \\subsetneq B");
+    expect(relationToTex(rel("A ⊂ B")[0]!)).toBe("A \\subset B");
+    expect(relationToTex(rel("A ⊊ B")[0]!)).toBe("A \\subset B");
     expect(relationToTex(rel("A ∩ B ≠ ∅")[0]!)).toBe("A \\cap B \\neq \\varnothing");
     expect(relationToTex(rel("A ⊈ Bᶜ")[0]!)).toBe("A \\nsubseteq B^{c}");
   });
 
   it("errores claros: un conjunto no es una relación, lados vacíos, paréntesis y errores de cada lado", () => {
     expect(errorOf("A ∩ B").message).toBe(
-      "A ∩ B es un conjunto, no una relación: compara dos conjuntos con ⊆, ⊊, ⊇, ⊋, = o ≠, por ejemplo A ⊆ B o A ∩ B = ∅.",
+      "A ∩ B es un conjunto, no una relación: compara dos conjuntos con ⊆, ⊂, ⊇, ⊃, = o ≠, por ejemplo A ⊆ B o A ∩ B = ∅.",
     );
     expect(errorOf("").message).toBe("Escribe una relación, como A ⊆ B.");
     expect(errorOf("⊆ B")).toMatchObject({ code: "missing-operand", start: 0, end: 1, message: "Falta un conjunto a la izquierda de «⊆»." });

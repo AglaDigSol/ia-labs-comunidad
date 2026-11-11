@@ -121,7 +121,15 @@ describe("búsqueda por nombres de Python y notación de otros laboratorios", ()
     ["Θ", "theta"],
     ["‖v‖", "norma"],
     ["rg", "rango"],
-    ["⊊", "subconjunto-propio"],
+    ["⊊", "subconjunto-propio-estricto"],
+    ["⊂", "subconjunto-propio"],
+    ["CR", "combinaciones-repeticion"],
+    ["VR", "variaciones-repeticion"],
+    ["PR", "permutaciones-repeticion"],
+    ["multinomial", "permutaciones-repeticion"],
+    ["combinations_with_replacement", "combinaciones-repeticion"],
+    ["absorbente", "estado-absorbente"],
+    ["matriz fundamental", "matriz-fundamental"],
   ])("«%s» encuentra %s primero", (q, id) => {
     expect(first(q)).toBe(id);
   });
