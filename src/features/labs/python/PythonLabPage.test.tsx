@@ -160,17 +160,56 @@ afterEach(() => {
 });
 
 describe("PythonLabPage: primera carga", () => {
-  it("sin Python en el dispositivo: panel con los tamaños del manifiesto y «Cargar Python» como único primario", async () => {
+  it("sin Python en el dispositivo: tarjeta arriba con los tamaños del manifiesto y «Cargar Python» como único primario", async () => {
     renderAt();
     expect(await screen.findByText("Python aún no está en este dispositivo")).toBeTruthy();
-    expect(screen.getByText(new RegExp(`La primera vez se descargan unos ${fmtMB(FIRST)} \\(Python y numpy\\)`))).toBeTruthy();
+    const size = screen.getByText(new RegExp(`La primera vez se descargan unos ${fmtMB(FIRST)} \\(Python y numpy\\)`));
     expect(screen.getByText(/pandas \([\d,]+ MB\), matplotlib \([\d,]+ MB\) y el resto/)).toBeTruthy();
     expect(screen.getByText("Python sin cargar")).toBeTruthy();
     const load = screen.getByRole("button", { name: "Cargar Python" });
     expect(screen.getAllByRole("button").filter(isPrimary)).toEqual([load]);
-    expect(runBtn().disabled).toBe(true);
-    expect(document.getElementById(runBtn().getAttribute("aria-describedby")!)!.textContent).toBe("Carga Python primero");
+    // La tarjeta va arriba: antes de la barra de herramientas y del editor, no debajo de él.
+    expect(load.compareDocumentPosition(screen.getByRole("toolbar", { name: "Herramientas de Python" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(load.compareDocumentPosition(editor()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(screen.getByRole("log")).queryByRole("button")).toBeNull();
+    // «Ejecutar código» pasa a «Cargar y ejecutar», con el aviso del tamaño como descripción.
+    expect(screen.queryByRole("button", { name: "Ejecutar código" })).toBeNull();
+    const run = screen.getByRole("button", { name: "Cargar y ejecutar" }) as HTMLButtonElement;
+    expect(run.disabled).toBe(false);
+    expect(document.getElementById(run.getAttribute("aria-describedby")!)).toBe(size);
+    expect((screen.getByRole("button", { name: "Ejecutar paso a paso" }) as HTMLButtonElement).disabled).toBe(true);
     expect(client().load).not.toHaveBeenCalled();
+  });
+
+  it("«Cargar y ejecutar»: descarga, prepara y después ejecuta el código del editor", async () => {
+    const f = stubFetch();
+    renderAt();
+    fireEvent.change(editor(), { target: { value: "print(1)" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cargar y ejecutar" }));
+    await flush();
+    expect(f.fn).toHaveBeenCalled();
+    expect(client().run).not.toHaveBeenCalled();
+    await act(async () => client().resolveLoad());
+    await flush();
+    expect(client().run).toHaveBeenCalledTimes(1);
+    expect(client().run.mock.calls[0]![0]).toBe("print(1)");
+    expect(isPrimary(runBtn())).toBe(true);
+  });
+
+  it("«Cargar y ejecutar» con la descarga detenida no ejecuta nada después", async () => {
+    stubFetch({ hold: true });
+    renderAt();
+    fireEvent.click(screen.getByRole("button", { name: "Cargar y ejecutar" }));
+    await flush();
+    fireEvent.click(screen.getByRole("button", { name: "Detener descarga" }));
+    await flush();
+    expect(screen.getByRole("button", { name: "Cargar y ejecutar" })).toBeTruthy();
+    stubFetch();
+    fireEvent.click(screen.getByRole("button", { name: "Cargar Python" }));
+    await flush();
+    await act(async () => client().resolveLoad());
+    await flush();
+    expect(client().run).not.toHaveBeenCalled();
   });
 
   it("el cliente usa la carpeta de Pyodide del sitio (o la del anfitrión) y su aislamiento", async () => {
@@ -408,8 +447,10 @@ describe("PythonLabPage: salida", () => {
       run.resolve({ kind: "done", figures: [], ms: 5, files: [] });
     });
     const log = screen.getByRole("log");
-    expect(within(log).getByText("matplotlib está preparando su caché de fuentes: solo pasa la primera vez y tarda unos segundos.").className).toContain("text-muted");
-    expect(within(log).queryByText(/building the font cache/)).toBeNull();
+    // La caché de fuentes va en la barra de estado, no en la salida del programa.
+    const bar = screen.getByRole("status", { name: "Estado de Python" });
+    expect(within(bar).getByText("matplotlib está preparando su caché de fuentes: solo pasa la primera vez y tarda unos segundos.")).toBeTruthy();
+    expect(within(log).queryByText(/caché de fuentes|building the font cache/)).toBeNull();
     const warn = within(log).getByLabelText("Aviso de Python (no es un error)");
     expect(warn.textContent).toMatch(/FutureWarning/);
     expect(warn.className).not.toContain("text-crit");
@@ -827,5 +868,181 @@ describe("PythonLabPage: paso a paso", () => {
     await flush();
     await act(async () => client().runs.at(-1)!.resolve({ kind: "timeout", seconds: 20 }));
     expect(screen.getByRole("alert").textContent).toMatch(/superó 20 s/);
+  });
+});
+
+/** matchMedia falso: `wide` para (min-width: 640px) y `touch` para (pointer: coarse). */
+function stubMedia({ wide = true, touch = false }: { wide?: boolean; touch?: boolean }) {
+  vi.stubGlobal("matchMedia", (q: string) => ({
+    matches: q.includes("min-width") ? wide : q.includes("coarse") ? touch : false,
+    media: q,
+    addEventListener() {},
+    removeEventListener() {},
+  }));
+}
+
+const follows = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+
+describe("PythonLabPage: salida y barra de estado", () => {
+  it("los mensajes de carga de paquetes van en la barra de estado, no en la salida del programa", async () => {
+    await renderReady();
+    const run = await startRun();
+    await act(async () => run.onEvent({ type: "package", name: "matplotlib", phase: "start" }));
+    const bar = screen.getByRole("status", { name: "Estado de Python" });
+    expect(within(bar).getByText(/^Cargando matplotlib( \([\d,]+ MB\))?…$/)).toBeTruthy();
+    await act(async () => {
+      run.onEvent({ type: "package", name: "matplotlib", phase: "done" });
+      run.onEvent({ type: "stdout", text: "hola\n" });
+      run.resolve({ kind: "done", figures: [], ms: 5, files: [] });
+    });
+    // La línea del paquete se cambia en su sitio: «matplotlib listo» sustituye a «Cargando matplotlib…».
+    expect(within(bar).getByText("matplotlib listo")).toBeTruthy();
+    expect(within(bar).queryByText(/Cargando matplotlib/)).toBeNull();
+    const log = screen.getByRole("log");
+    expect(within(log).getByText("hola")).toBeTruthy();
+    expect(within(log).queryByText(/matplotlib/)).toBeNull();
+    // Una ejecución nueva empieza con la barra vacía; «Limpiar salida» también la vacía.
+    const again = await startRun();
+    expect(screen.queryByRole("status", { name: "Estado de Python" })).toBeNull();
+    await act(async () => again.onEvent({ type: "package", name: "pandas", phase: "start" }));
+    fireEvent.click(screen.getByRole("button", { name: "Limpiar salida" }));
+    expect(screen.queryByRole("status", { name: "Estado de Python" })).toBeNull();
+  });
+});
+
+describe("PythonLabPage: «Entrada para input()»", () => {
+  const panel = () => document.querySelector<HTMLDetailsElement>("[data-stdin-panel]")!;
+
+  it("se abre sola cuando el código llama a input(); sin input() queda plegada", async () => {
+    await renderReady();
+    fireEvent.change(editor(), { target: { value: "print(1)" } });
+    expect(panel().open).toBe(false);
+    fireEvent.change(editor(), { target: { value: 'nombre = input("¿Nombre? ")' } });
+    expect(panel().open).toBe(true);
+    // Si la persona la pliega, seguir escribiendo no la vuelve a abrir.
+    panel().open = false;
+    fireEvent(panel(), new Event("toggle"));
+    fireEvent.change(editor(), { target: { value: 'nombre = input("¿Nombre? ")\nprint(nombre)' } });
+    expect(panel().open).toBe(false);
+    // Quitar input() y volver a ponerlo, sí.
+    fireEvent.change(editor(), { target: { value: "print(2)" } });
+    fireEvent.change(editor(), { target: { value: "x = int(input())" } });
+    expect(panel().open).toBe(true);
+  });
+
+  it("abierta desde el principio si el código guardado ya usa input(); no la abre un my_input() ni un .input()", async () => {
+    localStorage.setItem(PREFS, JSON.stringify({ loaded: true, codes: { blank: "edad = input()\n" } }));
+    renderAt();
+    await flush();
+    expect(panel().open).toBe(true);
+    cleanup();
+    localStorage.setItem(PREFS, JSON.stringify({ loaded: true, codes: { blank: "my_input(1)\nw.input (2)\n" } }));
+    renderAt();
+    await flush();
+    expect(panel().open).toBe(false);
+  });
+});
+
+describe("PythonLabPage: barra de símbolos (pantallas táctiles)", () => {
+  const NAMES = [
+    "Insertar dos puntos",
+    "Insertar paréntesis de apertura",
+    "Insertar paréntesis de cierre",
+    "Insertar corchete de apertura",
+    "Insertar corchete de cierre",
+    "Insertar comillas",
+    "Insertar guion bajo",
+    "Insertar sangría (Tab)",
+  ];
+
+  it("sin pantalla táctil no aparece", async () => {
+    stubMedia({ touch: false });
+    await renderReady();
+    expect(screen.queryByRole("toolbar", { name: "Símbolos de Python" })).toBeNull();
+  });
+
+  it("encima del editor, con nombres accesibles y botones de 44 px; inserta en el cursor y deja el foco en el editor", async () => {
+    stubMedia({ touch: true });
+    await renderReady();
+    const bar = screen.getByRole("toolbar", { name: "Símbolos de Python" });
+    expect(within(bar).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(NAMES);
+    for (const b of within(bar).getAllByRole("button")) expect(b.className).toMatch(/\bh-11\b.*\bmin-w-11\b/);
+    expect(follows(bar, editor())).toBe(true);
+
+    fireEvent.change(editor(), { target: { value: "def f\n" } });
+    editor().focus();
+    editor().setSelectionRange(5, 5);
+    const colon = within(bar).getByRole("button", { name: "Insertar dos puntos" });
+    // El botón no se queda con el foco al pulsarlo (el teclado del iPad no se cierra).
+    expect(fireEvent.mouseDown(colon)).toBe(false);
+    fireEvent.click(colon);
+    expect(editor().value).toBe("def f:\n");
+    expect(editor().selectionStart).toBe(6);
+    expect(document.activeElement).toBe(editor());
+
+    editor().setSelectionRange(5, 5);
+    fireEvent.click(within(bar).getByRole("button", { name: "Insertar paréntesis de apertura" }));
+    fireEvent.click(within(bar).getByRole("button", { name: "Insertar paréntesis de cierre" }));
+    expect(editor().value).toBe("def f():\n");
+    expect(editor().selectionStart).toBe(7);
+
+    editor().setSelectionRange(9, 9);
+    fireEvent.click(within(bar).getByRole("button", { name: "Insertar sangría (Tab)" }));
+    expect(editor().value).toBe("def f():\n    ");
+    expect(editor().selectionStart).toBe(13);
+
+    // Con texto seleccionado, lo sustituye.
+    fireEvent.change(editor(), { target: { value: "a b" } });
+    editor().setSelectionRange(1, 2);
+    fireEvent.click(within(bar).getByRole("button", { name: "Insertar guion bajo" }));
+    expect(editor().value).toBe("a_b");
+    expect(document.activeElement).toBe(editor());
+  });
+});
+
+describe("PythonLabPage: móvil (< 640 px)", () => {
+  it("el editor primero, con «Ejecutar» y «Detener» en una barra fija justo encima y «Paso a paso» justo debajo", async () => {
+    stubMedia({ wide: false });
+    await renderReady();
+    const bar = screen.getByRole("toolbar", { name: "Ejecución" });
+    expect(within(bar).getAllByRole("button").map((b) => b.textContent)).toEqual(["Ejecutar código", "Detener"]);
+    expect(bar.className).toMatch(/\bsticky\b/);
+    expect(bar.className).toContain("top-[calc(3rem+2.75rem+1px)]");
+    expect(bar.className).toContain("env(safe-area-inset-left)");
+    expect(bar.className).toContain("env(safe-area-inset-right)");
+    const trace = screen.getByRole("button", { name: "Ejecutar paso a paso" });
+    expect(follows(bar, editor())).toBe(true);
+    expect(follows(editor(), trace)).toBe(true);
+    expect(follows(trace, screen.getByRole("log"))).toBe(true);
+    // Descripción y opciones avanzadas, plegadas después del editor.
+    const more = document.querySelector<HTMLDetailsElement>("[data-more-panel]")!;
+    expect(more.open).toBe(false);
+    expect(more.querySelector("summary")!.textContent).toBe("Descripción y opciones");
+    expect(within(more).getByText(/Python 3\.12 en tu navegador/)).toBeTruthy();
+    expect(within(more).getByRole("combobox", { name: "Plantilla" })).toBeTruthy();
+    expect(within(more).getByRole("combobox", { name: "Límite de ejecución" })).toBeTruthy();
+    expect(within(more).getByRole("button", { name: "Restablecer plantilla" })).toBeTruthy();
+    expect(follows(editor(), more)).toBe(true);
+    // «Ejecutar código» de la barra ejecuta.
+    fireEvent.click(within(bar).getByRole("button", { name: "Ejecutar código" }));
+    await flush();
+    expect(client().run).toHaveBeenCalledTimes(1);
+  });
+
+  it("sin Python: la tarjeta de carga arriba y «Cargar y ejecutar» en la barra", async () => {
+    stubMedia({ wide: false });
+    renderAt();
+    const load = screen.getByRole("button", { name: "Cargar Python" });
+    const bar = screen.getByRole("toolbar", { name: "Ejecución" });
+    expect(within(bar).getByRole("button", { name: "Cargar y ejecutar" })).toBeTruthy();
+    expect(follows(load, bar)).toBe(true);
+  });
+
+  it("de 640 px en adelante, la disposición de siempre (sin barra fija)", async () => {
+    stubMedia({ wide: true });
+    await renderReady();
+    expect(screen.queryByRole("toolbar", { name: "Ejecución" })).toBeNull();
+    expect(within(screen.getByRole("toolbar", { name: "Herramientas de Python" })).getByRole("button", { name: "Ejecutar código" })).toBeTruthy();
+    expect(document.querySelector("[data-more-panel]")).toBeNull();
   });
 });

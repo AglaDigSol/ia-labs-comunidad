@@ -1,6 +1,9 @@
 // Pestaña «Python»: editor, salida con gráficos, archivos y entrada para input(). Pyodide solo se pide
 // desde aquí: el PyClient (y su worker) se crea al montar esta ruta perezosa, y la descarga empieza
-// cuando se pulsa «Cargar Python» (o sola, si ya se cargó antes en este dispositivo).
+// cuando se pulsa «Cargar Python» en la tarjeta de estado de arriba o «Cargar y ejecutar» (o sola, si
+// ya se cargó antes en este dispositivo). La tarjeta avisa del tamaño antes de descargar.
+// En el móvil (< 640 px) el editor va primero, con «Ejecutar» y «Detener» en una barra fija encima;
+// la descripción y las opciones quedan plegadas. En pantallas táctiles, una fila de símbolos.
 // Integridad: solo se ejecuta el código del editor al pulsar «Ejecutar código» (o «Ejecutar paso a
 // paso», que lo sigue línea a línea con el trazador de tracer.ts); un ?borrador= se abre en el
 // editor y nunca se ejecuta solo. Lo que escribe el anfitrión (writeFiles en sus ranuras)
@@ -74,6 +77,7 @@ import {
 import { Figure, saveBlob } from "./Figure.tsx";
 import { templateById, TEMPLATES, type TemplateId } from "./templates.ts";
 import { runTrace, TraceView, type TraceOutcome } from "./Tracer.tsx";
+import { INDENT, insertAt, SymbolBar, useMediaQuery } from "./SymbolBar.tsx";
 
 const LIMITS = [10, 30, 60, 120] as const;
 const DEFAULT_LIMIT = 30;
@@ -189,6 +193,12 @@ const mmss = (ms: number) => {
 };
 const isOffline = () => typeof navigator !== "undefined" && navigator.onLine === false;
 
+/** ¿El código llama a input()? Entonces «Entrada para input()» se abre sola. */
+export const usesInput = (code: string) => /(?<![\w.])input\s*\(/.test(code);
+
+/** Una línea de la barra de estado de la salida (paquetes que se cargan, caché de fuentes…). */
+type StatusLine = { id: string; text: string };
+
 /** Las líneas de «Entrada para input()», sin la vacía que deja un salto final. */
 export function stdinLines(text: string): string[] {
   if (text === "") return [];
@@ -240,6 +250,19 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
   const [limit, setLimit] = useState(prefs.limit);
   const [stdin, setStdin] = useState(prefs.stdin);
   const [out, setOut] = useState<OutItem[]>([]);
+  // Lo que hace Python mientras ejecuta (cargar paquetes, la caché de fuentes de matplotlib): va en su
+  // propia barra, no mezclado con lo que escribe el programa.
+  const [status, setStatus] = useState<StatusLine[]>([]);
+  // «Entrada para input()»: se abre sola cuando el código pasa a llamar a input(); después manda la persona.
+  const [stdinOpen, setStdinOpen] = useState(false);
+  const needsInput = usesInput(code);
+  const [sawInput, setSawInput] = useState(false);
+  if (needsInput !== sawInput) {
+    setSawInput(needsInput);
+    if (needsInput) setStdinOpen(true);
+  }
+  const wide = useMediaQuery("(min-width: 640px)", true);
+  const touch = useMediaQuery("(pointer: coarse)", false);
   const [files, setFilesState] = useState<FileInfo[]>([]);
   const filesRef = useRef<FileInfo[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -273,6 +296,8 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
   const caretRef = useRef<number | null>(null);
   const escRef = useRef(false);
   const halfRef = useRef(false);
+  // «Cargar y ejecutar»: al quedar listo Python, se ejecuta el código.
+  const runAfterLoad = useRef(false);
   const outputRef = useRef("");
 
   /** La lista «Archivos», ordenada; también para files.list() de las ranuras. */
@@ -344,6 +369,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
       writeLabItem("python", JSON.stringify(prefsRef.current));
       setPhase({ k: "ready" });
     } catch {
+      runAfterLoad.current = false;
       if (aliveRef.current) setPhase({ k: isOffline() ? "offline" : "error" });
     }
   }, [onLoadEvent]);
@@ -403,6 +429,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
       await startClient();
     } catch {
       if (!aliveRef.current) return;
+      runAfterLoad.current = false;
       if (ctrl.signal.aborted) setPhase({ k: "idle" });
       else setPhase({ k: isOffline() ? "offline" : "error" });
     }
@@ -430,22 +457,29 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
     });
   }
 
+  /** Pone una línea en la barra de estado; si ya hay una con ese id, la cambia en su sitio. */
+  function setStatusLine(id: string, text: string) {
+    setStatus((prev) => (prev.some((l) => l.id === id) ? prev.map((l) => (l.id === id ? { id, text } : l)) : [...prev, { id, text }]));
+  }
+
   function onRunEvent(e: PyEvent) {
     if (e.type === "stdout") append({ k: "stdout", text: e.text });
     else if (e.type === "stderr") {
-      // Los avisos (caché de fuentes de matplotlib, FutureWarning…) no son errores: no van en rojo.
+      // Los avisos (caché de fuentes de matplotlib, FutureWarning…) no son errores: no van en rojo. La
+      // caché de fuentes no es del programa: va a la barra de estado.
       const kind = classifyStderr(e.text);
-      append(kind === "font-cache" ? { k: "info", text: COPY_FONT_CACHE } : { k: kind === "warning" ? "warn" : "stderr", text: e.text });
+      if (kind === "font-cache") setStatusLine("font-cache", COPY_FONT_CACHE);
+      else append({ k: kind === "warning" ? "warn" : "stderr", text: e.text });
     }
     else if (e.type === "package") {
       const bytes = packageBytes(e.name);
       if (e.phase === "start") {
         setPkg(e.name);
         // Por debajo de 0,1 MB el tamaño no dice nada («0,0 MB»): solo el nombre.
-        append({ k: "info", text: bytes >= 50_000 ? `Cargando ${e.name} (${fmtMB(bytes)})…` : `Cargando ${e.name}…` });
+        setStatusLine(`pkg:${e.name}`, bytes >= 50_000 ? `Cargando ${e.name} (${fmtMB(bytes)})…` : `Cargando ${e.name}…`);
       } else {
         setPkg(null);
-        append({ k: "info", text: `${e.name} listo` });
+        setStatusLine(`pkg:${e.name}`, `${e.name} listo`);
       }
     }
   }
@@ -490,6 +524,7 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
     const client = clientRef.current;
     if (!client || !ready || running) return;
     setOut([]);
+    setStatus([]);
     outputRef.current = "";
     setLastMs(null);
     setAnnounce("");
@@ -543,8 +578,37 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
     }
   }
 
+  // «Cargar y ejecutar»: cuando Python queda listo, se ejecuta el código que haya entonces en el editor.
+  const runLatest = useRef(runCode);
+  runLatest.current = runCode;
+  useEffect(() => {
+    if (!ready || !runAfterLoad.current) return;
+    runAfterLoad.current = false;
+    void runLatest.current();
+  }, [ready]);
+
+  /** «Ejecutar código», o «Cargar y ejecutar» si Python aún no está en este dispositivo. */
+  function onRunClick() {
+    if (phase.k === "idle") {
+      runAfterLoad.current = true;
+      void loadPython();
+      return;
+    }
+    void runCode();
+  }
+
   function stopRun() {
     void clientRef.current?.stop();
+  }
+
+  /** Barra de símbolos: inserta en el cursor del editor (o en lugar de la selección). */
+  function insertText(text: string) {
+    const ta = textareaRef.current;
+    const start = ta ? ta.selectionStart : code.length;
+    const end = ta ? ta.selectionEnd : code.length;
+    const next = insertAt(code, start, end, text);
+    caretRef.current = next.caret;
+    changeCode(next.value);
   }
 
   function changeCode(next: string) {
@@ -661,8 +725,9 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
       const ta = e.currentTarget;
       const start = ta.selectionStart;
       const end = ta.selectionEnd;
-      caretRef.current = start + 4;
-      changeCode(`${code.slice(0, start)}    ${code.slice(end)}`);
+      const next = insertAt(code, start, end, INDENT);
+      caretRef.current = next.caret;
+      changeCode(next.value);
       return;
     }
     escRef.current = false; // Esc y después Tab: el Tab hace lo de siempre y sale del editor
@@ -711,315 +776,441 @@ export function PythonLabPage(props: PythonLabPageProps = {}) {
     }
   })();
 
+  const idle = phase.k === "idle";
   const runButton = (
     <Button
       variant={ready ? "primary" : "secondary"}
-      onClick={() => void runCode()}
+      onClick={onRunClick}
+      disabled={running || !(ready || idle)}
+      aria-describedby={ready ? undefined : idle ? "py-load-size" : "py-run-hint"}
+      className="touch-manipulation"
+    >
+      <Play size={16} strokeWidth={1.75} aria-hidden="true" />
+      {idle ? "Cargar y ejecutar" : "Ejecutar código"}
+    </Button>
+  );
+  const runControl =
+    ready || idle ? (
+      runButton
+    ) : (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className="inline-flex rounded-md">
+            {runButton}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>Carga Python primero</TooltipContent>
+      </Tooltip>
+    );
+  const traceButton = (
+    <Button
+      id="py-trace-button"
+      onClick={() => void traceCode()}
       disabled={!ready || running}
       aria-describedby={ready ? undefined : "py-run-hint"}
       className="touch-manipulation"
     >
-      <Play size={16} strokeWidth={1.75} aria-hidden="true" />
-      Ejecutar código
+      <Footprints size={16} strokeWidth={1.75} aria-hidden="true" />
+      Ejecutar paso a paso
     </Button>
   );
+  const runHint = (
+    <span id="py-run-hint" className="sr-only">
+      Carga Python primero
+    </span>
+  );
+  const stopButton = (
+    <Button variant="secondary" onClick={stopRun} disabled={!running} className="touch-manipulation">
+      <Square size={16} strokeWidth={1.75} aria-hidden="true" />
+      Detener
+    </Button>
+  );
+  const templateSelect = (
+    <div className="flex flex-col gap-1">
+      <span className="text-[14px] font-semibold text-muted">Plantilla</span>
+      <Select value={draft ? DRAFT_VALUE + draft.id : templateId} onValueChange={changeTemplate}>
+        <SelectTrigger aria-label="Plantilla" className="min-w-[13rem]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {TEMPLATES.map((t) => (
+            <SelectItem key={t.id} value={t.id}>
+              {t.label}
+            </SelectItem>
+          ))}
+          {drafts.length > 0 && (
+            <>
+              <SelectSeparator />
+              <SelectGroup>
+                <SelectLabel>Borradores</SelectLabel>
+                {drafts.map((d) => (
+                  <SelectItem key={d.id} value={DRAFT_VALUE + d.id}>
+                    {d.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </>
+          )}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+  const resetButton = (
+    <Button
+      variant="ghost"
+      className="touch-manipulation"
+      disabled={draft !== null}
+      onClick={() => {
+        if (!draft && code !== template.code) setConfirmReset(true);
+      }}
+    >
+      <RotateCcw size={16} strokeWidth={1.75} aria-hidden="true" />
+      Restablecer plantilla
+    </Button>
+  );
+  const limitSelect = (
+    <div className="flex flex-col gap-1">
+      <span className="text-[14px] font-semibold text-muted">Límite de ejecución</span>
+      <Select
+        value={String(limit)}
+        onValueChange={(v) => {
+          const n = Number(v);
+          setLimit(n);
+          savePrefs({ limit: n });
+        }}
+      >
+        <SelectTrigger aria-label="Límite de ejecución" className="min-w-[7rem]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {LIMITS.map((s) => (
+            <SelectItem key={s} value={String(s)}>
+              {s} s
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+  const description = (
+    <p className="text-muted">
+      Python 3.12 en tu navegador, sin instalar nada: numpy, pandas, matplotlib, seaborn, scikit-learn y más. Tu código y
+      tus archivos no salen de este dispositivo. Las plantillas son ejercicios genéricos para practicar; no resuelven ninguna
+      actividad evaluable.
+    </p>
+  );
+  const examLink =
+    examPath !== null ? (
+      <div>
+        <Link to={examPath} relative="path" className={buttonVariants({ variant: "secondary" })}>
+          <ClipboardCheck size={16} aria-hidden="true" />
+          Simulacro de examen (01MIAR)
+        </Link>
+      </div>
+    ) : null;
+  const statusCard = ready ? null : (
+    <LoadCard phase={phase} onLoad={() => void loadPython()} onAbort={() => abortRef.current?.abort()} onRetry={retry} />
+  );
+  const noticeBand = notice && (
+    <p role="status" className="flex items-start gap-2 rounded-md border border-border bg-info-bg px-3 py-2 text-[14px] text-info">
+      <Info size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
+      <span>{notice}</span>
+    </p>
+  );
+  const draftBand = draft && (draft.origin.kind === "cell" || renderDraftActions) && (
+    <div className="flex flex-col gap-2 rounded-md border border-border bg-sunken px-3 py-2">
+      {draft.origin.kind === "cell" && (
+        <p className="text-[14px] font-semibold text-muted">{copyDraftBand(draft.origin.notebookTitle, draft.origin.cell)}</p>
+      )}
+      {renderDraftActions && (
+        <div className="flex flex-wrap items-center gap-2">
+          <SlotBoundary key={draft.id}>
+            <HostSlot render={() => renderDraftActions({ draft, files: filesApi })} />
+          </SlotBoundary>
+        </div>
+      )}
+    </div>
+  );
+  const editorBlock = (
+    <>
+      {touch ? <SymbolBar target={textareaRef} onInsert={insertText} /> : null}
+      <div className="flex overflow-hidden rounded-lg border border-border bg-sunken focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">
+        <div
+          ref={gutterRef}
+          aria-hidden="true"
+          className="mono select-none overflow-hidden border-r border-border px-2 py-3 text-right text-[16px] leading-[1.5] text-muted"
+        >
+          {Array.from({ length: lineCount }, (_, i) => (
+            <div key={i}>{i + 1}</div>
+          ))}
+        </div>
+        <textarea
+          ref={textareaRef}
+          aria-label="Código Python"
+          value={code}
+          onChange={(e) => changeCode(e.target.value)}
+          onKeyDown={onEditorKey}
+          onScroll={(e) => {
+            if (gutterRef.current) gutterRef.current.scrollTop = e.currentTarget.scrollTop;
+          }}
+          spellCheck={false}
+          autoCapitalize="off"
+          autoCorrect="off"
+          autoComplete="off"
+          wrap="off"
+          className="mono min-h-[240px] w-full min-w-0 resize-y whitespace-pre bg-transparent px-3 py-3 text-[16px] leading-[1.5] text-fg outline-none sm:min-h-[320px] lg:min-h-[480px]"
+        />
+      </div>
+    </>
+  );
+  const editorHint = (
+    <p className="text-[14px] text-muted">
+      Tus cambios se guardan en este dispositivo. Admite %time, %timeit, %%time, %%timeit y %matplotlib inline.
+    </p>
+  );
+  const stdinPanel = (
+    <details
+      open={stdinOpen}
+      onToggle={(e) => setStdinOpen(e.currentTarget.open)}
+      className="rounded-md border border-border px-3 py-2"
+      data-stdin-panel=""
+    >
+      <summary className="flex min-h-11 cursor-pointer items-center text-[14px] font-semibold">Entrada para input()</summary>
+      <div className="flex flex-col gap-1 pt-2">
+        <label htmlFor="py-stdin" className="text-[14px] text-muted">
+          Cada input() lee la siguiente línea. Escríbelas antes de ejecutar.
+        </label>
+        <textarea
+          id="py-stdin"
+          value={stdin}
+          onChange={(e) => {
+            setStdin(e.target.value);
+            savePrefs({ stdin: e.target.value });
+          }}
+          spellCheck={false}
+          rows={3}
+          className="mono w-full resize-y rounded-md border border-border bg-sunken px-3 py-2 text-[16px] leading-[1.5]"
+        />
+      </div>
+    </details>
+  );
+  const filesBlock = (
+    <>
+      <FilesPanel
+        files={files}
+        error={fileError}
+        limits={filesApi.limits}
+        actions={
+          renderFilesActions ? (
+            <SlotBoundary>
+              <HostSlot render={() => renderFilesActions({ draft, files: filesApi })} />
+            </SlotBoundary>
+          ) : null
+        }
+        onPick={() => fileInputRef.current?.click()}
+        onDownload={(n) => void downloadFile(n)}
+        onDelete={deleteFile}
+        onClear={clearFiles}
+      />
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept={UPLOAD_ACCEPT}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        data-testid="py-file-input"
+        onChange={(e) => void onPickFiles(e)}
+      />
+    </>
+  );
+  const outputPanel = (
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[14px] font-semibold">Salida</span>
+          {lastMs !== null && <span className="mono text-[14px] text-muted">Terminado en {seconds(lastMs)} s</span>}
+        </div>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setOut([]);
+            setStatus([]);
+            setLastMs(null);
+          }}
+        >
+          Limpiar salida
+        </Button>
+      </div>
+      {status.length > 0 && (
+        <div
+          role="status"
+          aria-label="Estado de Python"
+          className="flex flex-col gap-1 rounded-md border border-border bg-sunken px-3 py-2 text-[14px] text-muted"
+          data-py-status=""
+        >
+          {status.map((l) => (
+            <p key={l.id} className="flex items-start gap-2">
+              <Info size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
+              <span>{l.text}</span>
+            </p>
+          ))}
+        </div>
+      )}
+      <div
+        ref={outputRef2}
+        role="log"
+        aria-live="off"
+        aria-label="Salida"
+        className="flex min-h-[240px] scroll-mt-28 flex-col gap-2 overflow-auto rounded-lg border border-border bg-base p-3 sm:scroll-mt-4"
+      >
+        <OutputBody out={out} code={code} onFixQuotes={changeCode} />
+      </div>
+      <div className="sr-only" aria-live="polite" role="status">
+        {announce && <span className="sr-only">{announce}</span>}
+        {dlAnnounce && <span className="sr-only">{dlAnnounce}</span>}
+      </div>
+    </div>
+  );
+  const tracePanel = (
+    <div ref={traceRef} className="scroll-mt-28 lg:scroll-mt-4" data-trace-panel="">
+      {traced && traced.code === code ? (
+        traced.outcome.ok ? (
+          <TraceView
+            code={traced.code}
+            trace={traced.outcome.trace}
+            onClose={() => {
+              setTraced(null);
+              // El foco vuelve al botón que lo abrió.
+              document.getElementById("py-trace-button")?.focus();
+            }}
+          />
+        ) : (
+          <p role="alert" className="flex items-start gap-2 text-[14px] text-crit">
+            <OctagonAlert size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
+            <span>{traced.outcome.message}</span>
+          </p>
+        )
+      ) : null}
+    </div>
+  );
+  const resetDialog = (
+    <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
+      <DialogContent>
+        <DialogTitle>Restablecer plantilla</DialogTitle>
+        <DialogDescription>Restablecer «{template.label}»: perderás los cambios que hiciste en el editor.</DialogDescription>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button variant="secondary" onClick={() => setConfirmReset(false)}>
+            Conservar cambios
+          </Button>
+          <Button variant="destructive" onClick={resetTemplate}>
+            Restablecer plantilla
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+  const title = (
+    <h1 tabIndex={-1} className="font-display text-[28px] font-semibold leading-[1.2]">
+      Python
+    </h1>
+  );
+
+  if (!wide) {
+    // Móvil: el editor primero, con «Ejecutar» y «Detener» fijos justo encima (debajo de la barra
+    // superior, de 3rem, y de las pestañas de los laboratorios, de 2,75rem más su borde); «Paso a paso»
+    // justo debajo. La descripción y las opciones, plegadas al final.
+    return (
+      <TooltipProvider delayDuration={200}>
+        <section className="flex min-w-0 flex-col gap-4" data-layout="narrow">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {title}
+            {chip}
+          </div>
+          {statusCard}
+          {noticeBand}
+          {draftBand}
+          {/* Hija directa de la sección: así sigue fija mientras se baja hasta la salida. */}
+          <div
+            role="toolbar"
+            aria-label="Ejecución"
+            className="sticky top-[calc(3rem+2.75rem+1px)] z-10 -mx-4 -mb-2 flex flex-wrap items-center gap-2 border-b border-border bg-base py-2 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]"
+            data-run-bar=""
+          >
+            {runControl}
+            {stopButton}
+          </div>
+          <div className="flex min-w-0 flex-col gap-2">
+            {editorBlock}
+            <div className="flex flex-wrap items-center gap-2">
+              {traceButton}
+              {runHint}
+            </div>
+            {editorHint}
+          </div>
+          {outputPanel}
+          {tracePanel}
+          {stdinPanel}
+          {filesBlock}
+          <details className="rounded-md border border-border px-3 py-2" data-more-panel="">
+            <summary className="flex min-h-11 cursor-pointer items-center text-[14px] font-semibold">Descripción y opciones</summary>
+            <div className="flex flex-col gap-3 pt-2">
+              {description}
+              {examLink}
+              <div className="flex flex-wrap items-end gap-2" role="toolbar" aria-label="Herramientas de Python">
+                {templateSelect}
+                {resetButton}
+                {limitSelect}
+              </div>
+            </div>
+          </details>
+          {resetDialog}
+        </section>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <TooltipProvider delayDuration={200}>
-      <section className="flex flex-col gap-6">
+      <section className="flex flex-col gap-6" data-layout="wide">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="flex min-w-0 flex-col gap-2">
-            <h1 tabIndex={-1} className="font-display text-[28px] font-semibold leading-[1.2]">
-              Python
-            </h1>
-            <p className="text-muted">
-              Python 3.12 en tu navegador, sin instalar nada: numpy, pandas, matplotlib, seaborn, scikit-learn y más. Tu
-              código y tus archivos no salen de este dispositivo. Las plantillas son ejercicios genéricos para practicar; no
-              resuelven ninguna actividad evaluable.
-            </p>
-            {examPath !== null ? (
-              <div>
-                <Link to={examPath} relative="path" className={buttonVariants({ variant: "secondary" })}>
-                  <ClipboardCheck size={16} aria-hidden="true" />
-                  Simulacro de examen (01MIAR)
-                </Link>
-              </div>
-            ) : null}
+            {title}
+            {description}
+            {examLink}
           </div>
           {chip}
         </div>
 
+        {statusCard}
+
         <div className="flex flex-wrap items-end gap-2" role="toolbar" aria-label="Herramientas de Python">
-          <div className="flex flex-col gap-1">
-            <span className="text-[14px] font-semibold text-muted">Plantilla</span>
-            <Select value={draft ? DRAFT_VALUE + draft.id : templateId} onValueChange={changeTemplate}>
-              <SelectTrigger aria-label="Plantilla" className="min-w-[13rem]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TEMPLATES.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-                {drafts.length > 0 && (
-                  <>
-                    <SelectSeparator />
-                    <SelectGroup>
-                      <SelectLabel>Borradores</SelectLabel>
-                      {drafts.map((d) => (
-                        <SelectItem key={d.id} value={DRAFT_VALUE + d.id}>
-                          {d.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          {ready ? (
-            runButton
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0} className="inline-flex rounded-md">
-                  {runButton}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>Carga Python primero</TooltipContent>
-            </Tooltip>
-          )}
-          <Button
-            id="py-trace-button"
-            onClick={() => void traceCode()}
-            disabled={!ready || running}
-            aria-describedby={ready ? undefined : "py-run-hint"}
-            className="touch-manipulation"
-          >
-            <Footprints size={16} strokeWidth={1.75} aria-hidden="true" />
-            Ejecutar paso a paso
-          </Button>
-          <span id="py-run-hint" className="sr-only">
-            Carga Python primero
-          </span>
-          <Button variant="secondary" onClick={stopRun} disabled={!running} className="touch-manipulation">
-            <Square size={16} strokeWidth={1.75} aria-hidden="true" />
-            Detener
-          </Button>
-          <Button
-            variant="ghost"
-            className="touch-manipulation"
-            disabled={draft !== null}
-            onClick={() => {
-              if (!draft && code !== template.code) setConfirmReset(true);
-            }}
-          >
-            <RotateCcw size={16} strokeWidth={1.75} aria-hidden="true" />
-            Restablecer plantilla
-          </Button>
-          <div className="flex flex-col gap-1">
-            <span className="text-[14px] font-semibold text-muted">Límite de ejecución</span>
-            <Select
-              value={String(limit)}
-              onValueChange={(v) => {
-                const n = Number(v);
-                setLimit(n);
-                savePrefs({ limit: n });
-              }}
-            >
-              <SelectTrigger aria-label="Límite de ejecución" className="min-w-[7rem]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LIMITS.map((s) => (
-                  <SelectItem key={s} value={String(s)}>
-                    {s} s
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {templateSelect}
+          {runControl}
+          {traceButton}
+          {runHint}
+          {stopButton}
+          {resetButton}
+          {limitSelect}
         </div>
 
-        {notice && (
-          <p role="status" className="flex items-start gap-2 rounded-md border border-border bg-info-bg px-3 py-2 text-[14px] text-info">
-            <Info size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
-            <span>{notice}</span>
-          </p>
-        )}
+        {noticeBand}
 
         <div className="grid items-start gap-6 lg:grid-cols-12">
           <div className="flex min-w-0 flex-col gap-2 lg:col-span-7">
-            {draft && (draft.origin.kind === "cell" || renderDraftActions) && (
-              <div className="flex flex-col gap-2 rounded-md border border-border bg-sunken px-3 py-2">
-                {draft.origin.kind === "cell" && (
-                  <p className="text-[14px] font-semibold text-muted">{copyDraftBand(draft.origin.notebookTitle, draft.origin.cell)}</p>
-                )}
-                {renderDraftActions && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <SlotBoundary key={draft.id}>
-                      <HostSlot render={() => renderDraftActions({ draft, files: filesApi })} />
-                    </SlotBoundary>
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="flex overflow-hidden rounded-lg border border-border bg-sunken focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">
-              <div
-                ref={gutterRef}
-                aria-hidden="true"
-                className="mono select-none overflow-hidden border-r border-border px-2 py-3 text-right text-[16px] leading-[1.5] text-muted"
-              >
-                {Array.from({ length: lineCount }, (_, i) => (
-                  <div key={i}>{i + 1}</div>
-                ))}
-              </div>
-              <textarea
-                ref={textareaRef}
-                aria-label="Código Python"
-                value={code}
-                onChange={(e) => changeCode(e.target.value)}
-                onKeyDown={onEditorKey}
-                onScroll={(e) => {
-                  if (gutterRef.current) gutterRef.current.scrollTop = e.currentTarget.scrollTop;
-                }}
-                spellCheck={false}
-                autoCapitalize="off"
-                autoCorrect="off"
-                autoComplete="off"
-                wrap="off"
-                className="mono min-h-[320px] w-full resize-y whitespace-pre bg-transparent px-3 py-3 text-[16px] leading-[1.5] text-fg outline-none lg:min-h-[480px]"
-              />
-            </div>
-            <p className="text-[14px] text-muted">
-              Tus cambios se guardan en este dispositivo. Admite %time, %timeit, %%time, %%timeit y %matplotlib inline.
-            </p>
-
-            <details className="rounded-md border border-border px-3 py-2">
-              <summary className="cursor-pointer text-[14px] font-semibold">Entrada para input()</summary>
-              <div className="flex flex-col gap-1 pt-2">
-                <label htmlFor="py-stdin" className="text-[14px] text-muted">
-                  Cada input() lee la siguiente línea. Escríbelas antes de ejecutar.
-                </label>
-                <textarea
-                  id="py-stdin"
-                  value={stdin}
-                  onChange={(e) => {
-                    setStdin(e.target.value);
-                    savePrefs({ stdin: e.target.value });
-                  }}
-                  spellCheck={false}
-                  rows={3}
-                  className="mono w-full resize-y rounded-md border border-border bg-sunken px-3 py-2 text-[16px] leading-[1.5]"
-                />
-              </div>
-            </details>
-
-            <FilesPanel
-              files={files}
-              error={fileError}
-              limits={filesApi.limits}
-              actions={
-                renderFilesActions ? (
-                  <SlotBoundary>
-                    <HostSlot render={() => renderFilesActions({ draft, files: filesApi })} />
-                  </SlotBoundary>
-                ) : null
-              }
-              onPick={() => fileInputRef.current?.click()}
-              onDownload={(n) => void downloadFile(n)}
-              onDelete={deleteFile}
-              onClear={clearFiles}
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept={UPLOAD_ACCEPT}
-              className="sr-only"
-              tabIndex={-1}
-              aria-hidden="true"
-              data-testid="py-file-input"
-              onChange={(e) => void onPickFiles(e)}
-            />
+            {draftBand}
+            {editorBlock}
+            {editorHint}
+            {stdinPanel}
+            {filesBlock}
           </div>
 
-          <div className="flex min-w-0 flex-col gap-2 lg:col-span-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-[14px] font-semibold">Salida</span>
-                {lastMs !== null && <span className="mono text-[14px] text-muted">Terminado en {seconds(lastMs)} s</span>}
-              </div>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setOut([]);
-                  setLastMs(null);
-                }}
-              >
-                Limpiar salida
-              </Button>
-            </div>
-            <div
-              ref={outputRef2}
-              role="log"
-              aria-live="off"
-              aria-label="Salida"
-              className="flex min-h-[240px] flex-col gap-2 overflow-auto rounded-lg border border-border bg-base p-3"
-            >
-              <OutputBody
-                phase={phase}
-                out={out}
-                code={code}
-                onFixQuotes={changeCode}
-                onLoad={() => void loadPython()}
-                onAbort={() => abortRef.current?.abort()}
-                onRetry={retry}
-              />
-            </div>
-            <div className="sr-only" aria-live="polite" role="status">
-              {announce && <span className="sr-only">{announce}</span>}
-              {dlAnnounce && <span className="sr-only">{dlAnnounce}</span>}
-            </div>
-          </div>
+          <div className="flex min-w-0 flex-col gap-2 lg:col-span-5">{outputPanel}</div>
         </div>
 
-        <div ref={traceRef} className="scroll-mt-28 lg:scroll-mt-4" data-trace-panel="">
-          {traced && traced.code === code ? (
-            traced.outcome.ok ? (
-              <TraceView
-                code={traced.code}
-                trace={traced.outcome.trace}
-                onClose={() => {
-                  setTraced(null);
-                  // El foco vuelve al botón que lo abrió.
-                  document.getElementById("py-trace-button")?.focus();
-                }}
-              />
-            ) : (
-              <p role="alert" className="flex items-start gap-2 text-[14px] text-crit">
-                <OctagonAlert size={16} strokeWidth={1.75} aria-hidden="true" className="mt-0.5 shrink-0" />
-                <span>{traced.outcome.message}</span>
-              </p>
-            )
-          ) : null}
-        </div>
-
-        <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
-          <DialogContent>
-            <DialogTitle>Restablecer plantilla</DialogTitle>
-            <DialogDescription>Restablecer «{template.label}»: perderás los cambios que hiciste en el editor.</DialogDescription>
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="secondary" onClick={() => setConfirmReset(false)}>
-                Conservar cambios
-              </Button>
-              <Button variant="destructive" onClick={resetTemplate}>
-                Restablecer plantilla
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {tracePanel}
+        {resetDialog}
       </section>
     </TooltipProvider>
   );
@@ -1098,32 +1289,30 @@ function FilesPanel({
   );
 }
 
-function OutputBody({
+/**
+ * Tarjeta de estado, arriba de la pestaña mientras Python no está listo: el aviso del tamaño y
+ * «Cargar Python», el progreso de la descarga, «Preparando…» o el error con «Reintentar carga».
+ */
+function LoadCard({
   phase,
-  out,
-  code,
-  onFixQuotes,
   onLoad,
   onAbort,
   onRetry,
 }: {
   phase: Phase;
-  out: OutItem[];
-  /** El código del editor y cómo cambiarlo, para «Cambiar por comillas rectas». */
-  code: string;
-  onFixQuotes: (fixed: string) => void;
   onLoad: () => void;
   onAbort: () => void;
   onRetry: () => void;
 }) {
+  const card = "flex flex-col items-start gap-3 rounded-lg border border-border bg-raised px-4 py-3";
   if (phase.k === "idle") {
     return (
-      <div className="flex flex-col items-start gap-3">
-        <h2 className="flex items-center gap-2 font-display text-[20px] font-semibold leading-[1.2]">
+      <section aria-labelledby="py-load-title" className={card} data-load-card="">
+        <h2 id="py-load-title" className="flex items-center gap-2 font-display text-[20px] font-semibold leading-[1.2]">
           <HardDriveDownload size={20} strokeWidth={1.75} aria-hidden="true" />
           Python aún no está en este dispositivo
         </h2>
-        <p>
+        <p id="py-load-size">
           La primera vez se descargan unos {fmtMB(FIRST_BYTES)} (Python y numpy) desde este sitio; después quedan en la caché
           del navegador. pandas ({fmtMB(packageBytes("pandas"))}), matplotlib ({fmtMB(packageBytes("matplotlib"))}) y el resto
           de paquetes se descargan solo cuando los importes.
@@ -1132,14 +1321,14 @@ function OutputBody({
           <HardDriveDownload size={16} strokeWidth={1.75} aria-hidden="true" />
           Cargar Python
         </Button>
-      </div>
+      </section>
     );
   }
   if (phase.k === "download") {
     const text = `${fmtMB(phase.done)} de ${fmtMB(phase.total)}`;
     const pct = phase.total > 0 ? Math.min(100, Math.round((phase.done / phase.total) * 100)) : 0;
     return (
-      <div className="flex flex-col gap-2">
+      <div className={card} data-load-card="">
         <div
           role="progressbar"
           aria-label="Descarga de Python"
@@ -1152,16 +1341,22 @@ function OutputBody({
           <div className="h-full bg-fg motion-safe:transition-[width]" style={{ width: `${pct}%` }} />
         </div>
         <span className="mono text-[14px]">{text}</span>
-        <Button variant="ghost" onClick={onAbort} className="self-start">
+        <Button variant="ghost" onClick={onAbort}>
           Detener descarga
         </Button>
       </div>
     );
   }
-  if (phase.k === "preparing") return <p className="text-[14px] text-muted">Iniciando el intérprete y numpy…</p>;
+  if (phase.k === "preparing") {
+    return (
+      <div className={card} data-load-card="">
+        <p className="text-[14px] text-muted">Iniciando el intérprete y numpy…</p>
+      </div>
+    );
+  }
   if (phase.k === "error" || phase.k === "offline") {
     return (
-      <div className="flex flex-col items-start gap-3">
+      <div className={card} data-load-card="">
         <p className="flex items-start gap-2 text-crit">
           <OctagonAlert size={16} strokeWidth={1.75} aria-hidden="true" className="mt-1 shrink-0" />
           <span>{COPY_LOAD_ERROR}</span>
@@ -1172,6 +1367,19 @@ function OutputBody({
       </div>
     );
   }
+  return null;
+}
+
+function OutputBody({
+  out,
+  code,
+  onFixQuotes,
+}: {
+  out: OutItem[];
+  /** El código del editor y cómo cambiarlo, para «Cambiar por comillas rectas». */
+  code: string;
+  onFixQuotes: (fixed: string) => void;
+}) {
   if (out.length === 0) return <p className="text-[14px] text-muted">{COPY_EMPTY}</p>;
   return (
     <>
