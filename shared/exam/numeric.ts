@@ -76,7 +76,8 @@ export function numericMatches(text: string | null, expected: ExamExpected, form
   const value = decimalFrac(d);
   const exact = expectedFrac(expected);
   if (exact && sameFrac(value, exact)) return true;
-  if (format !== "dos-decimales" || d.scale < 2) return false;
+  if (format !== "dos-decimales") return false;
+  // Con menos de dos cifras vale si es el valor redondeado sin los ceros del final («1» o «1,0» para 1,00).
   return roundedCents(value) === roundedCents(expected);
 }
 

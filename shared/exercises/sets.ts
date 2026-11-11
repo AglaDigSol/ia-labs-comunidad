@@ -427,9 +427,9 @@ export function relationOptionExplanation(option: string, hypotheses: string): s
   };
   if (c.verdict === "siempre") return "Siempre cierta: se cumple en todos los diagramas que cumplen los supuestos.";
   if (c.verdict === "nunca") {
-    return `Siempre falsa: no se cumple en ningún diagrama con los supuestos. Por ejemplo, con elementos solo ${worldPlace(c.vars, c.counterexample!)}, falla porque ${why(c.counterexample!)}.`;
+    return `Siempre falsa: no se cumple en ningún diagrama que cumpla los supuestos. Por ejemplo, si solo hay elementos ${worldPlace(c.vars, c.counterexample!)}, falla porque ${why(c.counterexample!)}.`;
   }
-  return `Depende: con elementos solo ${worldPlace(c.vars, c.example!)} se cumple; con elementos solo ${worldPlace(c.vars, c.counterexample!)}, no, porque ${why(c.counterexample!)}.`;
+  return `Depende de cómo sean los conjuntos. Se cumple, por ejemplo, si solo hay elementos ${worldPlace(c.vars, c.example!)}. Falla, por ejemplo, si solo hay elementos ${worldPlace(c.vars, c.counterexample!)}, porque ${why(c.counterexample!)}.`;
 }
 
 /** Índice de la opción correcta (o -1 si no hay exactamente una). */

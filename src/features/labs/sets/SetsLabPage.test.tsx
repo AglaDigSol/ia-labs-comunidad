@@ -401,10 +401,10 @@ describe("Relaciones (en «Comprobar una igualdad»)", () => {
     expect(screen.getByText("No es correcto: es «depende».")).toBeTruthy();
     expect(
       screen.getByText(
-        "Contraejemplo: con elementos solo en A ∩ B; Aᶜ ∩ B, se cumplen los supuestos y falla porque la región Aᶜ ∩ B tiene elementos y está en B ∖ A, pero no en A.",
+        "Contraejemplo: si solo hay elementos en A ∩ B y Aᶜ ∩ B, se cumplen los supuestos y falla porque la región Aᶜ ∩ B tiene elementos y está en B ∖ A, pero no en A.",
       ),
     ).toBeTruthy();
-    expect(screen.getByText("En cambio, con elementos solo en A ∩ B, sí se cumple.")).toBeTruthy();
+    expect(screen.getByText("En cambio, si solo hay elementos en A ∩ B, sí se cumple.")).toBeTruthy();
     expect(screen.getByRole("img", { name: /^Contraejemplo: regiones con elementos: A ∩ B; Aᶜ ∩ B\./ })).toBeTruthy();
     answer("Depende");
     expect(screen.getByText("¡Correcto! Depende.")).toBeTruthy();
@@ -419,7 +419,7 @@ describe("Relaciones (en «Comprobar una igualdad»)", () => {
     pick("no-vacio-disjuntos");
     answer("Nunca cierta");
     expect(screen.getByText("¡Correcto! Nunca cierta.")).toBeTruthy();
-    expect(screen.getByText(/^Contraejemplo: con elementos solo en A ∩ B, se cumplen los supuestos y falla porque/)).toBeTruthy();
+    expect(screen.getByText(/^Contraejemplo: si solo hay elementos en A ∩ B, se cumplen los supuestos y falla porque/)).toBeTruthy();
     pick("producto-cartesiano");
     answer("Depende");
     expect(screen.getByText("No es correcto: es «nunca cierta».")).toBeTruthy();

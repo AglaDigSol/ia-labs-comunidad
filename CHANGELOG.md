@@ -12,6 +12,20 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 
+## [0.15.1] - 2026-11-11
+
+Primeras correcciones de la revisión con usuarios de la v0.14.1.
+
+### Corregido
+
+- **Redondeo a dos decimales** (probabilidad y simulacro de 02MIAR): el valor redondeado sin los ceros del final
+  también vale. Si P(X ≥ 2) = 0,9963, «1» y «1,0» se aceptan igual que «1,00», con una nota que pide escribir los dos
+  decimales; «0,4» vale para 0,4012 (0,40). Lo que no es el valor redondeado sigue sin valer.
+- La solución enseña el valor exacto y el redondeado: «9963/10000 = 0,9963 ≈ 1,00» en lugar de «≈ 1».
+- **Relaciones entre conjuntos**: las explicaciones de «Depende» y «Siempre falsa» son frases completas: «Se cumple,
+  por ejemplo, si solo hay elementos en A ∩ B y Aᶜ ∩ B. Falla, por ejemplo, si solo hay elementos en A ∩ Bᶜ, porque
+  …». Las regiones se enumeran con comas y «y», no con «;». También en el laboratorio de conjuntos.
+
 ## [0.15.0] - 2026-11-10
 
 ### Añadido
@@ -577,7 +591,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.15.0...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.15.1...HEAD
+[0.15.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.15.1
 [0.15.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.15.0
 [0.14.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.14.1
 [0.14.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.14.0

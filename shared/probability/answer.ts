@@ -6,7 +6,8 @@
 // - Una fracción, un entero o un porcentaje sin decimales se comparan EXACTOS con el valor esperado.
 // - Un decimal vale si es exactamente el valor esperado (0,375 = 3/8) o si es ese valor bien
 //   redondeado a `digits` cifras (por defecto, 2): 0,33 vale para 1/3 y 0,67 para 2/3, pero 0,66
-//   (truncado) no. Con menos cifras, no vale.
+//   (truncado) no. Con menos cifras, vale solo si es ese mismo valor redondeado sin los ceros del
+//   final («1» o «1,0» cuando el valor redondeado es 1,00; «0,4» cuando es 0,40), con una nota.
 // - Con más cifras de las pedidas, vale si es el valor redondeado o truncado a esas cifras (0,3333 o
 //   0,6666), con una nota: en el examen hay que redondear a `digits` cifras.
 // - Un decimal con punto vale igual, con una nota: Blackboard pide coma.
@@ -68,6 +69,18 @@ function truncRoundNumber(x: number, d: number): [number, number] {
   return [Math.trunc(x * s + (x >= 0 ? eps : -eps)) / s, Math.round(x * s) / s];
 }
 
+/** ¿Lo escrito es exactamente el valor esperado redondeado a `digits` cifras? */
+function sameAsRounded(value: Frac, expected: Frac | number, digits: number): boolean {
+  if (typeof expected === "number") return Math.abs(toNumber(value) - truncRoundNumber(expected, digits)[1]) < 1e-12;
+  return equals(value, truncRound(expected, digits)[1]);
+}
+
+/** El valor esperado redondeado a `digits` cifras, con coma y sin quitar ceros («1,00»). */
+function roundedText(expected: Frac | number, digits: number): string {
+  const r = typeof expected === "number" ? truncRoundNumber(expected, digits)[1] : toNumber(truncRound(expected, digits)[1]);
+  return r.toFixed(digits).replace("-", "−").replace(".", ",");
+}
+
 export type AnswerCheck = {
   ok: boolean;
   /** Avisos que no cambian la nota: más cifras de las pedidas, punto en vez de coma, redondeo. */
@@ -76,6 +89,7 @@ export type AnswerCheck = {
 
 export const NOTE_MORE_DIGITS = (digits: number) => `Bien, pero en el examen se redondea a ${digits === 2 ? "dos" : digits} decimales.`;
 export const NOTE_DOT = "En el examen, el decimal se escribe con coma (0,25), no con punto.";
+export const NOTE_PAD = (text: string) => `Bien. En el examen escríbelo con los decimales que piden: ${text}.`;
 export const NOTE_ROUNDING = "Revisa el redondeo: si la cifra siguiente es 5 o más, la última sube (no se trunca).";
 
 /** Corrige lo escrito con sus avisos. `expected` es exacto (Frac) o, si no es racional, un número. */
@@ -91,10 +105,17 @@ export function gradeAnswer(answer: Extract<ProbAnswer, { ok: true }>, expected:
   if (typeof expected === "number" && !Number.isFinite(expected)) ok = false;
   else if (d === null) {
     ok = typeof expected === "number" ? Math.abs(toNumber(answer.value) - expected) < 0.5 * 10 ** -digits : equals(answer.value, expected);
+    // Un entero que es el valor redondeado («1» para 0,9963 → 1,00).
+    if (!ok && answer.value.d === 1n && sameAsRounded(answer.value, expected, digits)) {
+      ok = true;
+      notes.push(NOTE_PAD(roundedText(expected, digits)));
+    }
   } else if (typeof expected !== "number" && equals(answer.value, expected)) {
     ok = true;
   } else if (d < digits) {
-    ok = false;
+    // Menos cifras: solo si es el valor redondeado sin los ceros del final («1,0» o «0,4»).
+    ok = sameAsRounded(answer.value, expected, digits);
+    if (ok) notes.push(NOTE_PAD(roundedText(expected, digits)));
   } else {
     const [t, r] = typeof expected === "number" ? truncRoundNumber(expected, d) : truncRound(expected, d);
     const [isT, isR] = same(t, r);

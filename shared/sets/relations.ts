@@ -311,7 +311,9 @@ const namesText = (vars: readonly SetName[]) => (vars.length <= 1 ? vars.join(""
  */
 export function worldPlace(vars: readonly SetName[], w: VennWorld, order: readonly Region[] = READING_ORDER[vars.length as 2 | 3]): string {
   if (w === 1) return `fuera de ${namesText(vars)} (${vars.length === 2 ? "los dos" : "todos"} vacíos)`;
-  return `en ${worldText(vars, w, order)}`;
+  const list = order.filter((r) => worldHas(w, r)).map((r) => regionLabel(vars, r));
+  // Lista con comas y «y», no con «;»: va dentro de una frase que ya tiene sus propias pausas.
+  return `en ${list.length <= 1 ? list.join("") : `${list.slice(0, -1).join(", ")} y ${list[list.length - 1]}`}`;
 }
 
 /**

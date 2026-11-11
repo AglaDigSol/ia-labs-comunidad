@@ -14,18 +14,30 @@ export function probTex(x: Frac): string {
 /** El decimal (como mucho `digits` cifras) y si es exacto. */
 export const probDecimal = (x: Frac, digits = PROB_DIGITS) => formatDecimal(x, digits);
 
-/** «3/8 = 0,375», «1/3 ≈ 0,3333», «2» (sin repetir si es entero). */
+/**
+ * El decimal que acompaña a una fracción: exacto («= 0,375») o redondeado a `digits` cifras sin
+ * quitar ceros («≈ 0,33», «≈ 1,00»). Si la fracción es un decimal exacto más largo, se escriben los
+ * dos («= 0,9963 ≈ 1,00»), para que se vea de dónde sale el redondeo.
+ */
+function decimalParts(x: Frac, digits: number): string[] {
+  const d = formatDecimal(x, digits);
+  if (d.exact) return ["=", d.text];
+  const rounded = formatDecimal(x, digits, { pad: true }).text;
+  const long = formatDecimal(x, 6);
+  return long.exact ? ["=", long.text, "≈", rounded] : ["≈", rounded];
+}
+
+/** «3/8 = 0,375», «1/3 ≈ 0,33», «9963/10000 = 0,9963 ≈ 1,00», «2» (sin repetir si es entero). */
 export function probWithDecimal(x: Frac, digits = PROB_DIGITS): string {
   if (x.d === 1n) return probText(x);
-  const d = formatDecimal(x, digits);
-  return `${probText(x)} ${d.exact ? "=" : "≈"} ${d.text}`;
+  return `${probText(x)} ${decimalParts(x, digits).join(" ")}`;
 }
 
 /** Lo mismo en TeX. */
 export function probWithDecimalTex(x: Frac, digits = PROB_DIGITS): string {
   if (x.d === 1n) return probTex(x);
-  const d = formatDecimal(x, digits);
-  return `${probTex(x)} ${d.exact ? "=" : "\\approx"} ${d.text.replace("−", "-").replace(",", "{,}")}`;
+  const tex = decimalParts(x, digits).map((t) => (t === "≈" ? "\\approx" : t === "=" ? "=" : t.replace("−", "-").replace(",", "{,}")));
+  return `${probTex(x)} ${tex.join(" ")}`;
 }
 
 /** Un número en coma flotante, con coma decimal y `digits` cifras. */

@@ -372,7 +372,7 @@ describe("formato y simulación", () => {
     expect(probTex(f(3, 8))).toBe("\\frac{3}{8}");
     expect(probWithDecimal(f(1, 3))).toBe("1/3 ≈ 0,33");
     expect(probWithDecimal(f(1, 3), 4)).toBe("1/3 ≈ 0,3333");
-    expect(probWithDecimal(f(3, 8))).toBe("3/8 ≈ 0,38");
+    expect(probWithDecimal(f(3, 8))).toBe("3/8 = 0,375 ≈ 0,38");
     expect(probWithDecimal(f(3, 8), 4)).toBe("3/8 = 0,375");
     expect(decimalComma(-0.25)).toBe("−0,25");
   });

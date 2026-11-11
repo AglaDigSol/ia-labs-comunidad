@@ -253,11 +253,11 @@ export function RelationQuestion({
               </span>
               {result.counterexample !== null ? (
                 <span>
-                  {`Contraejemplo: con elementos solo ${worldPlace(result.vars, result.counterexample, order)}, se cumplen los supuestos y falla porque ${why(result.counterexample)}.`}
+                  {`Contraejemplo: si solo hay elementos ${worldPlace(result.vars, result.counterexample, order)}, se cumplen los supuestos y falla porque ${why(result.counterexample)}.`}
                 </span>
               ) : null}
               {result.verdict === "depende" && result.example !== null ? (
-                <span>{`En cambio, con elementos solo ${worldPlace(result.vars, result.example, order)}, sí se cumple.`}</span>
+                <span>{`En cambio, si solo hay elementos ${worldPlace(result.vars, result.example, order)}, sí se cumple.`}</span>
               ) : null}
             </Status>
             {result.counterexample !== null && analysis ? (
