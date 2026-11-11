@@ -12,6 +12,7 @@ import { COMB_EXAM_ADAPTERS, SETS_EXAM_ADAPTERS } from "./adapters/discrete.ts";
 import { LINALG_EXAM_ADAPTERS } from "./adapters/linalg.ts";
 import { LOGIC_EXAM_ADAPTERS, PRED_EXAM_ADAPTERS } from "./adapters/logic.ts";
 import { MARKOV_EXAM_ADAPTERS } from "./adapters/markov.ts";
+import { PRED_CONCRETE_EXAM_ADAPTERS } from "./adapters/predicates-concrete.ts";
 import { PROB_EXAM_ADAPTERS } from "./adapters/probability.ts";
 import { expectedFrac, numericCorrectText, numericFormatNote, numericMatches } from "./numeric.ts";
 import { decodeChoiceAnswer, type ExamItem } from "./types.ts";
@@ -20,6 +21,7 @@ import { decodeChoiceAnswer, type ExamItem } from "./types.ts";
 export const EXAM_ADAPTERS: readonly ExamAdapter[] = [
   ...LOGIC_EXAM_ADAPTERS,
   ...PRED_EXAM_ADAPTERS,
+  ...PRED_CONCRETE_EXAM_ADAPTERS,
   ...SETS_EXAM_ADAPTERS,
   ...COMB_EXAM_ADAPTERS,
   ...LINALG_EXAM_ADAPTERS,
