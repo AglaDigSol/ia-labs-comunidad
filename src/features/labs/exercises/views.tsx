@@ -73,6 +73,7 @@ import { DISCRETE_EXERCISE_VIEWS } from "./discrete-views.tsx";
 import { LOGIC_EXTRA_EXERCISE_VIEWS } from "./logic-extra-views.tsx";
 import { LINALG_EXERCISE_VIEWS } from "./linalg-views.tsx";
 import { MARKOV_EXERCISE_VIEWS } from "./markov-views.tsx";
+import { PRED_CONCRETE_EXERCISE_VIEWS } from "./predicates-concrete-views.tsx";
 import { PROB_EXERCISE_VIEWS } from "./probability-views.tsx";
 
 export type ExerciseViewProps<I> = { instance: I; onSolved: () => void };
@@ -483,6 +484,7 @@ export const EXERCISE_VIEWS: Readonly<Record<string, View>> = Object.fromEntries
   entry(LOGIC_NORMAL_FORMS, NormalFormsExercise),
   entry(PRED_EVALUATE, PredEvaluateExercise),
   entry(PRED_NEGATE, PredNegateExercise),
+  ...PRED_CONCRETE_EXERCISE_VIEWS,
   entry(SETS_VENN, VennExercise),
   entry(SETS_EQUAL, SetsEqualExercise),
   entry(SETS_PROOF, SetsProofExercise),

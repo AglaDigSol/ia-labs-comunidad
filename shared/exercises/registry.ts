@@ -11,6 +11,7 @@ import { LOGIC_EXERCISES } from "./logic.ts";
 import { LOGIC_EXTRA_EXERCISES, PRED_EXTRA_EXERCISES } from "./logic-extra.ts";
 import { MARKOV_EXERCISES } from "./markov.ts";
 import { PREDICATE_EXERCISES } from "./predicates.ts";
+import { PRED_CONCRETE_EXERCISES } from "./predicates-concrete.ts";
 import { PROB_EXERCISES } from "./probability.ts";
 import { PYTHON_EXERCISES } from "./python.ts";
 import { createRng, randomSeed } from "./random.ts";
@@ -29,6 +30,7 @@ export const EXERCISE_TYPES: readonly AnyExerciseType[] = [
   ...LOGIC_EXERCISES,
   ...LOGIC_EXTRA_EXERCISES,
   ...PREDICATE_EXERCISES,
+  ...PRED_CONCRETE_EXERCISES,
   ...PRED_EXTRA_EXERCISES,
   ...SET_EXERCISES,
   ...DISCRETE_EXERCISES,
