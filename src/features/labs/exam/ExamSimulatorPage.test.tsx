@@ -177,6 +177,72 @@ describe("examen y resultados", () => {
   });
 });
 
+describe("en el móvil: la pregunta, a la vista y debajo de la cabecera fija", () => {
+  it("«Empezar» y «Siguiente» desplazan la tarjeta de la pregunta, con margen para la cabecera; abrir la página, no", () => {
+    const scrolled: Element[] = [];
+    const spy = vi.fn(function (this: Element) {
+      scrolled.push(this);
+    });
+    Element.prototype.scrollIntoView = spy;
+    try {
+      renderPage();
+      fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+      const card = () => heading(scrolled.length === 1 ? 1 : 2).closest("article")!;
+      expect(scrolled).toEqual([card()]);
+      expect(card().className).toMatch(/scroll-mt-\[calc\(3rem\+2\.75rem\+1px\+var\(--exam-sticky/);
+      // La cabecera fija va debajo de las pestañas de los laboratorios, en una sola línea.
+      const bar = screen.getByRole("timer").closest("div.sticky")!;
+      expect(bar.className).toContain("top-[calc(3rem+2.75rem+1px)]");
+      expect(bar.className).not.toContain("flex-wrap");
+      expect(screen.getByRole("heading", { level: 1, name: "Simulacro: Rápido" })).toBeTruthy();
+      expect(screen.getByText("Contestadas: 0 de 10")).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
+      expect(scrolled).toHaveLength(2);
+      expect(scrolled[1]).toBe(heading(2).closest("article"));
+      expect(document.activeElement).toBe(heading(2));
+      // Al recargar con el intento en curso, la página no salta.
+      cleanup();
+      scrolled.length = 0;
+      renderPage("/laboratorios/ejercicios/simulacro");
+      expect(heading(2)).toBeTruthy();
+      expect(scrolled).toEqual([]);
+    } finally {
+      delete (Element.prototype as Partial<Element>).scrollIntoView;
+    }
+  });
+});
+
+describe("progreso por temas", () => {
+  it("suma los aciertos de cada tema en todos los intentos y enlaza «Practicar este tema» al banco", async () => {
+    const t0 = Date.UTC(2026, 10, 3, 18, 0, 0);
+    const done = (id: string, sections: Array<[string, number, number]>, at: number) => ({
+      ...startAttempt(config, questions.length, at),
+      id,
+      finishedAt: at + 60_000,
+      answers: null,
+      result: { score: 5, correct: 1, wrong: 1, blank: 0, auto: false, sections },
+    });
+    const history = [
+      done("b", [["logica", 2, 2], ["probabilidad", 0, 1]], t0),
+      done("a", [["logica", 1, 2]], t0 - 86_400_000),
+    ];
+    storage.save({ exam: JSON.stringify({ ...JSON.parse(serializeExamStore({ active: null, history: [] })), history }) });
+    expect(saved().history).toHaveLength(2);
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Historial (2)" }));
+    const sec = screen.getByRole("region", { name: "Progreso por temas" });
+    expect(within(sec).getByText("Lógica proposicional")).toBeTruthy();
+    expect(within(sec).getByText("3 de 4 bien (75 %) · 2 simulacros · último: 2 de 2")).toBeTruthy();
+    expect(within(sec).getByText("0 de 1 bien (0 %) · 1 simulacro · último: 0 de 1")).toBeTruthy();
+    const link = within(sec).getByRole("link", { name: "Practicar este tema: Probabilidad" });
+    const p = new URLSearchParams(link.getAttribute("href")!.split("?")[1]);
+    expect(link.getAttribute("href")).toMatch(/^\/laboratorios\/ejercicios\?/);
+    expect(p.get("t")).toMatch(/^probabilidad-/);
+    fireEvent.click(link);
+    expect(await screen.findByText("Banco de ejercicios")).toBeTruthy();
+  });
+});
+
 describe("reloj, recarga y entrega automática", () => {
   it("retoma el intento en curso tras recargar, con el tiempo que quedaba", () => {
     const t0 = Date.UTC(2026, 10, 3, 18, 0, 0);

@@ -243,6 +243,31 @@ describe("simulacro de 01MIAR: entrada y pantalla de inicio", () => {
     expect((screen.getByRole("textbox", { name: "Tu solución AQUÍ · Ejercicio 1" }) as HTMLTextAreaElement).value).toBe("def hola():\n    return 1\n");
   });
 
+  it("en el móvil: «Empezar» sube el cuaderno a la vista y el navegador deja cada parte debajo de la cabecera fija", async () => {
+    const scrolled: Element[] = [];
+    Element.prototype.scrollIntoView = vi.fn(function (this: Element) {
+      scrolled.push(this);
+    });
+    try {
+      renderAt(`/laboratorios/python/simulacro?s=${seedToText(7)}`);
+      await startHeading();
+      fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+      const timer = await screen.findByRole("timer");
+      const bar = timer.closest("div.sticky")!;
+      // Debajo de la cabecera de la app y de las pestañas de los laboratorios, no tapada por ellas.
+      expect(bar.className).toContain("top-[calc(3rem+2.75rem+1px)]");
+      expect(scrolled).toHaveLength(1);
+      expect(scrolled[0]!.contains(bar)).toBe(true);
+      fireEvent.click(screen.getByRole("button", { name: "Paso A: sin empezar" }));
+      expect(scrolled).toHaveLength(2);
+      const step = scrolled[1] as HTMLElement;
+      expect(document.activeElement).toBe(step);
+      expect(step.className).toMatch(/scroll-mt-\[calc\(3rem\+2\.75rem\+1px\+var\(--exam-sticky/);
+    } finally {
+      delete (Element.prototype as Partial<Element>).scrollIntoView;
+    }
+  });
+
   it("«Entregar» pide confirmación y lista las celdas sin empezar", async () => {
     renderAt(`/laboratorios/python/simulacro?s=${seedToText(7)}`);
     await startHeading();
