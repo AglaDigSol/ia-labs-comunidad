@@ -34,6 +34,10 @@ describe("searchSymbols", () => {
     expect(e.code.some((c) => c.lib === "numpy" && c.code.includes("~p | q"))).toBe(true);
   });
 
+  it.each(["bucle", "bucle for", "for", "range", "for i in range"])("«%s» (cómo se programa) finds sumatorio first", (q) => {
+    expect(first(q)).toBe("sumatorio");
+  });
+
   it("finds connectives by glyph, TeX and ASCII", () => {
     expect(first("∧")).toBe("conjuncion");
     expect(first("\\land")).toBe("conjuncion");

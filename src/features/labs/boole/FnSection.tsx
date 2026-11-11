@@ -296,6 +296,7 @@ function F2Practice({ index, onIndex }: { index: number | null; onIndex: (i: num
         </p>
       </div>
       <form
+        noValidate
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();

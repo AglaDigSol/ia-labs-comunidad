@@ -176,8 +176,22 @@ export const eigenvalues = (A: Matrix): RationalRoots => rationalRoots(charPolyn
 /** A − λI. */
 export const shiftMatrix = (A: Matrix, lambda: Frac): Matrix => matrixSub(A, matrixScale(lambda, identityMatrix(A.length)));
 
-/** Base del autoespacio de λ: núcleo de A − λI (vacía si λ no es autovalor). */
-export const eigenspace = (A: Matrix, lambda: Frac): Vector[] => nullSpace(shiftMatrix(A, lambda));
+/**
+ * El múltiplo de v con enteros sin factor común: (−1/2, 1/2, 1) → (−1, 1, 2). Es el mismo autovector
+ * (cualquier múltiplo no nulo lo es) y se lee mejor. El vector nulo se queda como está.
+ */
+export function integerVector(v: Vector): Vector {
+  if (v.every(isZero)) return [...v];
+  const abs = (x: bigint) => (x < 0n ? -x : x);
+  const gcd = (a: bigint, b: bigint): bigint => (b === 0n ? abs(a) : gcd(b, a % b));
+  const lcm = v.reduce((l, x) => (l / gcd(l, x.d)) * x.d, 1n);
+  const ints = v.map((x) => (x.n * lcm) / x.d);
+  const g = ints.reduce((acc, x) => gcd(acc, x), 0n);
+  return ints.map((x) => frac(x / g));
+}
+
+/** Base del autoespacio de λ: núcleo de A − λI (vacía si λ no es autovalor), con vectores enteros. */
+export const eigenspace = (A: Matrix, lambda: Frac): Vector[] => nullSpace(shiftMatrix(A, lambda)).map(integerVector);
 
 /** ¿v ≠ 0 y A·v = λ·v? */
 export function isEigenpair(A: Matrix, v: Vector, lambda: Frac): boolean {

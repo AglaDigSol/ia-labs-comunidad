@@ -103,7 +103,7 @@ const totalAdapter = examAdapter({
       label: ask === null ? "P(C)" : "Probabilidad",
       solution: [
         examP(`Probabilidad total: ${totalLine}.`),
-        ...(ask === null ? [] : [examP(`Bayes: P(${names[ask]} | C) = P(${names[ask]})·P(C | ${names[ask]}) / P(C) = ${probText(s.joints[ask]!)} / ${probText(s.total)} = ${withDecimal(value)}.`)]),
+        ...(ask === null ? [] : [examP(`Bayes: P(${names[ask]} | C) = P(${names[ask]})·P(C | ${names[ask]}) / P(C) = (${probText(s.joints[ask]!)}) / (${probText(s.total)}) = ${withDecimal(value)}.`)]),
       ],
     };
   },
@@ -121,7 +121,7 @@ const dieCondAdapter = examAdapter({
     return {
       kind: "choice",
       stem: [examP(`Se tira ${loadedDieWords(inst.odd, inst.even)}.`)],
-      prompt: `¿Cuál es la probabilidad de que el resultado ${dieEventText(inst.a)}, sabiendo que ${dieEventText(inst.b)}?`,
+      prompt: `¿Cuál es la probabilidad de que el resultado ${dieEventText(inst.a, "subjuntivo")}, sabiendo que ${dieEventText(inst.b)}?`,
       question: {
         mode: "single",
         options: inst.options.map((q, i) => {

@@ -8,7 +8,8 @@
 //   pistas, sin «Comprobar» y sin soluciones.
 // - Resultados: nota sobre 10, tiempo, desglose por bloques y, pregunta a pregunta, tu respuesta, la
 //   correcta y la solución razonada, con «Practicar este tipo» en el banco de ejercicios.
-// - Historial: los intentos entregados (y el que está en curso se retoma).
+// - Historial: los intentos entregados (y el que está en curso se retoma), con el progreso por temas de
+//   todos ellos y «Practicar este tema».
 // Los intentos se guardan con labs-storage.ts (clave «exam»).
 import { ArrowLeft, ArrowRight, Check, CircleCheck, CircleMinus, CircleX, Clock, Flag, History, Play, Printer, RotateCcw, Send, Shuffle } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
@@ -43,7 +44,10 @@ import { Chip } from "../../../components/ui/chip.tsx";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../../../components/ui/dialog.tsx";
 import { Switch } from "../../../components/ui/switch.tsx";
 import { cn } from "../../../lib/cn.ts";
+import { scrollBehavior } from "../../../lib/reveal.ts";
 import { ExamBlocks } from "./ExamBlocks.tsx";
+import { BELOW_EXAM_STICKY, EXAM_STICKY_TOP, useStickyHeight } from "./sticky.ts";
+import { sectionPracticeSearch, sectionProgress } from "./topic-progress.ts";
 import { announcementMarks, clockText, durationText, remainingAnnouncement } from "./time-text.ts";
 
 export { clockText, durationText } from "./time-text.ts";
@@ -78,6 +82,9 @@ export function ExamSimulatorPage({ exercisesPath = ".." }: ExamSimulatorPagePro
   const [config, setConfig] = useState<ExamConfig>(() => configFromSearch(params) ?? defaultExamConfig(randomSeed()));
   const heading = useRef<HTMLHeadingElement>(null);
   const first = useRef(true);
+  // Al empezar o retomar, la pregunta se desplaza a la vista (al abrir la página con un intento en
+  // curso, no: la página empieza arriba).
+  const [reveal, setReveal] = useState(false);
 
   const commit = useCallback((next: ExamStore) => {
     storeRef.current = next;
@@ -97,12 +104,18 @@ export function ExamSimulatorPage({ exercisesPath = ".." }: ExamSimulatorPagePro
       first.current = false;
       return;
     }
-    heading.current?.focus();
+    // En el examen, la pregunta se desplaza a la vista ella sola (ExamView): el foco no mueve la página.
+    heading.current?.focus(view.kind === "examen" ? { preventScroll: true } : undefined);
   }, [view]);
 
   const start = () => {
     const questions = configExam(config);
     commit({ ...storeRef.current, active: startAttempt(config, questions.length, Date.now()) });
+    setReveal(true);
+    setView({ kind: "examen" });
+  };
+  const resume = () => {
+    setReveal(true);
     setView({ kind: "examen" });
   };
 
@@ -128,6 +141,7 @@ export function ExamSimulatorPage({ exercisesPath = ".." }: ExamSimulatorPagePro
           key={active.id}
           attempt={active}
           heading={heading}
+          reveal={reveal}
           onChange={(a) => commit({ ...storeRef.current, active: a })}
           onFinish={finish}
         />
@@ -145,9 +159,10 @@ export function ExamSimulatorPage({ exercisesPath = ".." }: ExamSimulatorPagePro
         <HistoryView
           store={store}
           heading={heading}
+          exercisesPath={exercisesPath}
           onBack={() => setView({ kind: "inicio" })}
           onOpen={(id) => setView({ kind: "resultados", id, auto: false })}
-          onResume={() => setView({ kind: "examen" })}
+          onResume={resume}
           onRepeat={repeat}
         />
       ) : (
@@ -158,7 +173,7 @@ export function ExamSimulatorPage({ exercisesPath = ".." }: ExamSimulatorPagePro
           historyCount={store.history.length}
           heading={heading}
           onStart={start}
-          onResume={() => setView({ kind: "examen" })}
+          onResume={resume}
           onHistory={() => setView({ kind: "historial" })}
         />
       )}
@@ -324,10 +339,17 @@ function StartView({
   );
 }
 
+/**
+ * Un entero entre min y max. Campo de texto con teclado numérico (no type="number"): la validación es
+ * la de la página, en español, nunca el aviso del navegador.
+ */
 function NumberInput({ label, value, min, max, disabled, onChange }: { label: string; value: number; min: number; max: number; disabled?: boolean; onChange: (v: number) => void }) {
   const id = useId();
   const [text, setText] = useState(String(value));
   useEffect(() => setText(String(value)), [value]);
+  const t = text.trim();
+  const v = Number(t);
+  const invalid = !/^\d+$/.test(t) || v < min || v > max;
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={id} className="text-[14px] font-semibold">
@@ -335,21 +357,25 @@ function NumberInput({ label, value, min, max, disabled, onChange }: { label: st
       </label>
       <input
         id={id}
-        type="number"
+        type="text"
         inputMode="numeric"
-        min={min}
-        max={max}
+        autoComplete="off"
+        maxLength={4}
         disabled={disabled}
-        className="min-h-11 w-32 rounded-md border border-border bg-sunken px-3 text-fg"
+        aria-invalid={invalid ? true : undefined}
+        aria-describedby={`${id}-help`}
+        className={cn("min-h-11 w-32 rounded-md border bg-sunken px-3 text-fg", invalid ? "border-2 border-crit" : "border-border")}
         value={text}
         onChange={(e) => {
           setText(e.target.value);
-          const v = Number(e.target.value);
-          if (Number.isInteger(v) && v >= min && v <= max) onChange(v);
+          const n = Number(e.target.value.trim());
+          if (/^\d+$/.test(e.target.value.trim()) && n >= min && n <= max) onChange(n);
         }}
         onBlur={() => setText(String(value))}
       />
-      <span className="text-[14px] text-muted">{`Entre ${min} y ${max}.`}</span>
+      <span id={`${id}-help`} className={cn("text-[14px]", invalid ? "font-semibold text-crit" : "text-muted")}>
+        {invalid ? `Escribe un número entero entre ${min} y ${max}; se mantiene ${value}.` : `Entre ${min} y ${max}.`}
+      </span>
     </div>
   );
 }
@@ -360,11 +386,14 @@ function NumberInput({ label, value, min, max, disabled, onChange }: { label: st
 function ExamView({
   attempt,
   heading,
+  reveal = false,
   onChange,
   onFinish,
 }: {
   attempt: ExamAttempt;
   heading: RefObject<HTMLHeadingElement | null>;
+  /** Desplaza la pregunta a la vista al montar (al pulsar «Empezar» o «Continuar»). */
+  reveal?: boolean;
   onChange: (a: ExamAttempt) => void;
   onFinish: (auto: boolean) => void;
 }) {
@@ -377,6 +406,10 @@ function ExamView({
   const [confirm, setConfirm] = useState(false);
   const [message, setMessage] = useState("");
   const questionHeading = useRef<HTMLHeadingElement>(null);
+  const card = useRef<HTMLElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  useStickyHeight(bar, root);
   const moved = useRef(false);
   const finished = useRef(false);
   const remaining = attemptRemaining(attempt, now);
@@ -411,12 +444,23 @@ function ExamView({
     setMessage(remainingAnnouncement(Math.min(...hit)));
   }, [remaining, marks]);
 
-  // Al navegar, el foco va al título de la pregunta.
+  // Al empezar y al navegar, la tarjeta de la pregunta sube a la vista, justo debajo de la cabecera fija
+  // (scroll-margin-top), y el foco va a su título sin volver a mover la página.
+  const showQuestion = useCallback((focus: boolean) => {
+    const el = card.current;
+    if (el && typeof el.scrollIntoView === "function") el.scrollIntoView({ block: "start", behavior: scrollBehavior() });
+    if (focus) questionHeading.current?.focus({ preventScroll: true });
+  }, []);
+  useEffect(() => {
+    if (reveal) showQuestion(false);
+    // Solo al montar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (!moved.current) return;
     moved.current = false;
-    questionHeading.current?.focus();
-  }, [current]);
+    showQuestion(true);
+  }, [current, showQuestion]);
 
   if (!q) {
     return (
@@ -449,13 +493,18 @@ function ExamView({
   const low = remaining <= 5 * 60_000;
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
-      <div className="sticky top-12 z-10 flex flex-wrap items-center justify-between gap-2 border-b border-border bg-base py-2 lg:top-0">
-        <h1 ref={heading} tabIndex={-1} className="font-display text-[20px] font-semibold">
-          {`Simulacro: ${modeText(attempt.config)}`}
+    <div ref={root} className="flex min-w-0 flex-col gap-4">
+      {/* En el móvil, una sola línea: «Simulacro», contestadas (3/10) y el reloj; el resto, para el lector de pantalla. */}
+      <div ref={bar} className={cn("sticky z-10 flex items-center justify-between gap-2 border-b border-border bg-base py-2", EXAM_STICKY_TOP)}>
+        <h1 ref={heading} tabIndex={-1} className="min-w-0 truncate font-display text-[17px] font-semibold sm:text-[20px]">
+          Simulacro
+          <span className="sr-only sm:not-sr-only">{`: ${modeText(attempt.config)}`}</span>
         </h1>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[14px]">{`Contestadas: ${answeredCount} de ${n}`}</span>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <span className="text-[14px]">
+            <span aria-hidden="true" className="sm:hidden">{`${answeredCount}/${n}`}</span>
+            <span className="sr-only sm:not-sr-only">{`Contestadas: ${answeredCount} de ${n}`}</span>
+          </span>
           <div role="timer" aria-label="Tiempo restante" className={cn("flex min-h-11 items-center gap-2 rounded-md border px-3 font-mono text-[18px] font-semibold", low ? "border-2 border-crit text-crit" : "border-border")}>
             <Clock size={18} aria-hidden="true" />
             <span>{clockText(remaining)}</span>
@@ -468,7 +517,7 @@ function ExamView({
 
       <Navigator questions={questions} answers={answers} flagged={attempt.flagged} current={current} onGo={go} />
 
-      <article className="flex min-w-0 flex-col gap-4 rounded-lg border border-border bg-raised p-4" aria-labelledby={`${attempt.id}-q`}>
+      <article ref={card} className={cn("flex min-w-0 flex-col gap-4 rounded-lg border border-border bg-raised p-4", BELOW_EXAM_STICKY)} aria-labelledby={`${attempt.id}-q`}>
         <div className="flex flex-wrap items-center gap-2">
           <Chip tone="outline" className="font-normal">
             {examSectionLabel(q.section)}
@@ -810,6 +859,7 @@ function QuestionReview({ index, question: q, answer, outcome, exercisesPath }: 
 function HistoryView({
   store,
   heading,
+  exercisesPath,
   onBack,
   onOpen,
   onResume,
@@ -817,6 +867,7 @@ function HistoryView({
 }: {
   store: ExamStore;
   heading: RefObject<HTMLHeadingElement | null>;
+  exercisesPath: string;
   onBack: () => void;
   onOpen: (id: string) => void;
   onResume: () => void;
@@ -843,6 +894,7 @@ function HistoryView({
           </Button>
         </div>
       ) : null}
+      {store.history.length > 0 ? <TopicProgress history={store.history} exercisesPath={exercisesPath} /> : null}
       {store.history.length === 0 ? (
         <p className="text-muted">Aún no has entregado ningún simulacro.</p>
       ) : (
@@ -872,3 +924,42 @@ function HistoryView({
   );
 }
 
+/** Progreso por temas en todos los simulacros entregados, con «Practicar este tema» en el banco. */
+function TopicProgress({ history, exercisesPath }: { history: readonly ExamAttempt[]; exercisesPath: string }) {
+  const id = useId();
+  const rows = useMemo(() => sectionProgress(history), [history]);
+  if (rows.length === 0) return null;
+  return (
+    <section aria-labelledby={`${id}-t`} className="flex flex-col gap-3 rounded-lg border border-border bg-raised p-4">
+      <h2 id={`${id}-t`} className="font-display text-[20px] font-semibold">
+        Progreso por temas
+      </h2>
+      <p className="text-[14px] text-muted">{`Aciertos de cada tema sumando ${history.length === 1 ? "el simulacro entregado" : `los ${history.length} simulacros entregados`}, y el último intento.`}</p>
+      <ul className="flex flex-col gap-4">
+        {rows.map((p, i) => {
+          const pct = Math.round((100 * p.correct) / p.total);
+          const label = examSectionLabel(p.section);
+          const search = sectionPracticeSearch(p.section, (history.length * 31 + i) >>> 0);
+          return (
+            <li key={p.section} className="flex flex-col gap-2">
+              <span className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-[14px]">
+                <span className="font-semibold">{label}</span>
+                <span>{`${p.correct} de ${p.total} bien (${pct} %) · ${p.attempts === 1 ? "1 simulacro" : `${p.attempts} simulacros`} · último: ${p.last[0]} de ${p.last[1]}`}</span>
+              </span>
+              <span className="block h-3 w-full overflow-hidden rounded-full border border-border bg-sunken" aria-hidden="true">
+                <span className="block h-full bg-accent" style={{ width: `${pct}%` }} />
+              </span>
+              {search ? (
+                <div>
+                  <Link to={{ pathname: exercisesPath, search }} relative="path" className={buttonVariants({ variant: "ghost" })} aria-label={`Practicar este tema: ${label}`}>
+                    Practicar este tema
+                  </Link>
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}

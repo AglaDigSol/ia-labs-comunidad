@@ -15,7 +15,7 @@ export const CALCULO_PROBABILIDAD_SYMBOLS: SymbolEntry[] = [
     category: CA,
     session: S,
     name: "Sumatorio",
-    aliases: ["Σ", "sigma", "suma", "sumatoria", "sum", "np.sum"],
+    aliases: ["Σ", "sigma", "suma", "sumatoria", "sum", "np.sum", "bucle", "bucle for", "for", "range", "for i in range", "acumular"],
     tex: T`\sum_{i=1}^{n} x_i`,
     variants: [
       { tex: T`\sum_{i} x_i`, convention: "Índice sin límites" },
@@ -41,7 +41,7 @@ export const CALCULO_PROBABILIDAD_SYMBOLS: SymbolEntry[] = [
     category: CA,
     session: S,
     name: "Productorio",
-    aliases: ["Π", "pi mayúscula", "producto", "prod", "math.prod", "np.prod"],
+    aliases: ["Π", "pi mayúscula", "producto", "prod", "math.prod", "np.prod", "bucle de productos", "multiplicar en un bucle"],
     tex: T`\prod_{i=1}^{n} x_i`,
     variants: [{ tex: T`x_1 \cdot x_2 \cdots x_n`, convention: "Desarrollado" }],
     reading: "productorio de i igual a 1 hasta n de x sub i",

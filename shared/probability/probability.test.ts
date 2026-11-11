@@ -396,5 +396,9 @@ describe("juegos y sucesos con nombre", () => {
     const die = dieSpace();
     eq(condProbOf(die, dieEvent(die, { kind: "menor", k: 4 }), dieEvent(die, { kind: "par" }))!, f(1, 3));
     expect(dieEventText({ kind: "multiplo3" })).toBe("es múltiplo de 3");
+    // «la probabilidad de que el resultado sea…», en subjuntivo.
+    expect(dieEventText({ kind: "multiplo3" }, "subjuntivo")).toBe("sea múltiplo de 3");
+    expect(dieEventText({ kind: "primo" }, "subjuntivo")).toBe("sea un número primo");
+    expect(dieEventText({ kind: "distinto", k: 6 }, "subjuntivo")).toBe("no sea un 6");
   });
 });

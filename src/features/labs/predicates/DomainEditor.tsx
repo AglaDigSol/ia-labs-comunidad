@@ -46,7 +46,9 @@ export const interpretationKey = (s: DomainState) =>
     .sort()
     .join("|")}`;
 
-const cellClass = "h-11 w-11 text-center align-middle";
+const cellClass = "h-11 w-11 p-0 text-center align-middle";
+/** Toda la celda (44 × 44 px) marca la casilla, no solo el cuadradito de 20 px. */
+const checkTarget = "flex size-11 cursor-pointer items-center justify-center";
 
 export function DomainEditor({
   state,
@@ -172,13 +174,15 @@ export function DomainEditor({
                   </th>
                   {unary.map((p) => (
                     <td key={p.name} className={cellClass}>
-                      <input
-                        type="checkbox"
-                        aria-label={`${p.name}(${d})`}
-                        checked={has(p.name, d)}
-                        onChange={() => toggle(p.name, d)}
-                        className="h-5 w-5 accent-[var(--accent)]"
-                      />
+                      <label className={checkTarget}>
+                        <input
+                          type="checkbox"
+                          aria-label={`${p.name}(${d})`}
+                          checked={has(p.name, d)}
+                          onChange={() => toggle(p.name, d)}
+                          className="h-5 w-5 accent-[var(--accent)]"
+                        />
+                      </label>
                     </td>
                   ))}
                 </tr>
@@ -222,13 +226,15 @@ export function DomainEditor({
                     </th>
                     {state.domain.map((y) => (
                       <td key={y} className={cellClass}>
-                        <input
-                          type="checkbox"
-                          aria-label={`${p.name}(${x}, ${y})`}
-                          checked={has(p.name, `${x},${y}`)}
-                          onChange={() => toggle(p.name, `${x},${y}`)}
-                          className="h-5 w-5 accent-[var(--accent)]"
-                        />
+                        <label className={checkTarget}>
+                          <input
+                            type="checkbox"
+                            aria-label={`${p.name}(${x}, ${y})`}
+                            checked={has(p.name, `${x},${y}`)}
+                            onChange={() => toggle(p.name, `${x},${y}`)}
+                            className="h-5 w-5 accent-[var(--accent)]"
+                          />
+                        </label>
                       </td>
                     ))}
                   </tr>

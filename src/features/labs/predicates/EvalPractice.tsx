@@ -424,6 +424,7 @@ function ResultPractice({
           <label key={String(v)} className="flex min-h-11 items-center gap-2">
             <input
               type="radio"
+              className="size-5 shrink-0"
               name="pred-result"
               checked={answer === v}
               onChange={() => {
@@ -490,6 +491,7 @@ function WitnessQuestion({ formula, interp }: { formula: PredFormula; interp: Pr
           <label key={d} className="flex min-h-11 items-center gap-2 font-mono">
             <input
               type="radio"
+              className="size-5 shrink-0"
               name="pred-witness"
               checked={pick === d}
               onChange={() => {

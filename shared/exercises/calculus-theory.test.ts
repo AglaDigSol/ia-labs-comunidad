@@ -183,6 +183,17 @@ describe("puntos críticos tipo test", () => {
       expect(arrangeChoices(criticalChoiceQuestion(inst), s)).toHaveLength(4);
     });
   });
+  it("«f no tiene puntos críticos» va en texto normal, no en modo matemático", () => {
+    let seen = 0;
+    each((s, level) => {
+      const none = criticalChoiceQuestion(CALC_CRITICAL_CHOICE.generate(s, level)).options.find((o) => o.id === "sin");
+      if (!none) return;
+      seen++;
+      expect(none.text).toBe("f no tiene puntos críticos");
+      expect(none.tex).toBeUndefined();
+    });
+    expect(seen).toBeGreaterThan(0);
+  });
 });
 
 describe("integración por partes", () => {

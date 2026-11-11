@@ -89,6 +89,7 @@ export function CircuitBuilder({
         Escribe una expresión y mira el circuito que la calcula. Es un visualizador: aquí no hay nada que adivinar.
       </p>
       <form
+        noValidate
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();

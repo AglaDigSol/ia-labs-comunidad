@@ -20,6 +20,7 @@ import { Figure } from "../python/Figure.tsx";
 import type { PyClient, PyEvent } from "../python/py-client.ts";
 import { CELL_TIMEOUT_MS, cellProgram, newKernelId, parseKernelReply, type KernelValue } from "./kernel.ts";
 import { TableOutput } from "./TableOutput.tsx";
+import { BELOW_EXAM_STICKY } from "../exam/sticky.ts";
 
 export const COPY_KERNEL_LOST = "Python se había reiniciado: las variables de antes se han perdido. Vuelve a ejecutar las celdas anteriores (o «Ejecutar todo»).";
 export const COPY_KERNEL_RESTARTED = "Kernel reiniciado: las variables se han borrado.";
@@ -231,7 +232,7 @@ export function Notebook({
           const H = c.level === 2 ? "h2" : "h3";
           return (
             <li key={c.id} className="flex min-w-0 flex-col gap-2 pt-2">
-              <H id={first ? partAnchor(c.part) : undefined} tabIndex={-1} className={cn("font-display font-semibold", c.level === 2 ? "text-[22px]" : "text-[18px]")}>
+              <H id={first ? partAnchor(c.part) : undefined} tabIndex={-1} className={cn("font-display font-semibold", BELOW_EXAM_STICKY, c.level === 2 ? "text-[22px]" : "text-[18px]")}>
                 {c.title}
               </H>
               {c.text.map((p, i) => (

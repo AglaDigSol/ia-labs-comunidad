@@ -51,6 +51,8 @@ import { Button, buttonVariants } from "../../../components/ui/button.tsx";
 import { Chip } from "../../../components/ui/chip.tsx";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../../../components/ui/dialog.tsx";
 import { cn } from "../../../lib/cn.ts";
+import { scrollBehavior } from "../../../lib/reveal.ts";
+import { BELOW_LAB_TABS, EXAM_STICKY_TOP, useStickyHeight } from "../exam/sticky.ts";
 import { announcementMarks, clockText, durationText, remainingAnnouncement } from "../exam/time-text.ts";
 import { usePythonRuntime } from "../exercises/python/runtime.ts";
 import { Figure, saveBlob } from "../python/Figure.tsx";
@@ -125,6 +127,8 @@ export function PyExamPage({ exercisesPath = "../../ejercicios" }: PyExamPagePro
   const [seed, setSeed] = useState<number>(() => seedFromText(params.get("s")) ?? randomSeed());
   const heading = useRef<HTMLHeadingElement>(null);
   const first = useRef(true);
+  // Al empezar o retomar, el principio del cuaderno sube a la vista (al abrir la página, no).
+  const [reveal, setReveal] = useState(false);
 
   const commit = useCallback((next: PyExamStore) => {
     storeRef.current = next;
@@ -144,12 +148,17 @@ export function PyExamPage({ exercisesPath = "../../ejercicios" }: PyExamPagePro
       first.current = false;
       return;
     }
-    heading.current?.focus();
+    heading.current?.focus(view.kind === "examen" ? { preventScroll: true } : undefined);
   }, [view]);
 
   const start = () => {
     const exam = buildPyExam(seed);
     commit({ ...storeRef.current, active: startPyExamAttempt(seed, pyExamParts(exam), Date.now()) });
+    setReveal(true);
+    setView({ kind: "examen" });
+  };
+  const resume = () => {
+    setReveal(true);
     setView({ kind: "examen" });
   };
 
@@ -170,7 +179,7 @@ export function PyExamPage({ exercisesPath = "../../ejercicios" }: PyExamPagePro
   return (
     <section className="flex min-w-0 flex-col gap-6" aria-label={PYEXAM_PAGE_TITLE}>
       {view.kind === "examen" && active ? (
-        <ExamView key={active.id} attempt={active} heading={heading} onChange={(a) => commit({ ...storeRef.current, active: a })} onFinish={finish} />
+        <ExamView key={active.id} attempt={active} heading={heading} reveal={reveal} onChange={(a) => commit({ ...storeRef.current, active: a })} onFinish={finish} />
       ) : view.kind === "resultados" ? (
         <ResultsView
           key={view.id}
@@ -184,7 +193,7 @@ export function PyExamPage({ exercisesPath = "../../ejercicios" }: PyExamPagePro
           onHistory={() => setView({ kind: "historial" })}
         />
       ) : view.kind === "historial" ? (
-        <HistoryView store={store} heading={heading} onBack={() => setView({ kind: "inicio" })} onOpen={(id) => setView({ kind: "resultados", id, grade: false })} onResume={() => setView({ kind: "examen" })} onRepeat={repeat} />
+        <HistoryView store={store} heading={heading} onBack={() => setView({ kind: "inicio" })} onOpen={(id) => setView({ kind: "resultados", id, grade: false })} onResume={resume} onRepeat={repeat} />
       ) : (
         <StartView
           seed={seed}
@@ -193,7 +202,7 @@ export function PyExamPage({ exercisesPath = "../../ejercicios" }: PyExamPagePro
           heading={heading}
           onStart={start}
           onOther={() => setSeed(randomSeed())}
-          onResume={() => setView({ kind: "examen" })}
+          onResume={resume}
           onHistory={() => setView({ kind: "historial" })}
         />
       )}
@@ -309,7 +318,20 @@ function StartView({
 
 // ---------------------------------------------------------------- Examen
 
-function ExamView({ attempt, heading, onChange, onFinish }: { attempt: PyExamAttempt; heading: RefObject<HTMLHeadingElement | null>; onChange: (a: PyExamAttempt) => void; onFinish: (auto: boolean) => void }) {
+function ExamView({
+  attempt,
+  heading,
+  reveal = false,
+  onChange,
+  onFinish,
+}: {
+  attempt: PyExamAttempt;
+  heading: RefObject<HTMLHeadingElement | null>;
+  /** Desplaza el principio del simulacro a la vista al montar (al pulsar «Empezar» o «Continuar»). */
+  reveal?: boolean;
+  onChange: (a: PyExamAttempt) => void;
+  onFinish: (auto: boolean) => void;
+}) {
   const exam = useMemo(() => buildPyExam(attempt.seed), [attempt.seed]);
   const starters = useMemo(() => pyExamStarters(exam), [exam]);
   const kernel = useNotebookKernel(exam);
@@ -323,6 +345,16 @@ function ExamView({ attempt, heading, onChange, onFinish }: { attempt: PyExamAtt
   const announced = useRef<Set<number> | null>(null);
   if (announced.current === null) announced.current = new Set(marks.filter((m) => remaining <= m * 60_000));
   const code = attempt.code;
+  const root = useRef<HTMLDivElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
+  useStickyHeight(bar, root);
+
+  useEffect(() => {
+    const el = root.current;
+    if (reveal && el && typeof el.scrollIntoView === "function") el.scrollIntoView({ block: "start", behavior: scrollBehavior() });
+    // Solo al montar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const tick = () => setNow(Date.now());
@@ -370,21 +402,22 @@ function ExamView({ attempt, heading, onChange, onFinish }: { attempt: PyExamAtt
   const touched = Array.from({ length: parts }, (_, i) => code?.[i] !== null && code?.[i] !== undefined);
   const untouched = touched.flatMap((t, i) => (t ? [] : [i]));
   const go = (part: number) => {
+    // El título del ejercicio o paso queda justo debajo de la cabecera fija (scroll-margin-top).
     const el = document.getElementById(partAnchor(part));
-    el?.scrollIntoView?.({ block: "start" });
-    el?.focus();
+    el?.scrollIntoView?.({ block: "start", behavior: scrollBehavior() });
+    el?.focus({ preventScroll: true });
   };
   const low = remaining <= 5 * 60_000;
   const used = pyExamCodeSize(code);
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
-      <div className="sticky top-12 z-10 flex flex-col gap-2 border-b border-border bg-base py-2 lg:top-0">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 ref={heading} tabIndex={-1} className="font-display text-[20px] font-semibold">
+    <div ref={root} className={cn("flex min-w-0 flex-col gap-4", BELOW_LAB_TABS)}>
+      <div ref={bar} className={cn("sticky z-10 flex flex-col gap-2 border-b border-border bg-base py-2", EXAM_STICKY_TOP)}>
+        <div className="flex items-center justify-between gap-2">
+          <h1 ref={heading} tabIndex={-1} className="min-w-0 truncate font-display text-[17px] font-semibold sm:text-[20px]">
             {`${PYEXAM_PAGE_TITLE} · ${seedToText(attempt.seed)}`}
           </h1>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <div role="timer" aria-label="Tiempo restante" className={cn("flex min-h-11 items-center gap-2 rounded-md border px-3 font-mono text-[18px] font-semibold", low ? "border-2 border-crit text-crit" : "border-border")}>
               <Clock size={18} aria-hidden="true" />
               <span>{clockText(remaining)}</span>

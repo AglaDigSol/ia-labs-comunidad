@@ -53,7 +53,10 @@ describe("propiedades del determinante", () => {
       }
     }
     expect(detExprText({ k: -2, factors: [{ m: "A", pow: -1 }, { m: "B", pow: 1, T: true }] })).toBe("−2A⁻¹Bᵀ");
-    expect(detExprTex({ k: 3, factors: [{ m: "A", pow: 2, T: true }] })).toBe("3A^{T2}");
+    expect(detExprTex({ k: 3, factors: [{ m: "A", pow: 2, T: true }] })).toBe("3(A^{T})^{2}");
+    expect(detExprTex({ k: 1, factors: [{ m: "A", pow: 1 }, { m: "B", pow: -1, T: true }] })).toBe("A(B^{T})^{-1}");
+    expect(detExprTex({ k: -1, factors: [{ m: "B", pow: 1, T: true }] })).toBe("-B^{T}");
+    expect(detExprText({ k: 1, factors: [{ m: "A", pow: 1 }, { m: "B", pow: -1, T: true }] })).toBe("A(Bᵀ)⁻¹");
   });
 
   it("matrices con una entrada no nula por fila y columna: signo de la permutación por el producto", () => {
