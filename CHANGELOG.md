@@ -12,6 +12,40 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 
+## [0.19.0] - 2026-11-11
+
+Grupos de prácticas y franjas de examen por materia, también en los calendarios suscritos.
+
+### Añadido
+
+- Calendario: «Mis grupos». Cada persona elige, por materia, su grupo de prácticas (Todos, G1, G2, G3) y su franja
+  de examen (Todas, F1, F2); solo aparecen los que existen en esa materia. La lista, «Lo próximo», el aviso de cambio
+  de hora y el inicio muestran solo las prácticas de tu grupo y los exámenes de tu franja. Se guarda en
+  `pref/calGroups` y viaja en «Exportar mis datos».
+- Calendarios `.ics` filtrados: uno por materia y elección (`calendario-<materia>-<grupo>-<franja>.ics`) y, para todas
+  las materias, uno por combinación (`calendario-todas-….ics`), con la clave de `CALENDAR_ICS_KEY` si la hay.
+  `calendario.json` los describe en `filtrados`.
+- «Suscribirme» enseña la URL de tu elección: «Todas las materias con mis grupos» y una por materia. Son calendarios
+  fijos: si cambias de grupo, vuelve a suscribirte.
+
+### Cambiado
+
+- «Mi grupo de prácticas» y «Mi franja de examen», que valían para todas las materias, pasan a «Mis grupos», por
+  materia. La elección anterior se copia a cada materia.
+- Los `.ics` sin filtrar siguen igual («Con todos los grupos»). Un evento tiene el mismo UID y SEQUENCE en todos los
+  ficheros.
+
+### Corregido
+
+- Se quita un enlace `node_modules` que la v0.18.0 subió por error al repositorio; `.gitignore` lo ignora también
+  como enlace.
+
+### Despliegue
+
+- Con `CALENDAR_ICS_KEY` se generan 168 `.ics` en lugar de 3. Si la excepción del control de acceso lista los nombres
+  uno a uno, cámbiala por el prefijo `/calendario-<clave>` seguido de `[A-Za-z0-9-]*\.ics`. `calendario.json` sigue
+  detrás del control de acceso.
+
 ## [0.18.0] - 2026-11-11
 
 Cierre del informe de mejoras de la revisión con usuarios (A9 a A14) y un ejercicio nuevo de cuantificadores.
@@ -700,6 +734,7 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
 [Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.17.0...HEAD
+[0.19.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.19.0
 [0.18.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.18.0
 [0.17.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.17.0
 [0.16.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.16.0
