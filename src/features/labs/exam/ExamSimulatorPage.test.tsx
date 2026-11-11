@@ -84,7 +84,15 @@ describe("pantalla de inicio", () => {
     expect(screen.getByText("Elige al menos un tema.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Empezar" })).toHaveProperty("disabled", true);
     fireEvent.click(screen.getByRole("checkbox", { name: "Probabilidad" }));
-    fireEvent.change(screen.getByLabelText("Número de preguntas"), { target: { value: "4" } });
+    // Validación propia, en español (no la del navegador: sin type="number" ni min/max).
+    const count = screen.getByLabelText("Número de preguntas");
+    expect(count.getAttribute("type")).toBe("text");
+    expect(count.hasAttribute("min") || count.hasAttribute("max")).toBe(false);
+    fireEvent.change(count, { target: { value: "500" } });
+    expect(count.getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByText(/^Escribe un número entero entre \d+ y \d+; se mantiene 10\.$/)).toBeTruthy();
+    fireEvent.change(count, { target: { value: "4" } });
+    expect(count.hasAttribute("aria-invalid")).toBe(false);
     fireEvent.change(screen.getByLabelText("Tiempo (minutos)"), { target: { value: "25" } });
     expect(screen.getByText(/4 preguntas en 25 min/)).toBeTruthy();
     await waitFor(() => expect(screen.getByTestId("loc").textContent).toMatch(/modo=temas&s=[0-9a-z]+&temas=probabilidad&n=4&min=25&pen=1$/));

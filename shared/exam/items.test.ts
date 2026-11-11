@@ -7,7 +7,7 @@ import { seedFromText } from "../exercises/random.ts";
 import { levelFromSlug } from "../exercises/types.ts";
 import { examBlockText } from "./blocks.ts";
 import { EXAM_ADAPTERS, EXAM_TYPE_IDS, examItem, examLevels, examTypeSummary } from "./items.ts";
-import { expectedFrac, numericMatches, parseExamDecimal } from "./numeric.ts";
+import { expectedFrac, numericCorrectText, numericMatches, parseExamDecimal } from "./numeric.ts";
 import { decodeChoiceAnswer, encodeChoiceAnswer, isAnswered, type ExamItem } from "./types.ts";
 
 const SEEDS = Array.from({ length: 25 }, (_, i) => (i * 2654435761 + 17) >>> 0);
@@ -155,5 +155,22 @@ describe("conjuntos-relaciones en el simulacro (muchas semillas)", () => {
         }
       }
     }
+  });
+});
+
+describe("textos", () => {
+  it("«la probabilidad de que el resultado sea…», en subjuntivo", () => {
+    for (const seed of SEEDS) {
+      const it2 = examItem("probabilidad-dado", seed, "medio") ?? examItem("probabilidad-dado", seed, "básico");
+      if (!it2) continue;
+      expect(it2.prompt).toMatch(/de que el resultado (no )?sea /);
+      expect(it2.prompt).not.toMatch(/de que el resultado (no )?es /);
+    }
+  });
+  it("la respuesta correcta redondeada dice su valor: exacto o aproximado con «≈» y coma", () => {
+    expect(numericCorrectText({ n: 2n, d: 21n }, "dos-decimales")).toBe("0,10 (≈ 0,0952)");
+    expect(numericCorrectText({ n: 19n, d: 200n }, "dos-decimales")).toBe("0,10 (exacto: 0,095)");
+    expect(numericCorrectText({ n: 4n, d: 5n }, "dos-decimales")).toBe("0,80 (exacto: 0,8)");
+    expect(numericCorrectText({ n: 1n, d: 4n }, "dos-decimales")).toBe("0,25");
   });
 });

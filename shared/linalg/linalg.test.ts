@@ -5,6 +5,7 @@ import { detCofactor, detElimination, matrixDeterminant, sarrusTerms } from "./d
 import {
   charPolynomial,
   eigenspace,
+  integerVector,
   eigenvalueOf,
   eigenvalues,
   isCharPolynomial,
@@ -425,6 +426,11 @@ describe("autovalores y autovectores", () => {
     }
     expect(eigenvalueOf(A, intVector([1, 0, 0]))).toBeNull();
     expect(eigenspace(A, F(5))).toEqual([]);
+    // Autovectores enteros: el múltiplo sin fracciones ni factor común.
+    for (const { value } of ev.roots) expect(eigenspace(A, value)[0]!.every((x) => x.d === 1n)).toBe(true);
+    expect(integerVector([frac(-1n, 2n), frac(1n, 2n), ONE]).map(fracText)).toEqual(["−1", "1", "2"]);
+    expect(integerVector([frac(2n, 3n), frac(4n, 3n)]).map(fracText)).toEqual(["1", "2"]);
+    expect(integerVector([ZERO, ZERO]).map(fracText)).toEqual(["0", "0"]);
   });
 
   it("lee el polinomio desarrollado o factorizado y acepta det(λI − A) y det(A − λI)", () => {

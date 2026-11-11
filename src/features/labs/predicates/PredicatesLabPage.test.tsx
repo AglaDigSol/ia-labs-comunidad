@@ -218,3 +218,16 @@ describe("PredicatesLabPage: traducir", () => {
     expect(screen.getByRole("status").textContent).toContain("Usa solo los predicados del glosario: P, Q.");
   });
 });
+
+describe("PredicatesLabPage: casillas grandes en el móvil", () => {
+  it("cada casilla del dominio se marca desde toda su celda de 44 px (una etiqueta que la envuelve)", async () => {
+    await open();
+    const box = screen.getByRole("checkbox", { name: "P(1)" }) as HTMLInputElement;
+    const target = box.closest("label");
+    expect(target).not.toBeNull();
+    expect(target!.className).toContain("size-11");
+    const before = box.checked;
+    fireEvent.click(target!);
+    expect(box.checked).toBe(!before);
+  });
+});

@@ -1312,7 +1312,8 @@ export function criticalChoiceQuestion(inst: CalcCriticalChoiceInstance): Choice
     const label = kind === "no-critico" ? "no es un punto crítico (∇f ≠ 0)" : `punto crítico: ${CRITICAL_LABEL[kind].toLowerCase()}`;
     return opt(`p${i}`, `(${niceText(x)}, ${niceText(y)})`, `(${niceTex(x)},\\ ${niceTex(y)})`, kind === inst.ask, `(${niceText(x)}, ${niceText(y)}): ${label}.`);
   });
-  if (inst.none) options.push(opt("sin", "f no tiene puntos críticos", "f \\text{ no tiene puntos críticos}", hasNoCriticalPoints(f), "Mira si alguna parcial puede anularse."));
+  // En texto normal (no en modo matemático): es una frase, no una fórmula.
+  if (inst.none) options.push(opt("sin", "f no tiene puntos críticos", undefined, hasNoCriticalPoints(f), "Mira si alguna parcial puede anularse."));
   return { mode: "single", options };
 }
 

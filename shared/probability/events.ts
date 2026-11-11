@@ -161,8 +161,16 @@ export function dieEventHolds(e: DieEventSpec, face: number): boolean {
   }
 }
 
-/** «es par», «es menor que 4»… */
-export function dieEventText(e: DieEventSpec): string {
+/**
+ * «es par», «es menor que 4»… En subjuntivo («la probabilidad de que el resultado sea par»): «sea par»,
+ * «no sea un 6».
+ */
+export function dieEventText(e: DieEventSpec, mood: "indicativo" | "subjuntivo" = "indicativo"): string {
+  const text = dieEventIndicative(e);
+  return mood === "subjuntivo" ? text.replace(/^(no )?es /, (_, no: string | undefined) => `${no ?? ""}sea `) : text;
+}
+
+function dieEventIndicative(e: DieEventSpec): string {
   switch (e.kind) {
     case "par":
       return "es par";

@@ -363,7 +363,7 @@ export function DieCondPractice({ odd, even, a, b, options, onSolved }: { odd: n
   const facesAB = facesB.filter((x) => dieEventHolds(a, x));
   return (
     <PracticeBox title="Condicionada con un dado">
-      <p>{`Se tira ${loadedDieText(odd, even)}. ¿Cuál es la probabilidad de que el resultado ${dieEventText(a)}, sabiendo que ${dieEventText(b)}?`}</p>
+      <p>{`Se tira ${loadedDieText(odd, even)}. ¿Cuál es la probabilidad de que el resultado ${dieEventText(a, "subjuntivo")}, sabiendo que ${dieEventText(b)}?`}</p>
       <Options
         legend="Elige la respuesta correcta"
         name={name}

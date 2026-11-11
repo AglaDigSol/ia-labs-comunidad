@@ -111,6 +111,7 @@ export function AxiomPractice({ structure: s, resetKey }: { structure: FiniteStr
                     <label key={c} className="flex min-h-11 items-center gap-2">
                       <input
                         type="radio"
+                        className="size-5 shrink-0"
                         name={`claim-${id}`}
                         checked={a.claim === c}
                         onChange={() => update(id, { claim: c })}

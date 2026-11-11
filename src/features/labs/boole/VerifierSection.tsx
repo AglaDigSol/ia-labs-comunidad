@@ -123,7 +123,7 @@ function CustomEditor({ tables, onChange }: { tables: CustomTables; onChange: (t
       </div>
       <button
         type="button"
-        className="self-start text-[14px] text-accent underline underline-offset-4"
+        className="inline-flex min-h-11 items-center self-start text-[14px] text-accent underline underline-offset-4"
         onClick={() => onChange(defaultCustomTables(n))}
       >
         Restablecer las tablas

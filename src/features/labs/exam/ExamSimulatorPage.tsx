@@ -339,10 +339,17 @@ function StartView({
   );
 }
 
+/**
+ * Un entero entre min y max. Campo de texto con teclado numérico (no type="number"): la validación es
+ * la de la página, en español, nunca el aviso del navegador.
+ */
 function NumberInput({ label, value, min, max, disabled, onChange }: { label: string; value: number; min: number; max: number; disabled?: boolean; onChange: (v: number) => void }) {
   const id = useId();
   const [text, setText] = useState(String(value));
   useEffect(() => setText(String(value)), [value]);
+  const t = text.trim();
+  const v = Number(t);
+  const invalid = !/^\d+$/.test(t) || v < min || v > max;
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={id} className="text-[14px] font-semibold">
@@ -350,21 +357,25 @@ function NumberInput({ label, value, min, max, disabled, onChange }: { label: st
       </label>
       <input
         id={id}
-        type="number"
+        type="text"
         inputMode="numeric"
-        min={min}
-        max={max}
+        autoComplete="off"
+        maxLength={4}
         disabled={disabled}
-        className="min-h-11 w-32 rounded-md border border-border bg-sunken px-3 text-fg"
+        aria-invalid={invalid ? true : undefined}
+        aria-describedby={`${id}-help`}
+        className={cn("min-h-11 w-32 rounded-md border bg-sunken px-3 text-fg", invalid ? "border-2 border-crit" : "border-border")}
         value={text}
         onChange={(e) => {
           setText(e.target.value);
-          const v = Number(e.target.value);
-          if (Number.isInteger(v) && v >= min && v <= max) onChange(v);
+          const n = Number(e.target.value.trim());
+          if (/^\d+$/.test(e.target.value.trim()) && n >= min && n <= max) onChange(n);
         }}
         onBlur={() => setText(String(value))}
       />
-      <span className="text-[14px] text-muted">{`Entre ${min} y ${max}.`}</span>
+      <span id={`${id}-help`} className={cn("text-[14px]", invalid ? "font-semibold text-crit" : "text-muted")}>
+        {invalid ? `Escribe un número entero entre ${min} y ${max}; se mantiene ${value}.` : `Entre ${min} y ${max}.`}
+      </span>
     </div>
   );
 }

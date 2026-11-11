@@ -100,7 +100,9 @@ export function numericCorrectText(expected: ExamExpected, format: ExamNumericFo
     const c = roundedCents(expected);
     const text = formatDecimal(frac(c, 100n), 2, { pad: true }).text;
     const short = exact ? formatDecimal(exact, 6) : null;
-    // Si el valor exacto tiene más cifras, se dice que es redondeado.
+    // Si el valor exacto tiene más cifras, se dice cuál es; si no es un decimal exacto (2/21), su
+    // aproximación con ≈ y coma: «0,10 (≈ 0,0952)».
+    if (exact && short && !short.exact) return `${text} (≈ ${formatDecimal(exact, 4).text})`;
     return short && short.exact && short.text !== text ? `${text} (exacto: ${short.text})` : text;
   }
   if (!exact) return formatDecimal(frac(roundedCents(expected), 100n), 2, { pad: true }).text;

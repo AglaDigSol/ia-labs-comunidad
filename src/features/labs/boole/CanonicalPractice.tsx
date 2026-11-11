@@ -204,6 +204,7 @@ export function CanonicalPractice({
           : `Escribe los índices separados por comas (por ejemplo, Σm(1, 3, 5)). Las formas canónicas son opcionales: escríbelas con ⊕, ⊙ y ′ usando ${vars.join(", ")}.${dc.length > 0 ? " Esta función tiene indiferencias (X): no van ni en Σm ni en ΠM." : ""}`}
       </p>
       <form
+        noValidate
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();

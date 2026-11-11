@@ -70,11 +70,11 @@ export function evalMatrixExpr(e: DetExpr, mats: Readonly<Record<DetName, Matrix
   return matrixScale(frac(BigInt(e.k)), M);
 }
 
-/** «−2AB⁻¹», «3Aᵀ», «A²B». */
+/** «−2AB⁻¹», «3Aᵀ», «A²B», «(Bᵀ)⁻¹» (la traspuesta con otro exponente, entre paréntesis). */
 export function detExprText(e: DetExpr): string {
   const sup: Record<string, string> = { "-1": "⁻¹", "2": "²", "3": "³" };
   const k = e.k === 1 ? "" : e.k === -1 ? "−" : String(e.k).replace("-", "−");
-  return k + e.factors.map((f) => `${f.m}${f.T ? "ᵀ" : ""}${f.pow === 1 ? "" : sup[String(f.pow)]}`).join("");
+  return k + e.factors.map((f) => (f.pow === 1 ? `${f.m}${f.T ? "ᵀ" : ""}` : `${f.T ? `(${f.m}ᵀ)` : f.m}${sup[String(f.pow)]}`)).join("");
 }
 
 export function detExprTex(e: DetExpr): string {
@@ -83,8 +83,10 @@ export function detExprTex(e: DetExpr): string {
     k +
     e.factors
       .map((f) => {
-        const exps = [f.T ? "T" : "", f.pow === 1 ? "" : String(f.pow)].filter(Boolean);
-        return exps.length === 0 ? f.m : `${f.m}^{${exps.join("")}}`;
+        // (B^{T})^{-1}, nunca B^{T-1}: la traspuesta y la potencia son dos exponentes distintos.
+        const base = f.T ? `${f.m}^{T}` : f.m;
+        if (f.pow === 1) return base;
+        return `${f.T ? `(${base})` : base}^{${f.pow}}`;
       })
       .join("")
   );
