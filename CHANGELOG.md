@@ -12,6 +12,38 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 
+## [0.16.0] - 2026-11-11
+
+Más correcciones de la revisión con usuarios: flashcards (A8) y Python en el móvil (A11).
+
+### Añadido
+
+- **Flashcards**: un mazo con 0 para hoy explica el motivo («Ya viste las 20 nuevas de hoy de este mazo» o «No quedan
+  tarjetas pendientes») y ofrece «Repasar 5 más» para sacar 5 nuevas extra ese día.
+- **Ajustes**: campo «Nuevas por día» para el tope de tarjetas nuevas de cada mazo.
+- **Python en pantallas táctiles**: fila de símbolos encima del editor (: ( ) [ ] " _ y Tab), con botones de 44 px y
+  nombre accesible, que inserta en el cursor sin sacar el foco del editor.
+
+### Cambiado
+
+- **Flashcards**: el tope diario de tarjetas nuevas es ahora por mazo (20 por defecto), así que un mazo grande ya no
+  deja a los demás en «Para hoy 0». `buildQueue` y `dueSummary` aplican el tope por mazo y aceptan un cuarto argumento
+  opcional con las nuevas extra del día (clave `newx/<mazo>`).
+- **Flashcards**: en una tarjeta nueva, Difícil, Bien y Fácil dan intervalos distintos (1, 3 y 4 días; `FIRST_INTERVAL`).
+  Después sigue SM-2; cuando los tres coinciden, el repaso explica por qué.
+- **Python**: el aviso de descarga (16,8 MB) y «Cargar Python» pasan a una tarjeta de estado arriba de la pestaña; sin
+  Python cargado, «Ejecutar código» es «Cargar y ejecutar» (descarga, prepara y ejecuta). Ctrl+Enter nunca inicia la
+  descarga.
+- **Python en el móvil** (< 640 px): el editor va primero, con «Ejecutar» y «Detener» en una barra fija encima y
+  «Ejecutar paso a paso» justo debajo; la descripción y las opciones quedan plegadas en «Descripción y opciones».
+
+### Corregido
+
+- Diccionario y flashcards: la lectura de ⊻ dice «o p o q, pero no ambas».
+- Python: la carga de paquetes («Cargando matplotlib…») y la caché de fuentes van en una barra de estado aparte, no
+  mezcladas con la salida del programa; «Entrada para input()» se abre sola cuando el código llama a input().
+- Laboratorios en el móvil: la barra de pestañas se queda fija arriba al desplazarse (antes se iba con la cabecera).
+
 ## [0.15.1] - 2026-11-11
 
 Primeras correcciones de la revisión con usuarios de la v0.14.1.
@@ -591,7 +623,8 @@ usaban CC BY-SA y una frase de acceso: ambas desaparecen.
 
 - Calendario: cada zona horaria muestra su propio día, y las ventanas de varios días (tests) muestran inicio y fin.
 
-[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.15.1...HEAD
+[Próximamente]: https://github.com/AglaDigSol/ia-labs-comunidad/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.16.0
 [0.15.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.15.1
 [0.15.0]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.15.0
 [0.14.1]: https://github.com/AglaDigSol/ia-labs-comunidad/releases/tag/v0.14.1

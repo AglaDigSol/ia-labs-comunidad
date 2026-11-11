@@ -158,8 +158,9 @@ export function LabsRoutes({ extraTabs = [], renderHeaderAction, basePath, pytho
   const activeTab = tabs.find((tab) => isActive(pathname, hrefOf(tab))) ?? null;
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* «contents»: la barra de pestañas es sticky y necesita como contenedor toda el área, no solo esta cabecera. */}
+      <div className="contents">
+        <div className="-mb-4 flex flex-wrap items-center justify-between gap-2">
           <p className="text-[14px] font-semibold text-muted">Laboratorios</p>
           <div className="flex flex-wrap items-center gap-2">
             {guides ? (
