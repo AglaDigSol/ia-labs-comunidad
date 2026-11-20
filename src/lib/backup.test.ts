@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
-import { BACKUP_VERSION, backupFileName, buildBackup, IMPORT_ERROR, restoreBackup } from "./backup.ts";
+import { BACKUP_VERSION, backupFileName, buildBackup, clearExtras, COMMUNITY_NAME_KEY, IMPORT_ERROR, restoreBackup } from "./backup.ts";
 import { __resetKvStoreForTests, setKv, snapshotKv } from "./kv-store.ts";
 
 beforeEach(() => __resetKvStoreForTests());
@@ -38,6 +38,27 @@ describe("backup", () => {
     expect(restoreBackup(text, "merge").ok).toBe(true);
     expect(localStorage.getItem("ia-labs.pyexam.v1")).toBe('{"v":1,"active":null,"history":[]}');
     localStorage.clear();
+  });
+
+  it("includes python prefs, drafts and community display name in extras and clears them", () => {
+    localStorage.setItem("ia-labs.python.v1", '{"template":"blank","codes":{"blank":"print(1)"},"limit":30,"loaded":false,"stdin":""}');
+    localStorage.setItem("ia-labs.py.drafts", '[{"id":"d_abcdefghij"}]');
+    localStorage.setItem(COMMUNITY_NAME_KEY, "Nombre Ejemplo");
+    const text = JSON.stringify(buildBackup());
+    const parsed = JSON.parse(text);
+    expect(parsed.extras["ia-labs.python.v1"]).toContain("print(1)");
+    expect(parsed.extras["ia-labs.py.drafts"]).toContain("d_abcdefghij");
+    expect(parsed.extras[COMMUNITY_NAME_KEY]).toBe("Nombre Ejemplo");
+
+    clearExtras();
+    expect(localStorage.getItem("ia-labs.python.v1")).toBeNull();
+    expect(localStorage.getItem("ia-labs.py.drafts")).toBeNull();
+    expect(localStorage.getItem(COMMUNITY_NAME_KEY)).toBeNull();
+
+    expect(restoreBackup(text, "replace").ok).toBe(true);
+    expect(localStorage.getItem("ia-labs.python.v1")).toContain("print(1)");
+    expect(localStorage.getItem("ia-labs.py.drafts")).toContain("d_abcdefghij");
+    expect(localStorage.getItem(COMMUNITY_NAME_KEY)).toBe("Nombre Ejemplo");
   });
 
   it("round-trips through JSON", () => {

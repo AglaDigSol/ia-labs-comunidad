@@ -6,6 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { PYODIDE_VERSION } from "./src/features/labs/python/packages.ts";
 import { PYODIDE_PACKAGES } from "./src/features/labs/python/pyodide-manifest.ts";
 import { trimLock, type Lock } from "./scripts/pyodide-lib.ts";
+import { comunidadEnabled } from "./scripts/comunidad-flag.ts";
 import { pythonEnabled } from "./scripts/python-flag.ts";
 import { serviceWorker } from "./scripts/service-worker.ts";
 import { cspSafeRadix } from "./vite/csp-safe-radix.mjs";
@@ -60,7 +61,10 @@ export default defineConfig(({ mode }) => {
     base,
     // serviceWorker(): dist/sw.js (solo al construir; ver scripts/service-worker.ts).
     plugins: [cspSafeRadix(), react(), tailwindcss(), serviceWorker(), ...(python ? [devPyodide(base)] : [])],
-    define: process.env.VITEST ? {} : { __LABS_PYTHON__: JSON.stringify(python) },
+    // Comunidad: LABS_COMUNIDAD=1/0 o config.modules.comunidad. Apagada, su import desaparece del build.
+    define: process.env.VITEST
+      ? {}
+      : { __LABS_PYTHON__: JSON.stringify(python), __LABS_COMUNIDAD__: JSON.stringify(comunidadEnabled()) },
     // Pyodide se sirve tal cual: el optimizador de dependencias de Vite no debe reempaquetarlo.
     optimizeDeps: { exclude: ["pyodide"] },
     // El worker de Python es un módulo ES (import() del runtime de Pyodide).

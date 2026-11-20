@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { activeModules, MODULES } from "../../config.ts";
+import { activeModules, COMMUNITY_MODULE, config, MODULES } from "../../config.ts";
 import { AppShell } from "./AppShell.tsx";
 
 afterEach(() => {
@@ -12,12 +12,12 @@ afterEach(() => {
 
 describe("module switches", () => {
   it("the three labs and settings are always on; optional modules follow the switches", () => {
-    expect(activeModules({ calendario: false, flashcards: false, calculadora: false }).map((m) => m.id)).toEqual([
+    expect(activeModules({ calendario: false, flashcards: false, calculadora: false, comunidad: false }).map((m) => m.id)).toEqual([
       "inicio",
       "laboratorios",
       "ajustes",
     ]);
-    expect(activeModules({ calendario: true, flashcards: false, calculadora: true }).map((m) => m.id)).toEqual([
+    expect(activeModules({ calendario: true, flashcards: false, calculadora: true, comunidad: false }).map((m) => m.id)).toEqual([
       "inicio",
       "laboratorios",
       "calendario",
@@ -25,6 +25,14 @@ describe("module switches", () => {
       "ajustes",
     ]);
     expect(MODULES.every((m) => m.path.startsWith("/"))).toBe(true);
+  });
+  it("Comunidad is off by default (public site) and appears only when its switch is on", () => {
+    expect(config.modules.comunidad).toBe(false);
+    expect(COMMUNITY_MODULE).toBe(false);
+    expect(activeModules().map((m) => m.id)).not.toContain("comunidad");
+    expect(activeModules({ calendario: true, flashcards: true, calculadora: true, comunidad: true }).map((m) => m.id)).toContain(
+      "comunidad",
+    );
   });
 });
 
@@ -82,13 +90,17 @@ describe("AppShell en el móvil y con teclado", () => {
     renderShell();
     const bottom = screen.getAllByRole("navigation", { name: "Principal" })[1]!;
     const links = within(bottom).getAllByRole("link");
+    // Comunidad viene apagada en el sitio público (LABS_COMUNIDAD=1 la enciende en un despliegue propio).
     expect(links.map((l) => l.textContent)).toEqual(["Inicio", "Labs", "Agenda", "Tarjetas", "Notas", "Ajustes"]);
     // Lo que se ve es lo que se oye (sin un aria-label distinto).
     expect(links.every((l) => !l.hasAttribute("aria-label"))).toBe(true);
     const notas = within(bottom).getByRole("link", { name: "Notas" });
     expect(notas.getAttribute("aria-current")).toBe("page");
-    // Cortos: caben a 390 px aun con una séptima entrada (unos 55 px por entrada).
-    for (const l of links) expect(l.textContent!.length).toBeLessThanOrEqual(8);
+    // Cortos: caben a 390 px aun con una séptima entrada (unos 55 px por entrada). Con Comunidad encendida
+    // su nombre corto es «Grupo» («Comunidad» se cortaba a 390 px).
+    for (const l of links) expect(l.textContent!.length).toBeLessThanOrEqual(9);
+    for (const m of MODULES) expect(m.nav.short.length).toBeLessThanOrEqual(9);
+    expect(MODULES.find((m) => m.id === "comunidad")!.nav.short).toBe("Grupo");
   });
 
   it("el contenido deja sitio abajo para la barra inferior y la zona segura", () => {

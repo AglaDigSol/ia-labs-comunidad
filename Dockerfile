@@ -14,11 +14,13 @@ ARG CALENDAR_ICS_KEY=
 # el build descarga los paquetes verificados de jsDelivr, PyPI o la release de GitHub). Vacío: lo que
 # diga config.modules.python (apagada).
 ARG LABS_PYTHON=
+# Módulo Comunidad (necesita el servicio /api/community): --build-arg LABS_COMUNIDAD=1 lo enciende.
+ARG LABS_COMUNIDAD=
 # Enlace «Guías de estudio» de los laboratorios (https). Vacío: sin enlace.
 ARG VITE_GUIDES_URL=
 # Tarjeta «Comunidad» del inicio (https). Vacío: sin tarjeta.
 ARG VITE_COMMUNITY_URL=
-RUN VITE_BASE="$VITE_BASE" CALENDAR_ICS_URL="$CALENDAR_ICS_URL" CALENDAR_ICS_KEY="$CALENDAR_ICS_KEY" LABS_PYTHON="$LABS_PYTHON" VITE_GUIDES_URL="$VITE_GUIDES_URL" VITE_COMMUNITY_URL="$VITE_COMMUNITY_URL" npm run build
+RUN VITE_BASE="$VITE_BASE" CALENDAR_ICS_URL="$CALENDAR_ICS_URL" CALENDAR_ICS_KEY="$CALENDAR_ICS_KEY" LABS_PYTHON="$LABS_PYTHON" LABS_COMUNIDAD="$LABS_COMUNIDAD" VITE_GUIDES_URL="$VITE_GUIDES_URL" VITE_COMMUNITY_URL="$VITE_COMMUNITY_URL" npm run build
 
 # 2) nginx sin privilegios sirviendo dist/.
 FROM nginx:alpine

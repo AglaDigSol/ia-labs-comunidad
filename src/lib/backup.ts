@@ -1,11 +1,13 @@
 // «Exportar / Importar mis datos»: copia JSON de todo lo que la app guarda en este navegador.
 import { z } from "zod";
 import { DEFAULT_LABS_KEYS } from "../features/labs/labs-storage.ts";
+import { DEFAULT_DRAFTS_KEY } from "../features/labs/python/python-config.ts";
 import { t } from "../i18n/index.ts";
 import { importKv, snapshotKv, type ImportReport } from "./kv-store.ts";
 
 export const BACKUP_APP = "ia-labs-comunidad";
 export const BACKUP_VERSION = 1;
+export const COMMUNITY_NAME_KEY = "ia_labs_community_name";
 /** Claves de localStorage ajenas al almacén KV que también viajan en la copia. */
 export const EXTRA_KEYS = [
   DEFAULT_LABS_KEYS.markov,
@@ -15,9 +17,12 @@ export const EXTRA_KEYS = [
   DEFAULT_LABS_KEYS.sets,
   DEFAULT_LABS_KEYS.boole,
   DEFAULT_LABS_KEYS.exercises,
+  DEFAULT_LABS_KEYS.python,
+  DEFAULT_DRAFTS_KEY,
   DEFAULT_LABS_KEYS.exam,
   DEFAULT_LABS_KEYS.pyexam,
   DEFAULT_LABS_KEYS.recent,
+  COMMUNITY_NAME_KEY,
 ] as const;
 
 const BackupSchema = z.strictObject({
@@ -25,7 +30,7 @@ const BackupSchema = z.strictObject({
   version: z.literal(BACKUP_VERSION),
   exportedAt: z.string().max(40),
   data: z.record(z.string().max(200), z.unknown()),
-  extras: z.partialRecord(z.enum(EXTRA_KEYS), z.string().max(16 * 1024)).optional(),
+  extras: z.partialRecord(z.enum(EXTRA_KEYS), z.string().max(512 * 1024)).optional(),
 });
 export type Backup = z.infer<typeof BackupSchema>;
 
@@ -54,6 +59,17 @@ export type RestoreResult = { ok: true; report: ImportReport } | { ok: false; er
 
 export const IMPORT_ERROR = t.settings.invalidFile;
 
+/** Borra del almacenamiento local todas las claves de EXTRA_KEYS. */
+export function clearExtras(): void {
+  for (const k of EXTRA_KEYS) {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      // almacenamiento no disponible
+    }
+  }
+}
+
 export function restoreBackup(text: string, mode: "replace" | "merge"): RestoreResult {
   let raw: unknown;
   try {
@@ -64,6 +80,7 @@ export function restoreBackup(text: string, mode: "replace" | "merge"): RestoreR
   const parsed = BackupSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: IMPORT_ERROR };
   const report = importKv(parsed.data.data, mode);
+  if (mode === "replace") clearExtras();
   for (const [k, v] of Object.entries(parsed.data.extras ?? {})) {
     try {
       localStorage.setItem(k, v);

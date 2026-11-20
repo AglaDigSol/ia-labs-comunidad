@@ -5,7 +5,7 @@
 //    excepción: viene apagado y es una pestaña de Laboratorios, no un módulo de la navegación.
 // 2) Registro: cada módulo declara su id, su ruta, su entrada de navegación, su componente perezoso y
 //    el contenido de content/ que usa. Para añadir un módulo nuevo, añade una entrada a MODULES.
-import { CalendarDays, Calculator, FlaskConical, House, Layers, Settings } from "lucide-react";
+import { CalendarDays, Calculator, FlaskConical, House, Layers, MessageSquare, Settings } from "lucide-react";
 import { createElement, lazy, type ComponentType, type LazyExoticComponent } from "react";
 import type { LabsRoutesProps } from "./features/labs/labs.tsx";
 import { t } from "./i18n/index.ts";
@@ -18,6 +18,12 @@ export const config = {
     flashcards: true,
     /** Calculadora de notas (mínimo 5,0 por bloque y menciones). */
     calculadora: true,
+    /**
+     * Comunidad estudiantil con preguntas, recursos y novedades. Necesita el servicio /api/community, que
+     * no forma parte de este repositorio: apagada en el sitio público. Un despliegue con ese servicio la
+     * enciende construyendo con LABS_COMUNIDAD=1, sin tocar el código.
+     */
+    comunidad: false,
     /**
      * Pestaña «Python» de Laboratorios: Python 3.12 en el navegador con Pyodide. Apagada por defecto
      * porque publica unos 120 MB de paquetes en dist/pyodide/. Se enciende aquí (true) o, sin tocar el
@@ -33,6 +39,17 @@ export type OptionalModuleId = Exclude<keyof typeof config.modules, "python">;
 
 // vite.config.ts lo define al construir: config.modules.python, salvo que LABS_PYTHON diga otra cosa.
 declare const __LABS_PYTHON__: boolean | undefined;
+
+// vite.config.ts lo define al construir (LABS_COMUNIDAD o config.modules.comunidad). Sin definir en las
+// pruebas y en una app anfitriona: entonces manda config.modules.comunidad.
+declare const __LABS_COMUNIDAD__: boolean | undefined;
+
+/** ¿Lleva el sitio Comunidad? */
+export const COMMUNITY_MODULE: boolean =
+  typeof __LABS_COMUNIDAD__ === "boolean" ? __LABS_COMUNIDAD__ : config.modules.comunidad;
+
+/** Interruptores efectivos de los módulos opcionales (config.modules con Comunidad resuelta). */
+export const MODULE_SWITCHES: Record<OptionalModuleId, boolean> = { ...config.modules, comunidad: COMMUNITY_MODULE };
 
 /** Dirección de las guías de estudio (VITE_GUIDES_URL, en el build). Vacía: sin enlace. */
 export const GUIDES_URL: string | undefined = import.meta.env.VITE_GUIDES_URL;
@@ -118,6 +135,19 @@ export const MODULES: AppModule[] = [
     content: ["content/courses"],
     optional: true,
   },
+  // Con __LABS_COMUNIDAD__ = false (sitio público) esta entrada y su import desaparecen del build.
+  ...((typeof __LABS_COMUNIDAD__ === "boolean" ? __LABS_COMUNIDAD__ : true)
+    ? [
+        {
+          id: "comunidad",
+          path: "/comunidad/*",
+          nav: { label: t.nav.community, short: t.nav.communityShort, icon: MessageSquare, end: false },
+          component: lazyNamed(() => import("./features/community/CommunityPage.tsx"), "CommunityRoutes"),
+          content: [],
+          optional: true,
+        } satisfies AppModule,
+      ]
+    : []),
   {
     id: "ajustes",
     path: "/ajustes",
@@ -129,7 +159,7 @@ export const MODULES: AppModule[] = [
 ];
 
 /** Módulos activos según los interruptores. */
-export function activeModules(switches: Record<OptionalModuleId, boolean> = config.modules): AppModule[] {
+export function activeModules(switches: Record<OptionalModuleId, boolean> = MODULE_SWITCHES): AppModule[] {
   return MODULES.filter((m) => !m.optional || switches[m.id as OptionalModuleId]);
 }
 

@@ -53,6 +53,9 @@
   --color-on-accent: var(--on-accent);
   --color-border: var(--border);
   --color-fg: var(--text);
+  --color-foreground: var(--text);
+  --color-surface: var(--surface-raised);
+  --color-hover: var(--surface-sunken);
   --color-muted: var(--text-muted);
   --color-ok: var(--ok);
   --color-ok-bg: var(--ok-bg);

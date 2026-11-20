@@ -48,6 +48,31 @@ describe("Ajustes · mis datos", () => {
     expect(screen.queryByRole("button", { name: "Salir" })).toBeNull();
     expect(screen.getByText(/El sitio no usa cookies/)).toBeTruthy();
   });
+
+  it("sin Comunidad (sitio público) no muestra «Identidad en la Comunidad»", () => {
+    render(<SettingsPage />);
+    expect(screen.queryByRole("heading", { name: "Identidad en la Comunidad" })).toBeNull();
+    expect(screen.queryByPlaceholderText("Tu nombre y apellidos")).toBeNull();
+  });
+
+  it("al confirmar «Borrar mis datos» limpia tanto KV como las claves extras", () => {
+    setKv("grade/01MIAR/ev1", 800);
+    localStorage.setItem("ia-labs.python.v1", '{"template":"blank"}');
+    localStorage.setItem("ia-labs.py.drafts", "[]");
+    localStorage.setItem("ia-labs.markov.v1", "{}");
+    localStorage.setItem("ia_labs_community_name", "Nombre Ejemplo");
+
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByRole("button", { name: "Borrar mis datos" }));
+    fireEvent.click(screen.getByRole("button", { name: "Borrar" }));
+
+    expect(screen.getByText("Datos borrados.")).toBeTruthy();
+    expect(snapshotKv()).toEqual({});
+    expect(localStorage.getItem("ia-labs.python.v1")).toBeNull();
+    expect(localStorage.getItem("ia-labs.py.drafts")).toBeNull();
+    expect(localStorage.getItem("ia-labs.markov.v1")).toBeNull();
+    expect(localStorage.getItem("ia_labs_community_name")).toBeNull();
+  });
 });
 
 describe("Ajustes · flashcards", () => {

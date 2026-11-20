@@ -4,10 +4,11 @@ import { ThemeToggle } from "../../components/layout/AppShell.tsx";
 import { Button } from "../../components/ui/button.tsx";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "../../components/ui/dialog.tsx";
 import { Input } from "../../components/ui/input.tsx";
-import { config } from "../../config.ts";
+import { COMMUNITY_MODULE, config } from "../../config.ts";
 import { DEFAULT_NEW_CARDS_PER_DAY } from "../../../shared/srs/due.ts";
+import { DisplayNameSchema } from "../../../shared/community/validation.ts";
 import { NEW_CAP_MAX, NEW_CAP_MIN, setNewCardsPerDay, useNewCap } from "../../lib/new-cards-pref.ts";
-import { backupFileName, buildBackup, restoreBackup } from "../../lib/backup.ts";
+import { backupFileName, buildBackup, clearExtras, COMMUNITY_NAME_KEY, restoreBackup } from "../../lib/backup.ts";
 import { t } from "../../i18n/index.ts";
 import { clearKv } from "../../lib/kv-store.ts";
 
@@ -73,11 +74,77 @@ function NewCardsField() {
   );
 }
 
+function CommunityDisplayNameEditor() {
+  const [name, setName] = useState(() => {
+    try {
+      return localStorage.getItem(COMMUNITY_NAME_KEY) || "";
+    } catch {
+      return "";
+    }
+  });
+  const [msg, setMsg] = useState<{ tone: "ok" | "crit"; text: string } | null>(null);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = DisplayNameSchema.safeParse(name.trim());
+    if (!parsed.success) {
+      setMsg({ tone: "crit", text: parsed.error.issues[0]?.message ?? "Nombre no válido." });
+      return;
+    }
+    try {
+      localStorage.setItem(COMMUNITY_NAME_KEY, parsed.data);
+      // Sincroniza con el backend si hay sesión activa
+      try {
+        const res = await fetch("/api/community/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ displayName: parsed.data }),
+        });
+        if (!res.ok) {
+          const errJson = (await res.json().catch(() => ({}))) as { error?: string };
+          setMsg({ tone: "crit", text: errJson.error || `Error ${res.status} al guardar el nombre.` });
+          return;
+        }
+      } catch {
+        // Sin servidor activo: se mantiene guardado en este navegador.
+      }
+      setMsg({ tone: "ok", text: t.settings.displayNameSaved });
+      setTimeout(() => setMsg(null), 3000);
+    } catch {
+      // noop
+    }
+  };
+
+  return (
+    <form onSubmit={handleSave} className="flex flex-col gap-2 max-w-sm">
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={name}
+          minLength={2}
+          maxLength={80}
+          placeholder="Tu nombre y apellidos"
+          onChange={(e) => {
+            setName(e.target.value);
+            if (msg) setMsg(null);
+          }}
+          className="flex-1 rounded-md border border-border bg-sunken px-3 py-1.5 text-xs text-foreground focus:border-accent focus:outline-hidden"
+        />
+        <Button type="submit" disabled={name.trim().length < 2}>
+          Guardar
+        </Button>
+      </div>
+      {msg && <p className={`text-xs font-medium ${msg.tone === "ok" ? "text-ok" : "text-crit"}`}>{msg.text}</p>}
+    </form>
+  );
+}
+
 export function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<"merge" | "replace">("merge");
   const [status, setStatus] = useState<Status>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [clearCount, setClearCount] = useState(0);
 
   const onExport = () => {
     const now = new Date();
@@ -187,6 +254,8 @@ export function SettingsPage() {
                 variant="destructive"
                 onClick={() => {
                   clearKv();
+                  clearExtras();
+                  setClearCount((c) => c + 1);
                   setConfirmClear(false);
                   setStatus({ tone: "ok", text: t.settings.cleared });
                 }}
@@ -197,6 +266,16 @@ export function SettingsPage() {
           </DialogContent>
         </Dialog>
       </section>
+
+      {COMMUNITY_MODULE ? (
+        <section aria-labelledby="ajustes-comunidad" className="flex flex-col gap-3">
+          <h2 id="ajustes-comunidad" className="text-[20px]">
+            {t.settings.communityTitle}
+          </h2>
+          <p className="text-muted text-sm">{t.settings.displayNameHelp}</p>
+          <CommunityDisplayNameEditor key={clearCount} />
+        </section>
+      ) : null}
 
       <section aria-labelledby="ajustes-privacidad" className="flex flex-col gap-2">
         <h2 id="ajustes-privacidad" className="text-[20px]">
