@@ -12,6 +12,25 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 
+## [0.21.0] - 2026-11-20
+
+Trece tipos nuevos en el banco de ejercicios, con corrección paso a paso, y las Evidencias 2 y 4 de 01MIAR en el
+calendario.
+
+### Añadido
+
+- Tensores: `algebra-einstein` (índices mudos y libres, términos y componentes), `algebra-producto-tensorial`
+  (producto tensorial y contracción), `algebra-coordenadas-base` (coordenadas en otra base 2 × 2, también escalada) y
+  `algebra-cambio-base` (D = C⁻¹AC, comprobada con la traza).
+- Factorizaciones: `algebra-lu`, `algebra-cholesky`, `algebra-qr` (Gram-Schmidt) y `algebra-svd` (valores singulares
+  desde AᵀA), con números pequeños y resultados exactos.
+- `algebra-aplicacion-lineal` (matriz de una aplicación lineal desde su fórmula o desde las imágenes de una base) y
+  `calculo-extremos-absolutos` (máximo y mínimo absolutos en [a, b]).
+- NumPy, sin necesidad de la pestaña Python: `py-forma-datos` (forma, rango y bytes de audio, imagen y vídeo, NumPy
+  frente a PyTorch), `py-numpy-ejes` (`expand_dims`, `squeeze` e índices en 3D) y `py-desbordamiento` (`int8` y
+  `uint8`).
+- Calendario: Evidencia 2 y Evidencia 4 de 01MIAR (18/01/2027, 08:00).
+
 ## [0.20.0] - 2026-11-20
 
 Módulo Comunidad opcional para despliegues propios. El sitio público no cambia.

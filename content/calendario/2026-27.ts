@@ -78,6 +78,8 @@ export const CALENDARIO_2026_27: CalendarPack = {
     { id: "01MIAR-EX1-F1", materia: "01MIAR", tipo: "examen", titulo: "Examen 1ª convocatoria", inicio: "2027-01-15T12:00", fin: "2027-01-15T14:00", franja: "F1", fuente: GUIA["01MIAR"], actualizado: ACT },
     { id: "01MIAR-EX1-F2", materia: "01MIAR", tipo: "examen", titulo: "Examen 1ª convocatoria", inicio: "2027-01-15T20:00", fin: "2027-01-15T22:00", franja: "F2", fuente: GUIA["01MIAR"], actualizado: ACT },
     { id: "01MIAR-EV1", materia: "01MIAR", tipo: "foro", titulo: "Evidencia 1 · Foro evaluable", inicio: "2027-01-18T08:00", fuente: GUIA["01MIAR"], actualizado: ACT },
+    { id: "01MIAR-EV2", materia: "01MIAR", tipo: "entrega", titulo: "Evidencia 2 · Investigación sobre papers", inicio: "2027-01-18T08:00", fuente: GUIA["01MIAR"], actualizado: "2026-11-20" },
+    { id: "01MIAR-EV4", materia: "01MIAR", tipo: "entrega", titulo: "Evidencia 4 · Análisis de un dataset", inicio: "2027-01-18T08:00", fuente: GUIA["01MIAR"], actualizado: "2026-11-20" },
     { id: "02MIAR-EX2-F1", materia: "02MIAR", tipo: "examen", titulo: "Examen 2ª convocatoria", inicio: "2027-02-12T12:00", fin: "2027-02-12T14:00", franja: "F1", fuente: GUIA["02MIAR"], actualizado: ACT },
     { id: "02MIAR-EX2-F2", materia: "02MIAR", tipo: "examen", titulo: "Examen 2ª convocatoria", inicio: "2027-02-12T20:00", fin: "2027-02-12T22:00", franja: "F2", fuente: GUIA["02MIAR"], actualizado: ACT },
     { id: "01MIAR-EX2-F1", materia: "01MIAR", tipo: "examen", titulo: "Examen 2ª convocatoria", inicio: "2027-02-19T12:00", fin: "2027-02-19T14:00", franja: "F1", fuente: GUIA["01MIAR"], actualizado: ACT },
