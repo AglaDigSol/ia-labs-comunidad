@@ -12,6 +12,27 @@ Todos los cambios relevantes de este proyecto se anotan aquí. El formato sigue
   activar/desactivar).
 - Sincronización opcional con cuentas sobre la interfaz `StorageAdapter`.
 
+## [0.20.0] - 2026-11-20
+
+Módulo Comunidad opcional para despliegues propios. El sitio público no cambia.
+
+### Añadido
+
+- Comunidad: preguntas, recursos y novedades entre estudiantes, con categorías, filtro por materia, búsqueda,
+  respuestas, respuesta aceptada, reportes y moderación. Necesita un servicio `/api/community` que no forma parte de
+  este repositorio, así que viene apagada (`config.modules.comunidad = false`). Se enciende al construir con
+  `LABS_COMUNIDAD=1` (o `--build-arg LABS_COMUNIDAD=1` en Docker). Apagada, su código no entra en `dist/` ni en el
+  service worker.
+- Con Comunidad encendida: «Identidad en la Comunidad» en Ajustes (nombre que se muestra, validado), edición de los
+  enlaces de una publicación, edición y retirada de respuestas, diálogos accesibles (Escape, foco atrapado) y un aviso
+  visible cuando no hay servidor y se muestran publicaciones de ejemplo.
+
+### Cambiado
+
+- «Exportar mis datos» incluye las preferencias y los borradores de la pestaña Python y el nombre de Comunidad. El
+  límite por entrada sube a 512 KB. Importar en modo «Reemplazar» y «Borrar mis datos» también los borran.
+- eslint ignora `dist-server/` y `.claude/`.
+
 ## [0.19.0] - 2026-11-11
 
 Grupos de prácticas y franjas de examen por materia, también en los calendarios suscritos.

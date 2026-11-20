@@ -35,12 +35,16 @@ Los módulos opcionales se activan o desactivan en [`src/config.ts`](src/config.
 
 ```ts
 export const config = {
-  modules: { calendario: true, flashcards: true, calculadora: true, python: false },
+  modules: { calendario: true, flashcards: true, calculadora: true, comunidad: false, python: false },
 } as const;
 ```
 
 Si pones uno a `false`, desaparece de la navegación y de las rutas (y del inicio), y su código no llega a descargarse.
 `python` viene apagado y también se enciende sin tocar el código, al construir: `LABS_PYTHON=1 npm run build`.
+`comunidad` (preguntas, recursos y novedades entre estudiantes) también viene apagado: necesita un servicio
+`/api/community` que no forma parte de este repositorio. Un despliegue que lo tenga la enciende al construir, sin tocar
+el código: `LABS_COMUNIDAD=1 npm run build` (o `--build-arg LABS_COMUNIDAD=1` con Docker). Apagada, su código no entra en
+`dist/` ni en el service worker, y Ajustes no muestra «Identidad en la Comunidad».
 
 **Rutas.** `/` es el inicio; `/laboratorios/<pestaña>` (`/laboratorios` abre Simbología), `/calendario`, `/flashcards`,
 `/notas` y `/ajustes`. Cualquier otra, también dentro de `/laboratorios/`, muestra «Página no encontrada». En el móvil, la
@@ -512,7 +516,7 @@ el `tsc` de la app anfitriona.
 
 ```json
 "dependencies": {
-  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.19.0"
+  "ia-labs-comunidad": "https://codeload.github.com/AglaDigSol/ia-labs-comunidad/tar.gz/refs/tags/v0.20.0"
 }
 ```
 
