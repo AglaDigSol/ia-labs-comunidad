@@ -35,13 +35,13 @@ const each = (fn: (seed: number, level: ExerciseLevel) => void, seeds = SEEDS) =
 };
 
 describe("registro de cálculo", () => {
-  it("quince tipos en el tema «Cálculo» (siete de cálculo y ocho de teoría), tras «Álgebra lineal»", () => {
+  it("dieciséis tipos en el tema «Cálculo» (siete de cálculo, ocho de teoría y los extremos absolutos), tras «Álgebra lineal»", () => {
     const ids = exerciseTopics().map((t) => t.id);
     expect(ids.indexOf("calculo")).toBe(ids.indexOf("algebra-lineal") + 1);
-    expect(exercisesOfTopic("calculo").map((t) => t.id)).toEqual(CALC_EXERCISES.map((t) => t.id));
+    expect(exercisesOfTopic("calculo").map((t) => t.id)).toEqual([...CALC_EXERCISES.map((t) => t.id), "calculo-extremos-absolutos"]);
     expect(CALC_EXERCISES).toHaveLength(15);
     const mixed = new Set(SEEDS.slice(0, 150).map((s) => mixedType("calculo", "medio", s).id));
-    expect(mixed.size).toBe(15);
+    expect(mixed.size).toBe(16);
   });
 
   it("deterministas y variados", () => {

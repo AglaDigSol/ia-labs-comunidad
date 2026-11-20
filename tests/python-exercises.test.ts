@@ -45,13 +45,14 @@ function check(jobs: Job[]): CheckResult[] {
 }
 
 describe("ejercicios de Python: registro", () => {
-  it("solo existen con el módulo python encendido", () => {
-    expect(exerciseTopics().map((t) => t.id)).not.toContain("python");
+  it("los de código solo existen con el módulo python encendido (los de formas y desbordamiento, siempre)", () => {
+    const always = ["py-forma-datos", "py-numpy-ejes", "py-desbordamiento"];
+    expect(exerciseTopics().map((t) => t.id)).toContain("python");
     expect(exerciseTopics({ python: true }).map((t) => t.id)).toContain("python");
     expect(exerciseType("py-cadenas")).toBeNull();
     expect(exerciseType("py-cadenas", { python: true })?.id).toBe("py-cadenas");
-    expect(exercisesOfTopic("python")).toEqual([]);
-    expect(exercisesOfTopic("python", { python: true }).map((t) => t.id)).toEqual(PYTHON_EXERCISES.map((t) => t.id));
+    expect(exercisesOfTopic("python").map((t) => t.id)).toEqual(always);
+    expect(exercisesOfTopic("python", { python: true }).map((t) => t.id)).toEqual([...PYTHON_EXERCISES.map((t) => t.id), ...always]);
     for (const level of EXERCISE_LEVELS) expect(mixedType("python", level, 7, { python: true }).topic).toBe("python");
   });
 

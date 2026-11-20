@@ -132,17 +132,20 @@ async function submit(code: string) {
 }
 
 describe("tema Python en «Ejercicios»", () => {
-  it("sin el módulo no aparece; con él, sus nueve tipos y sin cargar Python", async () => {
+  it("sin el módulo, solo los tipos sin Pyodide; con él, todos y sin cargar Python", async () => {
+    const always = ["Forma de un audio, una imagen o un vídeo", "Ejes: expand_dims, squeeze e índices", "Desbordamiento de int8 y uint8"];
     const { unmount } = renderAt("/laboratorios/ejercicios", false);
     await page();
-    expect(screen.queryByRole("heading", { level: 2, name: "Python (01MIAR)" })).toBeNull();
+    const alone = screen.getByRole("heading", { level: 2, name: "Python (01MIAR)" }).closest("section")!;
+    expect(within(within(alone).getByRole("list")).getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(always);
+    expect(within(alone).queryByRole("link", { name: "Abrir el simulacro de 01MIAR" })).toBeNull();
     unmount();
     renderAt("/laboratorios/ejercicios");
     await page();
     const block = screen.getByRole("heading", { level: 2, name: "Python (01MIAR)" }).closest("section")!;
     // Antes de los tipos, la tarjeta del simulacro de 01MIAR.
     expect(within(block).getByRole("link", { name: "Abrir el simulacro de 01MIAR" })).toBeTruthy();
-    expect(within(within(block).getByRole("list")).getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(PYTHON_EXERCISES.map((t) => t.title));
+    expect(within(within(block).getByRole("list")).getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([...PYTHON_EXERCISES.map((t) => t.title), ...always]);
     expect(Python3Worker.all).toHaveLength(0);
   });
 

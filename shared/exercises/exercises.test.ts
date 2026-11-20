@@ -112,7 +112,9 @@ describe("registro", () => {
       expect(exerciseType(t.id, { python: true })).toBe(t);
     }
     expect(exerciseType("no-existe")).toBeNull();
-    expect(exerciseTopics().map((t) => t.id)).toEqual(["logica", "predicados", "conjuntos", "combinatoria", "boole", "algebra-lineal", "calculo", "probabilidad", "markov"]);
+    // «Python (01MIAR)» está también sin el módulo: sus tipos sin Pyodide (formas de arrays, desbordamiento).
+    expect(exerciseTopics().map((t) => t.id)).toEqual(["logica", "predicados", "conjuntos", "combinatoria", "boole", "algebra-lineal", "calculo", "probabilidad", "markov", "python"]);
+    expect(EXERCISE_TYPES.filter((t) => t.topic === "python" && !t.module).map((t) => t.id)).toEqual(["py-forma-datos", "py-numpy-ejes", "py-desbordamiento"]);
   });
 
   it("cada tipo es determinista: misma semilla y nivel, misma instancia", () => {

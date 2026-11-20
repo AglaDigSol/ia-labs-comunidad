@@ -5,17 +5,21 @@
 // aparecen en la lista, en «Mezclar» ni por su id en la URL.
 import { BOOLE_EXERCISES } from "./boole.ts";
 import { CALC_EXERCISES } from "./calculus.ts";
+import { CALC_ABS_EXTREMES } from "./calculus-extremes.ts";
 import { DISCRETE_EXERCISES } from "./discrete.ts";
+import { FACTORIZATION_EXERCISES } from "./factorizations.ts";
 import { LINALG_EXERCISES } from "./linalg.ts";
 import { LOGIC_EXERCISES } from "./logic.ts";
 import { LOGIC_EXTRA_EXERCISES, PRED_EXTRA_EXERCISES } from "./logic-extra.ts";
 import { MARKOV_EXERCISES } from "./markov.ts";
+import { NUMPY_SHAPE_EXERCISES } from "./numpy-shapes.ts";
 import { PREDICATE_EXERCISES } from "./predicates.ts";
 import { PRED_CONCRETE_EXERCISES } from "./predicates-concrete.ts";
 import { PROB_EXERCISES } from "./probability.ts";
 import { PYTHON_EXERCISES } from "./python.ts";
 import { createRng, randomSeed } from "./random.ts";
 import { SET_EXERCISES } from "./sets.ts";
+import { TENSOR_EXERCISES } from "./tensors.ts";
 import { EXERCISE_TOPICS, type ExerciseLevel, type ExerciseModules, type ExerciseTopic, type ExerciseType } from "./types.ts";
 
 export type AnyExerciseType = ExerciseType<unknown>;
@@ -36,10 +40,16 @@ export const EXERCISE_TYPES: readonly AnyExerciseType[] = [
   ...DISCRETE_EXERCISES,
   ...BOOLE_EXERCISES,
   ...LINALG_EXERCISES,
+  ...TENSOR_EXERCISES,
+  ...FACTORIZATION_EXERCISES,
   ...CALC_EXERCISES,
+  CALC_ABS_EXTREMES,
   ...PROB_EXERCISES,
   ...MARKOV_EXERCISES,
   ...(WITH_PYTHON ? PYTHON_EXERCISES : []),
+  // Formas de arrays y desbordamiento: del tema Python, pero sin Pyodide (no ejecutan código), así que
+  // están siempre, con el módulo encendido o sin él.
+  ...NUMPY_SHAPE_EXERCISES,
 ];
 
 const BY_ID = new Map(EXERCISE_TYPES.map((t) => [t.id, t]));

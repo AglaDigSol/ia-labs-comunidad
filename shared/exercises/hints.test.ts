@@ -12,6 +12,8 @@ import { connectiveRulesHint } from "./hints.ts";
 import { detRulesHints, LINALG_DET_RULES, LINALG_NORMS, normsHints } from "./linalg.ts";
 import { numberFamily, numbersHints, PRED_NUMBERS } from "./logic-extra.ts";
 import { LOGIC_CLASSIFY, LOGIC_TRUTH_TABLE } from "./logic.ts";
+import { axesGuided, dataShapeGuided, PY_DATA_SHAPE, PY_NUMPY_AXES } from "./numpy-shapes.ts";
+import { einsteinGuided, einsteinFree, LINALG_EINSTEIN } from "./tensors.ts";
 import { EXERCISE_LEVELS, type ExerciseLevel, type ExerciseType } from "./types.ts";
 
 const SEEDS = Array.from({ length: 150 }, (_, i) => (i * 2654435761 + 11) >>> 0);
@@ -155,5 +157,36 @@ describe("pistas ajustadas al enunciado", () => {
       },
     };
     sweep(type, normsHints, rules);
+  });
+  it("Einstein: arriba y abajo, la traza y «sin libres» solo si la expresión los tiene", () => {
+    sweep(LINALG_EINSTEIN, (i) => einsteinGuided(i).steps.flatMap((x) => x.hints), [
+      { name: "índices arriba", hint: /arriba/, needs: (i) => i.factors.some((f) => f.upper.length > 0) },
+      { name: "un índice repetido en un factor", hint: /mismo factor/, needs: (i) => i.factors.some((f) => new Set([...f.upper, ...f.lower]).size < f.upper.length + f.lower.length) },
+      { name: "ningún libre", hint: /Sin índices libres/, needs: (i) => einsteinFree(i).length === 0 },
+    ]);
+  });
+
+  it("forma de un audio, una imagen o un vídeo: lote, fotogramas, muestras y canales según el enunciado", () => {
+    sweep(PY_DATA_SHAPE, (i) => dataShapeGuided(i).steps.flatMap((x) => x.hints), [
+      { name: "un lote", hint: /lote/, needs: (i) => i.batch !== null },
+      { name: "un vídeo", hint: /fps/, needs: (i) => i.kind === "video" },
+      { name: "un audio", hint: /muestreo/, needs: (i) => i.kind === "audio" },
+      { name: "una resolución ancho × alto", hint: /ancho × alto/, needs: (i) => i.kind !== "audio" && i.res !== "hw" },
+      { name: "varios canales", hint: /canales van al final|canales van delante del alto/, needs: (i) => i.channels > 1 },
+      { name: "bytes", hint: /bytes/, needs: (i) => i.dtype !== null },
+    ]);
+  });
+
+  it("ejes: cada regla (expand_dims, squeeze, enteros, cortes, pasos, ..., newaxis, listas) solo si el código la usa", () => {
+    const code = (i: ReturnType<typeof PY_NUMPY_AXES.generate>) => axesGuided(i).statement.blocks.map((b) => (b.kind === "code" ? b.code : "")).join("\n");
+    sweep(PY_NUMPY_AXES, (i) => axesGuided(i).steps.flatMap((x) => x.hints), [
+      { name: "expand_dims", hint: /expand_dims/, needs: (i) => code(i).includes("expand_dims") },
+      { name: "squeeze", hint: /squeeze/, needs: (i) => code(i).includes("squeeze") },
+      { name: "un negativo", hint: /negativos/, needs: (i) => /[=[, ]-\d/.test(code(i)) },
+      { name: "un paso", hint: /::2/, needs: (i) => /:-?\d+\]|:-?\d+,/.test(code(i).split("b = ")[1]!) && /::|:\d*:/.test(code(i)) },
+      { name: "Ellipsis", hint: /Ellipsis/, needs: (i) => code(i).includes("...") },
+      { name: "newaxis", hint: /newaxis/, needs: (i) => code(i).includes("np.newaxis") },
+      { name: "una lista", hint: /lista de posiciones/, needs: (i) => /\[\d+, \d+/.test(code(i).split("b = ")[1]!) },
+    ]);
   });
 });

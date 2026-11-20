@@ -70,6 +70,7 @@ import { PartsPractice } from "../sets/PartsSection.tsx";
 import { ShadePractice } from "../sets/VennSection.tsx";
 import { CALC_EXERCISE_VIEWS } from "./calculus-views.tsx";
 import { DISCRETE_EXERCISE_VIEWS } from "./discrete-views.tsx";
+import { GUIDED_EXERCISE_VIEWS } from "./guided-views.tsx";
 import { LOGIC_EXTRA_EXERCISE_VIEWS } from "./logic-extra-views.tsx";
 import { LINALG_EXERCISE_VIEWS } from "./linalg-views.tsx";
 import { MARKOV_EXERCISE_VIEWS } from "./markov-views.tsx";
@@ -500,4 +501,5 @@ export const EXERCISE_VIEWS: Readonly<Record<string, View>> = Object.fromEntries
   ...CALC_EXERCISE_VIEWS,
   ...PROB_EXERCISE_VIEWS,
   ...MARKOV_EXERCISE_VIEWS,
+  ...GUIDED_EXERCISE_VIEWS,
 ]);
